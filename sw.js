@@ -1,7 +1,7 @@
 /* DAIMON 販売版 — Service Worker
    index.html は network-first（最新優先）、その他アセットは stale-while-revalidate。
    中身を差し替えたら VERSION を上げる（daimon-sales-v1 → v2 ...）。 */
-const VERSION = 'daimon-sales-v5-morning05-health';
+const VERSION = 'daimon-sales-v6-morning05-textless';
 const SHELL = [
   './',
   './index.html',
