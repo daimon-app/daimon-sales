@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>DAIMON</title>
+<style>
+/* =========================================================
+   DAIMON 販売版  基本骨格＋朝モード
+   - トーン（金/Georgia/ゴールドフレーム）は原本を踏襲
+   - 朝12枚は morningSlides データ1か所から生成
+   - 画像は assets/images.js（キー参照）に完全分離
+   ========================================================= */
+:root{
+  --gold:#D4AF37; --gold2:#F5D080; --gold3:#B8860B;
+  --ink:#0a0a0a;
+  /* safe area */
+  --sat:env(safe-area-inset-top,0px);
+  --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);
+  --sar:env(safe-area-inset-right,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);
+  font-family:'Georgia','Times New Roman',serif;color:#fff}
+button{font-family:inherit}
+
+/* ===== 汎用レイヤー ===== */
+.layer{
+  position:fixed; inset:0; z-index:100;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:calc(32px + var(--sat)) 24px calc(32px + var(--sab));
+  background:radial-gradient(120% 100% at 50% 30%, #141414 0%, #0a0a0a 70%, #050505 100%);
+  opacity:0; visibility:hidden; pointer-events:none;
+  transition:opacity .8s ease, visibility 0s linear .8s;
+}
+.layer.on{ opacity:1; visibility:visible; pointer-events:auto;
+  transition:opacity .9s ease; }
+.gold-frame{ position:absolute; inset:8px; border:1px solid rgba(212,175,55,.35);
+  border-radius:2px; pointer-events:none; z-index:50; }
+.gold-corner{ position:absolute; width:22px;height:22px; border-color:var(--gold);
+  border-style:solid; opacity:.8; z-index:51; }
+.gold-corner.tl{top:8px;left:8px;border-width:3px 0 0 3px}
+.gold-corner.tr{top:8px;right:8px;border-width:3px 3px 0 0}
+.gold-corner.bl{bottom:8px;left:8px;border-width:0 0 3px 3px}
+.gold-corner.br{bottom:8px;right:8px;border-width:0 3px 3px 0}
+
+.eyebrow{ color:var(--gold); letter-spacing:.28em; font-size:12px; margin-bottom:20px; opacity:.85 }
+.big{ font-size:clamp(28px,7.4vw,52px); font-weight:700; line-height:1.45; letter-spacing:.05em;
+  text-shadow:0 2px 20px rgba(0,0,0,.8) }
+.big .g{ color:var(--gold) }
+.sub{ margin-top:16px; font-size:clamp(15px,3.9vw,22px); color:rgba(255,255,255,.82);
+  line-height:1.9; letter-spacing:.06em }
+
+/* 金ボタン / ゴースト */
+.gbtn{ margin-top:34px; cursor:pointer; border:none; font-weight:700; letter-spacing:.14em;
+  color:#1a1000; font-size:clamp(14px,3.6vw,18px); padding:14px 40px; border-radius:44px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold3));
+  box-shadow:0 4px 22px rgba(212,175,55,.45) }
+.gbtn:active{ transform:translateY(1px) }
+.ghost{ margin-top:16px; cursor:pointer; background:none; border:1px solid rgba(212,175,55,.4);
+  color:rgba(255,255,255,.7); letter-spacing:.12em; font-size:12px; padding:9px 22px; border-radius:40px }
+
+/* ===== HOME（3モード選択） ===== */
+#scrHome .home-title{ font-size:clamp(30px,9vw,58px); font-weight:700; letter-spacing:.22em;
+  color:var(--gold); text-shadow:0 2px 24px rgba(0,0,0,.9),0 0 40px rgba(212,175,55,.35) }
+#scrHome .home-tag{ margin-top:10px; font-size:12px; letter-spacing:.3em;
+  color:rgba(255,255,255,.55) }
+.mode-list{ margin-top:38px; width:100%; max-width:420px; display:flex; flex-direction:column; gap:16px }
+.mode-card{ position:relative; cursor:pointer; text-align:left;
+  padding:20px 22px; border-radius:16px; border:1px solid rgba(212,175,55,.4);
+  background:linear-gradient(135deg, rgba(212,175,55,.10), rgba(255,255,255,.02));
+  display:flex; align-items:center; gap:16px; transition:transform .2s ease, border-color .2s ease }
+.mode-card:active{ transform:scale(.98) }
+.mode-card .mc-en{ color:var(--gold); font-size:12px; letter-spacing:.24em }
+.mode-card .mc-jp{ font-size:clamp(20px,5.4vw,26px); font-weight:700; letter-spacing:.08em; margin-top:2px }
+.mode-card .mc-note{ font-size:11px; color:rgba(255,255,255,.5); letter-spacing:.06em; margin-top:4px }
+.mode-card .mc-icon{ width:44px;height:44px; flex:0 0 44px; border-radius:50%;
+  display:flex;align-items:center;justify-content:center; font-size:22px;
+  background:radial-gradient(circle at 50% 40%, rgba(212,175,55,.28), rgba(212,175,55,.06));
+  border:1px solid rgba(212,175,55,.35) }
+.mode-card.soon{ opacity:.72 }
+.mode-card.soon .badge-soon{ position:absolute; top:12px; right:14px; font-size:10px;
+  letter-spacing:.14em; color:#1a1000; background:linear-gradient(135deg,var(--gold),var(--gold2));
+  padding:3px 10px; border-radius:20px }
+
+/* ===== BREATH（呼吸・戻る時間） ===== */
+.breath-stage{ position:relative; width:230px;height:230px; display:flex;align-items:center;justify-content:center; margin:6px 0 26px }
+.breath-ring{ position:absolute; width:150px;height:150px; border-radius:50%;
+  border:2px solid var(--gold);
+  box-shadow:0 0 40px rgba(212,175,55,.35), inset 0 0 30px rgba(212,175,55,.15);
+  animation:breathe 10s ease-in-out infinite }
+.breath-ring.g2{ opacity:.35 }
+@keyframes breathe{
+  0%{ transform:scale(1); box-shadow:0 0 30px rgba(212,175,55,.25), inset 0 0 20px rgba(212,175,55,.1) }
+  40%{ transform:scale(1.45); box-shadow:0 0 60px rgba(212,175,55,.5), inset 0 0 40px rgba(212,175,55,.25) }
+  100%{ transform:scale(1); box-shadow:0 0 30px rgba(212,175,55,.25), inset 0 0 20px rgba(212,175,55,.1) }
+}
+#breathLabel{ position:relative; z-index:2; color:#fff; letter-spacing:.3em;
+  font-size:clamp(16px,4.2vw,22px); text-shadow:0 0 18px rgba(0,0,0,.8) }
+
+/* ===== 朝ステージ ===== */
+#scrMorning{ padding:0; background:#000 }
+.vb-wrap{ width:100%; height:100%; overflow:hidden; position:relative }
+.vb-stage{ display:flex; width:100%; height:100%;
+  transition:transform var(--trans) cubic-bezier(0.77,0,0.175,1) }
+.vb-page{ min-width:100vw; width:100vw; height:100%; position:relative; overflow:hidden }
+.vb-bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;
+  background:linear-gradient(135deg,#1a1a1a,#2a2a2a) }
+/* 可読性のための暗幕（画像には文字を焼き込まない＝分離） */
+.vb-scrim{ position:absolute; inset:0; z-index:2; pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.60) 0%,rgba(0,0,0,.20) 48%,rgba(0,0,0,.68) 100%) }
+
+/* ① メイン（上段30〜35%） */
+.ov-title{ position:absolute; left:50%; top:32%; transform:translate(-50%,-50%);
+  width:90%; max-width:640px; z-index:6;
+  font-size:clamp(34px,8.8vw,60px); font-weight:700; color:#fff; letter-spacing:.04em; line-height:1.2;
+  text-shadow:0 2px 8px rgba(0,0,0,.95),0 0 24px rgba(0,0,0,.75) }
+.ov-title .g{ color:var(--gold) }
+/* ② 補助（中段48〜55%） */
+.ov-sub{ position:absolute; left:50%; top:52%; transform:translate(-50%,-50%);
+  width:90%; max-width:560px; z-index:6;
+  font-size:clamp(15px,4vw,23px); color:rgba(255,255,255,.92); letter-spacing:.04em; line-height:1.5;
+  text-shadow:0 2px 8px rgba(0,0,0,.95),0 0 24px rgba(0,0,0,.75) }
+/* ③ 最後の一言（演出で中央→下段70〜76%へ） */
+.ov-affirm{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) scale(.86);
+  width:auto; z-index:8; opacity:0;
+  font-size:clamp(34px,11vw,68px); font-weight:900; color:var(--gold);
+  letter-spacing:.10em; line-height:1.2;
+  white-space:nowrap;              /* 改行させない＝1行固定。幅はJS実測ガードで詰める */
+  text-shadow:0 2px 6px rgba(0,0,0,.98),0 0 3px rgba(0,0,0,.92),0 2px 14px rgba(0,0,0,.85),0 0 26px rgba(212,175,55,.40);
+  will-change:transform,opacity,filter,top }
+
+/* ①② 出現（奥→定着）。.ov.show で発火 */
+@keyframes upSettle{
+  0%{ opacity:0; filter:blur(10px); transform:translate(-50%,-50%) scale(.9) }
+  100%{ opacity:1; filter:blur(0); transform:translate(-50%,-50%) scale(1) }
+}
+.ov-title,.ov-sub{ opacity:0 }
+.vb-page.show .ov-title{ animation:upSettle .55s cubic-bezier(.2,.8,.2,1) .10s both }
+.vb-page.show .ov-sub{ animation:upSettle .55s cubic-bezier(.2,.8,.2,1) .40s both }
+
+/* ③ 共通演出：中央出現→拡大浮上→保持→縮小しながら下段へ収まる */
+.ov-affirm.play{ animation:affirmJourney var(--impact) cubic-bezier(.22,.75,.2,1) forwards }
+@keyframes affirmJourney{
+  0%{   top:50%; opacity:0; filter:blur(14px); transform:translate(-50%,-50%) scale(.80) }
+  16%{  opacity:1; filter:blur(0) }
+  42%{  top:50%; transform:translate(-50%,-50%) scale(1.14) }   /* 中央で最大まで浮上 */
+  60%{  top:50%; transform:translate(-50%,-50%) scale(1.14) }   /* 視認保持 */
+  100%{ top:73%; opacity:1; filter:blur(0); transform:translate(-50%,-50%) scale(1.0) } /* 縮小・下降・定着 */
+}
+
+/* ===== NAV / PROGRESS / HINT ===== */
+.nav-dots{ position:fixed; right:calc(12px + var(--sar)); top:50%; transform:translateY(-50%);
+  z-index:120; display:flex; flex-direction:column; gap:8px; opacity:0; transition:opacity .5s }
+.nav-dots.on{ opacity:1 }
+.nav-dot{ width:7px;height:7px; border-radius:50%; background:rgba(255,255,255,.35); cursor:pointer; transition:all .3s }
+.nav-dot.active{ background:var(--gold); transform:scale(1.4) }
+.progress-bar{ position:fixed; bottom:0; left:0; height:2px;
+  background:linear-gradient(90deg,var(--gold),var(--gold2)); z-index:120; width:0;
+  box-shadow:0 0 8px rgba(212,175,55,.8); opacity:0; transition:opacity .4s }
+.progress-bar.on{ opacity:1 }
+.hint{ position:fixed; bottom:calc(20px + var(--sab)); left:50%; transform:translateX(-50%);
+  color:rgba(255,255,255,.45); font-size:11px; letter-spacing:.15em; z-index:120;
+  pointer-events:none; opacity:0; transition:opacity .5s }
+.hint.on{ opacity:1 }
+
+/* 締めの余韻文字 */
+.peak{ font-size:clamp(34px,9vw,62px); font-weight:700; color:var(--gold);
+  text-shadow:0 2px 24px rgba(0,0,0,.9),0 0 44px rgba(212,175,55,.5); letter-spacing:.06em; line-height:1.3 }
+
+/* プレースホルダー（仕事・夜） */
+.ph-tag{ margin-top:22px; display:inline-block; font-size:11px; letter-spacing:.16em;
+  color:#1a1000; background:linear-gradient(135deg,var(--gold),var(--gold2));
+  padding:5px 14px; border-radius:20px }
+</style>
+</head>
+<body>
+
+<!-- ===== 音声受け口（現段階は無音・構造のみ） ===== -->
+<!-- 将来: ユーザー自身の録音音声などを src へ差し替え、AudioHook.enabled=true で有効化 -->
+<audio id="userVoice" preload="none" playsinline></audio>
+
+<!-- ============================ HOME ============================ -->
+<div class="layer on" id="scrHome">
+  <div class="gold-frame"></div>
+  <div class="gold-corner tl"></div><div class="gold-corner tr"></div>
+  <div class="gold-corner bl"></div><div class="gold-corner br"></div>
+  <div class="home-title">DAIMON</div>
+  <div class="home-tag">MORNING &nbsp;/&nbsp; WORK &nbsp;/&nbsp; NIGHT</div>
+  <div class="mode-list">
+    <div class="mode-card" data-go="morning">
+      <div class="mc-icon">☀</div>
+      <div>
+        <div class="mc-en">MORNING</div>
+        <div class="mc-jp">朝</div>
+        <div class="mc-note">自分に戻り、一日を始める</div>
+      </div>
+    </div>
+    <div class="mode-card soon" data-go="work">
+      <span class="badge-soon">準備中</span>
+      <div class="mc-icon">◆</div>
+      <div>
+        <div class="mc-en">WORK</div>
+        <div class="mc-jp">仕事</div>
+        <div class="mc-note">後続仕様で実装</div>
+      </div>
+    </div>
+    <div class="mode-card soon" data-go="night">
+      <span class="badge-soon">準備中</span>
+      <div class="mc-icon">☾</div>
+      <div>
+        <div class="mc-en">NIGHT</div>
+        <div class="mc-jp">夜</div>
+        <div class="mc-note">後続仕様で実装</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ BREATH（呼吸・戻る） ============================ -->
+<div class="layer" id="scrBreath">
+  <div class="gold-frame"></div>
+  <div class="gold-corner tl"></div><div class="gold-corner tr"></div>
+  <div class="gold-corner bl"></div><div class="gold-corner br"></div>
+  <div class="eyebrow">A MOMENT TO RETURN</div>
+  <div class="breath-stage">
+    <div class="breath-ring"></div>
+    <div class="breath-ring g2"></div>
+    <div id="breathLabel">吸って…</div>
+  </div>
+  <div class="big">一度、<span class="g">自分に戻る</span>。</div>
+  <button class="gbtn" id="breathNext">はじめる</button>
+</div>
+
+<!-- ============================ 朝ステージ ============================ -->
+<div class="layer" id="scrMorning">
+  <div class="vb-wrap">
+    <div class="vb-stage" id="stage"><!-- morningSlides から生成 --></div>
+    <div class="gold-frame"></div>
+    <div class="gold-corner tl"></div><div class="gold-corner tr"></div>
+    <div class="gold-corner bl"></div><div class="gold-corner br"></div>
+  </div>
+</div>
+<div class="nav-dots" id="navDots"></div>
+<div class="progress-bar" id="progressBar"></div>
+<div class="hint" id="hint">スワイプで進む</div>
+
+<!-- ============================ CLOSING（締め） ============================ -->
+<div class="layer" id="scrClose">
+  <div class="gold-frame"></div>
+  <div class="gold-corner tl"></div><div class="gold-corner tr"></div>
+  <div class="gold-corner bl"></div><div class="gold-corner br"></div>
+  <div class="eyebrow">DECIDED</div>
+  <div class="peak">もう、決まっている。</div>
+  <!-- 「今日の一手」等の受け口：後続仕様で実装（構造のみ・現在は非表示） -->
+  <div id="actionHook" data-placeholder="today-action" hidden></div>
+  <button class="gbtn" id="closeNext">現実へ戻る</button>
+</div>
+
+<!-- ============================ RETURN（現実へ戻る） ============================ -->
+<div class="layer" id="scrReturn">
+  <div class="gold-frame"></div>
+  <div class="gold-corner tl"></div><div class="gold-corner tr"></div>
+  <div class="gold-corner bl"></div><div class="gold-corner br"></div>
+  <div class="big">さあ、<span class="g">今日を動かそう</span>。</div>
+  <div class="sub">見た未来を、行動でつなげていく。</div>
+  <button class="ghost" id="returnHome">ホームへ戻る</button>
+</div>
+
+<!-- ============================ PLACEHOLDER（仕事・夜 共通） ============================ -->
+<div class="layer" id="scrPlaceholder">
+  <div class="gold-frame"></div>
+  <div class="gold-corner tl"></div><div class="gold-corner tr"></div>
+  <div class="gold-corner bl"></div><div class="gold-corner br"></div>
+  <div class="eyebrow" id="phEn">WORK</div>
+  <div class="big"><span class="g" id="phJp">仕事</span>モード</div>
+  <div class="sub">このモードは後続の専用仕様で実装します。<br>現段階は入口と器のみです。</div>
+  <div class="ph-tag">後続仕様で実装</div>
+  <button class="ghost" id="phBack">ホームへ戻る</button>
+</div>
+
+<!-- ===== 画像（キー参照・完全分離） ===== -->
+<script src="assets/images.js"></script>
+<script>
+/* =========================================================
+   共通定数（後からここだけ変えれば挙動を調整できる）
+   ========================================================= */
+const CFG = {
+  SLIDE_HOLD_MS : 3200,   // ③演出が終わってから次へ行くまでの保持時間
+  IMPACT_MS     : 2600,   // ③「最後の一言」演出の全体尺（独立定数）
+  TRANS_MS      : 600,    // スライド横移動の時間
+  OV_LEADIN_MS  : 900,    // ①②が出てから③演出を始めるまでの間
+  BREATH_AUTO_MS: 0,      // 呼吸→朝への自動遷移（0=自動なし。手動ボタンで進む）
+};
+document.documentElement.style.setProperty('--impact', CFG.IMPACT_MS + 'ms');
+document.documentElement.style.setProperty('--trans',  CFG.TRANS_MS  + 'ms');
+
+/* =========================================================
+   朝12枚データ（画像はキー、文字はここに一元管理）
+   theme / main / support / impact  ＝ 指示書 第7章 確定稿
+   ========================================================= */
+const morningSlides = [
+  { image:"morning01", theme:"自分",     main:"私は、自分の人生をつくっている。",   support:"今日の選択が、望む未来につながっていく。",         impact:"進む。" },
+  { image:"morning02", theme:"仕事",     main:"私は、速く正確に仕事をこなす。",     support:"大切なことが見え、迷わず動ける。",                 impact:"仕上げる。" },
+  { image:"morning03", theme:"信頼",     main:"私は、自然に信頼されている。",       support:"行動と積み重ねが、確かな信用になっている。",       impact:"積み上がる。" },
+  { image:"morning04", theme:"お金",     main:"私は、豊かさを受け取っている。",     support:"生み出した価値が、収入となって返ってくる。",       impact:"豊かになる。" },
+  { image:"morning05", theme:"健康",     main:"私は、健康で強く、頭が冴えている。", support:"身体は整い、今日も軽やかに動ける。",               impact:"強い。" },
+  { image:"morning06", theme:"判断",     main:"私は、冷静に的確な判断ができる。",   support:"必要なものが見え、不要なものに流されない。",       impact:"見極める。" },
+  { image:"morning07", theme:"行動",     main:"私は、すぐに行動できる。",           support:"小さな一歩が、現実を動かしていく。",               impact:"やる。" },
+  { image:"morning08", theme:"自信",     main:"私は、自分の力を信じている。",       support:"これまで積み上げた経験が、自分を支えている。",     impact:"できる。" },
+  { image:"morning09", theme:"人間関係", main:"私は、良い人たちに恵まれている。",   support:"信頼できる人との縁が、自然につながっていく。",     impact:"つながる。" },
+  { image:"morning10", theme:"理想",     main:"私は、望む暮らしを現実にしている。", support:"毎日の選択が、理想の人生を形にしていく。",         impact:"叶う。" },
+  { image:"morning11", theme:"未来",     main:"私の未来は、さらに良くなっていく。", support:"今日までの積み重ねが、次の可能性につながっている。", impact:"楽しむ。" },
+  { image:"morning12", theme:"締め",     main:"今日も、最高の一日になる。",         support:"今できることを、一つずつ進めればいい。",           impact:"行こう。" },
+];
+
+/* =========================================================
+   音声フック（現段階は無音。将来の受け口だけ用意）
+   ========================================================= */
+const AudioHook = {
+  el: document.getElementById('userVoice'),
+  enabled: false,                 // 現段階OFF。新規音声・TTSは追加しない
+  setUserVoice(src){ if(this.el){ this.el.src = src; } },  // 将来：ユーザー録音を差し替え
+  play(){ if(this.enabled && this.el && this.el.src){ this.el.play().catch(()=>{}); } },
+  stop(){ if(this.el){ try{ this.el.pause(); this.el.currentTime=0; }catch(e){} } },
+};
+
+/* =========================================================
+   画面（レイヤー）管理
+   ========================================================= */
+const IMAGES = window.MORNING_IMAGES || {};
+const $ = id => document.getElementById(id);
+const layers = ['scrHome','scrBreath','scrMorning','scrClose','scrReturn','scrPlaceholder'];
+const extras = ['navDots','progressBar','hint'];
+function showLayer(id){
+  layers.forEach(l => $(l).classList.toggle('on', l===id));
+  // 朝ステージ専用UIは朝のときだけ
+  const onMorning = (id==='scrMorning');
+  extras.forEach(e => $(e).classList.toggle('on', onMorning));
+}
+
+/* ---------- HOME → 各モード ---------- */
+document.querySelectorAll('.mode-card').forEach(card=>{
+  card.addEventListener('click', ()=>{
+    const go = card.getAttribute('data-go');
+    if(go==='morning'){ startMorningFlow(); }
+    else { openPlaceholder(go); }
+  });
+});
+
+function openPlaceholder(kind){
+  if(kind==='work'){ $('phEn').textContent='WORK'; $('phJp').textContent='仕事'; }
+  else { $('phEn').textContent='NIGHT'; $('phJp').textContent='夜'; }
+  showLayer('scrPlaceholder');
+}
+$('phBack').addEventListener('click', ()=> showLayer('scrHome'));
+
+/* ---------- 朝フロー：呼吸 → 12枚 → 締め → 戻る ---------- */
+function startMorningFlow(){
+  showLayer('scrBreath');
+  startBreath();
+  if(CFG.BREATH_AUTO_MS>0){ setTimeout(()=>{ if($('scrBreath').classList.contains('on')) enterMorning(); }, CFG.BREATH_AUTO_MS); }
+}
+$('breathNext').addEventListener('click', enterMorning);
+
+// 呼吸ラベル（吸って/吐いて）を10秒周期で切替
+let breathTimer=null;
+function startBreath(){
+  const label=$('breathLabel'); let inhale=true; label.textContent='吸って…';
+  clearInterval(breathTimer);
+  breathTimer=setInterval(()=>{ inhale=!inhale; label.textContent=inhale?'吸って…':'吐いて…'; }, 5000);
+}
+function stopBreath(){ clearInterval(breathTimer); }
+
+/* ---------- 朝12枚：生成 ---------- */
+let built=false;
+function buildMorning(){
+  if(built) return; built=true;
+  const stage=$('stage'); const nav=$('navDots');
+  const frag=document.createDocumentFragment();
+  morningSlides.forEach((s,i)=>{
+    const page=document.createElement('div'); page.className='vb-page'; page.dataset.idx=i;
+    const src=IMAGES[s.image]||'';
+    page.innerHTML =
+      '<img class="vb-bg" alt="" '+(src?('src="'+src+'"'):'')+'>' +
+      '<div class="vb-scrim"></div>' +
+      '<div class="ov-title">'+escapeHTML(s.main)+'</div>' +
+      '<div class="ov-sub">'+escapeHTML(s.support)+'</div>' +
+      '<div class="ov-affirm">'+escapeHTML(s.impact)+'</div>';
+    frag.appendChild(page);
+    const d=document.createElement('div'); d.className='nav-dot'+(i===0?' active':'');
+    d.addEventListener('click', ()=> seekTo(i));
+    nav.appendChild(d);
+  });
+  stage.appendChild(frag);
+}
+function escapeHTML(t){ return String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- ③はみ出しガード（実測幅ベース） ----------
+   ③は1行固定。中央拡大(scale AFFIRM_PEAK)を見込み、
+   安全幅を超える③だけ font-size を必要最小限まで自動で詰める。
+   短い③は基本サイズ(clamp)のまま維持される。 */
+const AFFIRM_PEAK = 1.14;      // 演出中の最大拡大率（affirmJourneyと一致させる）
+const AFFIRM_SIDE = 20;        // 左右に確保する最小マージン(px)
+const AFFIRM_MIN  = 20;        // これ以上は小さくしない下限(px)
+function fitAffirm(el){
+  el.style.fontSize = '';                       // いったん基本サイズへ戻す
+  const safeL = cssPx('--sal'), safeR = cssPx('--sar');
+  const avail = window.innerWidth - safeL - safeR - AFFIRM_SIDE*2;
+  if(avail<=0) return;
+  let guard=0;
+  // 拡大ピーク時の実効幅が安全幅に収まるまで2pxずつ縮める
+  while(el.scrollWidth * AFFIRM_PEAK > avail && guard<40){
+    const cur = parseFloat(getComputedStyle(el).fontSize);
+    if(cur<=AFFIRM_MIN) break;
+    el.style.fontSize = Math.max(AFFIRM_MIN, cur-2) + 'px';
+    guard++;
+  }
+}
+function fitAllAffirms(){ document.querySelectorAll('.ov-affirm').forEach(fitAffirm); }
+function cssPx(varName){
+  const v = getComputedStyle(document.documentElement).getPropertyValue(varName);
+  const n = parseFloat(v); return isNaN(n)?0:n;
+}
+
+/* ---------- 朝12枚：進行制御 ---------- */
+const N = morningSlides.length;
+let current=0, autoTimer=null, playing=false;
+
+function enterMorning(){
+  stopBreath();
+  buildMorning();
+  showLayer('scrMorning');
+  current=0;
+  // 初回ヒント
+  $('hint').textContent='スワイプで進む';
+  // ③のはみ出しガードを先に確定させてから再生
+  requestAnimationFrame(()=>{ fitAllAffirms(); playSlide(0, true); });
+}
+
+function playSlide(n, jump){
+  clearTimeout(autoTimer);
+  const pages=document.querySelectorAll('.vb-page');
+  const prev=pages[current];
+  if(prev){ prev.classList.remove('show'); const a=prev.querySelector('.ov-affirm'); if(a) a.classList.remove('play'); }
+  current=(n+N)%N;
+  $('stage').style.transform='translateX(-'+(current*100)+'vw)';
+  // ドット
+  document.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('active', i===current));
+  // ①②出現 →（間）→ ③演出 → 保持 → 次へ
+  const delay = jump ? 420 : (CFG.TRANS_MS+80);
+  setTimeout(()=>{
+    const page=pages[current]; if(!page) return;
+    page.classList.add('show');                 // ①② upSettle
+    const affirm=page.querySelector('.ov-affirm');
+    // ③はリフローを挟んでからplay（アニメ再発火を確実に）
+    if(affirm){ affirm.classList.remove('play'); void affirm.offsetWidth; }
+    startProgress();
+    // ①②の後に③演出開始
+    setTimeout(()=>{ if(affirm) affirm.classList.add('play'); }, CFG.OV_LEADIN_MS);
+    // ③演出（IMPACT）＋保持のあと自動送り
+    const total = CFG.OV_LEADIN_MS + CFG.IMPACT_MS + CFG.SLIDE_HOLD_MS;
+    autoTimer=setTimeout(()=>{
+      if(current<N-1){ playSlide(current+1); }
+      else { finishMorning(); }
+    }, total);
+  }, delay);
+}
+
+function seekTo(n){ playSlide(n); }        // ドット/手動ジャンプ
+function next(){ if(current<N-1) playSlide(current+1); else finishMorning(); }
+function prev(){ if(current>0) playSlide(current-1); }
+
+function finishMorning(){
+  clearTimeout(autoTimer); stopProgress();
+  showLayer('scrClose');
+}
+
+/* ---------- プログレスバー（1枚の想定尺を可視化：タイマー基準） ---------- */
+let progRAF=null, progT0=0;
+function startProgress(){
+  stopProgress();
+  const bar=$('progressBar'); const dur=CFG.OV_LEADIN_MS+CFG.IMPACT_MS+CFG.SLIDE_HOLD_MS;
+  progT0=performance.now();
+  const step=()=>{
+    const t=performance.now()-progT0;
+    bar.style.width=Math.min(100,(t/dur)*100)+'%';
+    if(t<dur){ progRAF=requestAnimationFrame(step); }
+  };
+  bar.style.width='0%'; progRAF=requestAnimationFrame(step);
+}
+function stopProgress(){ if(progRAF) cancelAnimationFrame(progRAF); progRAF=null; }
+
+/* ---------- 締め → 戻る → ホーム ---------- */
+$('closeNext').addEventListener('click', ()=> showLayer('scrReturn'));
+$('returnHome').addEventListener('click', ()=>{ showLayer('scrHome'); resetMorning(); });
+function resetMorning(){ clearTimeout(autoTimer); stopProgress(); current=0;
+  document.querySelectorAll('.vb-page').forEach(p=>p.classList.remove('show')); }
+
+/* ---------- 手動スワイプ（朝ステージのみ） ---------- */
+(function swipe(){
+  let x0=null,y0=null;
+  const wrap=$('scrMorning');
+  wrap.addEventListener('touchstart',e=>{ const t=e.changedTouches[0]; x0=t.clientX; y0=t.clientY; },{passive:true});
+  wrap.addEventListener('touchend',e=>{
+    if(x0===null) return; const t=e.changedTouches[0];
+    const dx=t.clientX-x0, dy=t.clientY-y0;
+    if(Math.abs(dx)>50 && Math.abs(dx)>Math.abs(dy)){ if(dx<0) next(); else prev(); }
+    x0=y0=null;
+  },{passive:true});
+})();
+
+/* ---------- バックグラウンド復帰：タイマー暴走を防ぐ ---------- */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ clearTimeout(autoTimer); stopProgress(); }
+  else if($('scrMorning').classList.contains('on')){ /* 復帰時はその枚で待機、次操作で再開 */ }
+});
+
+/* ---------- 画面回転・リサイズ：③はみ出しガードを再計算 ---------- */
+window.addEventListener('resize', ()=>{ if($('scrMorning').classList.contains('on')) fitAllAffirms(); });
+window.addEventListener('orientationchange', ()=>{ setTimeout(()=>{ if($('scrMorning').classList.contains('on')) fitAllAffirms(); }, 300); });
+
+/* ---------- Service Worker（GitHub更新→次回起動で自動更新） ---------- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      reg.update();
+      setInterval(()=>reg.update(), 3600000);   // 以降1時間毎に更新チェック
+    }).catch(()=>{});
+    let _reloaded=false;
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+      if(_reloaded) return; _reloaded=true;      // 新SW有効化で1回だけ再読込→最新へ
+      window.location.reload();
+    });
+  });
+}
+</script>
+</body>
+</html>
