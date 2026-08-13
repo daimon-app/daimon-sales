@@ -9,7 +9,7 @@
    DAIMON 販売版  基本骨格＋朝モード
    - トーン（金/Georgia/ゴールドフレーム）は原本を踏襲
    - 朝12枚は morningSlides データ1か所から生成
-   - 画像は images.js（キー参照）に完全分離
+   - 画像は assets/images.js（キー参照）に完全分離
    ========================================================= */
 :root{
   --gold:#D4AF37; --gold2:#F5D080; --gold3:#B8860B;
@@ -281,7 +281,7 @@ button{font-family:inherit}
 </div>
 
 <!-- ===== 画像（キー参照・完全分離） ===== -->
-<script src="images.js"></script>
+<script src="assets/images.js"></script>
 <script>
 /* =========================================================
    共通定数（後からここだけ変えれば挙動を調整できる）
@@ -330,6 +330,13 @@ const AudioHook = {
    画面（レイヤー）管理
    ========================================================= */
 const IMAGES = window.MORNING_IMAGES || {};
+/* 画像ごとの表示位置調整（文章データとは分離）。顔・主役が①②③や③拡大と衝突しないよう寄せる。
+   未指定のキーは中央(既定)。実機を見て値だけ微調整すればよい。 */
+const IMAGE_POS = {
+  morning02: 'center 30%',   // 俯瞰の作業風景：上部の人物を見せ、下部の机に文字が乗るように
+  morning03: 'center 30%',   // 握手：笑顔の顔を①の上に保ち、下部に握手を残す
+  morning09: 'center 40%',   // 会議の顔の帯をやや上へ、下段③の余白を確保
+};
 const $ = id => document.getElementById(id);
 const layers = ['scrHome','scrBreath','scrMorning','scrClose','scrReturn','scrPlaceholder'];
 const extras = ['navDots','progressBar','hint'];
@@ -382,8 +389,9 @@ function buildMorning(){
   morningSlides.forEach((s,i)=>{
     const page=document.createElement('div'); page.className='vb-page'; page.dataset.idx=i;
     const src=IMAGES[s.image]||'';
+    const pos=IMAGE_POS[s.image];
     page.innerHTML =
-      '<img class="vb-bg" alt="" '+(src?('src="'+src+'"'):'')+'>' +
+      '<img class="vb-bg" alt="" '+(src?('src="'+src+'"'):'')+(pos?(' style="object-position:'+pos+'"'):'')+'>' +
       '<div class="vb-scrim"></div>' +
       '<div class="ov-title">'+escapeHTML(s.main)+'</div>' +
       '<div class="ov-sub">'+escapeHTML(s.support)+'</div>' +

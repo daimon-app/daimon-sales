@@ -1,14 +1,14 @@
 /* DAIMON 販売版 — Service Worker
    index.html は network-first（最新優先）、その他アセットは stale-while-revalidate。
    中身を差し替えたら VERSION を上げる（daimon-sales-v1 → v2 ...）。 */
-const VERSION = 'daimon-sales-v1';
+const VERSION = 'daimon-sales-v2';
 const SHELL = [
   './',
   './index.html',
   './manifest.json',
-  './images.js',
-  './icon-192.png',
-  './icon-512.png'
+  './assets/images.js',
+  './icons/icon-192.png',
+  './icons/icon-512.png'
 ];
 
 self.addEventListener('install', (e) => {
