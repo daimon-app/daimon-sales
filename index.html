@@ -99,6 +99,15 @@ button{font-family:inherit}
 #breathLabel{ position:relative; z-index:2; color:#fff; letter-spacing:.3em;
   font-size:clamp(16px,4.2vw,22px); text-shadow:0 0 18px rgba(0,0,0,.8) }
 
+/* ===== NAME（自己認識・導入） ===== */
+#nameLine{ display:inline-block; white-space:nowrap;
+  max-width:calc(100vw - var(--sal) - var(--sar) - 48px);
+  font-size:clamp(28px,7.4vw,52px); font-weight:700; line-height:1.45; letter-spacing:.05em;
+  color:#fff; text-shadow:0 2px 20px rgba(0,0,0,.8) }
+#nameLine.wrap2{ white-space:normal; overflow-wrap:break-word; word-break:break-word;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden }
+#nameLine .g{ color:var(--gold) }
+
 /* ===== 朝ステージ ===== */
 #scrMorning{ padding:0; background:#000 }
 .vb-wrap{ width:100%; height:100%; overflow:hidden; position:relative }
@@ -233,6 +242,15 @@ button{font-family:inherit}
   <button class="gbtn" id="breathNext">はじめる</button>
 </div>
 
+<!-- ============================ NAME（自己認識・導入） ============================ -->
+<div class="layer" id="scrName">
+  <div class="gold-frame"></div>
+  <div class="gold-corner tl"></div><div class="gold-corner tr"></div>
+  <div class="gold-corner bl"></div><div class="gold-corner br"></div>
+  <div class="eyebrow">A MOMENT OF SELF</div>
+  <div id="nameLine"></div>
+</div>
+
 <!-- ============================ 朝ステージ ============================ -->
 <div class="layer" id="scrMorning">
   <div class="vb-wrap">
@@ -311,6 +329,7 @@ const CFG = {
   TRANS_MS      : 600,    // スライド横移動の時間
   OV_LEADIN_MS  : 900,    // ①②が出てから③演出を始めるまでの間
   BREATH_AUTO_MS: 0,      // 呼吸→朝への自動遷移（0=自動なし。手動ボタンで進む）
+  NAME_HOLD_MS  : 2000,   // 名前レイヤーの表示保持時間（自動で朝へ。タップで即スキップ）
 };
 document.documentElement.style.setProperty('--impact', CFG.IMPACT_MS + 'ms');
 document.documentElement.style.setProperty('--trans',  CFG.TRANS_MS  + 'ms');
@@ -319,20 +338,38 @@ document.documentElement.style.setProperty('--trans',  CFG.TRANS_MS  + 'ms');
    朝12枚データ（画像はキー、文字はここに一元管理）
    theme / main / support / impact  ＝ 指示書 第7章 確定稿
    ========================================================= */
-const morningSlides = [
-  { image:"morning01", theme:"自分",     main:"私は、自分の人生をつくっている。",   support:"今日の選択が、望む未来につながっていく。",         impact:"進む。" },
-  { image:"morning02", theme:"仕事",     main:"私は、速く正確に仕事をこなす。",     support:"大切なことが見え、迷わず動ける。",                 impact:"仕上げる。" },
-  { image:"morning03", theme:"信頼",     main:"私は、自然に信頼されている。",       support:"行動と積み重ねが、確かな信用になっている。",       impact:"積み上がる。" },
-  { image:"morning04", theme:"お金",     main:"私は、豊かさを受け取っている。",     support:"生み出した価値が、収入となって返ってくる。",       impact:"豊かになる。" },
-  { image:"morning05", theme:"健康",     main:"私は、健康で強く、頭が冴えている。", support:"身体は整い、今日も軽やかに動ける。",               impact:"強い。" },
-  { image:"morning06", theme:"判断",     main:"私は、冷静に的確な判断ができる。",   support:"必要なものが見え、不要なものに流されない。",       impact:"見極める。" },
-  { image:"morning07", theme:"行動",     main:"私は、すぐに行動できる。",           support:"小さな一歩が、現実を動かしていく。",               impact:"やる。" },
-  { image:"morning08", theme:"自信",     main:"私は、自分の力を信じている。",       support:"これまで積み上げた経験が、自分を支えている。",     impact:"できる。" },
-  { image:"morning09", theme:"人間関係", main:"私は、良い人たちに恵まれている。",   support:"信頼できる人との縁が、自然につながっていく。",     impact:"つながる。" },
-  { image:"morning10", theme:"理想",     main:"私は、望む暮らしを現実にしている。", support:"毎日の選択が、理想の人生を形にしていく。",         impact:"叶う。" },
-  { image:"morning11", theme:"未来",     main:"私の未来は、さらに良くなっていく。", support:"今日までの積み重ねが、次の可能性につながっている。", impact:"楽しむ。" },
-  { image:"morning12", theme:"締め",     main:"今日も、最高の一日になる。",         support:"今できることを、一つずつ進めればいい。",           impact:"行こう。" },
-];
+/* Text Pack受け口：将来 ja / en 等を差し替え可能。今回は ja のみ・翻訳なし。
+   ①②③本文は確定稿を逐語維持（変更禁止）。audio は将来の音声割当用の受け口（現状 null）。 */
+const languagePacks = {
+  ja: {
+    morning: {
+      slides: [
+        { image:"morning01", theme:"自分",     main:"私は、自分の人生をつくっている。",   support:"今日の選択が、望む未来につながっていく。",         impact:"進む。",       audio:null },
+        { image:"morning02", theme:"仕事",     main:"私は、速く正確に仕事をこなす。",     support:"大切なことが見え、迷わず動ける。",                 impact:"仕上げる。",   audio:null },
+        { image:"morning03", theme:"信頼",     main:"私は、自然に信頼されている。",       support:"行動と積み重ねが、確かな信用になっている。",       impact:"積み上がる。", audio:null },
+        { image:"morning04", theme:"お金",     main:"私は、豊かさを受け取っている。",     support:"生み出した価値が、収入となって返ってくる。",       impact:"豊かになる。", audio:null },
+        { image:"morning05", theme:"健康",     main:"私は、健康で強く、頭が冴えている。", support:"身体は整い、今日も軽やかに動ける。",               impact:"強い。",       audio:null },
+        { image:"morning06", theme:"判断",     main:"私は、冷静に的確な判断ができる。",   support:"必要なものが見え、不要なものに流されない。",       impact:"見極める。",   audio:null },
+        { image:"morning07", theme:"行動",     main:"私は、すぐに行動できる。",           support:"小さな一歩が、現実を動かしていく。",               impact:"やる。",       audio:null },
+        { image:"morning08", theme:"自信",     main:"私は、自分の力を信じている。",       support:"これまで積み上げた経験が、自分を支えている。",     impact:"できる。",     audio:null },
+        { image:"morning09", theme:"人間関係", main:"私は、良い人たちに恵まれている。",   support:"信頼できる人との縁が、自然につながっていく。",     impact:"つながる。",   audio:null },
+        { image:"morning10", theme:"理想",     main:"私は、望む暮らしを現実にしている。", support:"毎日の選択が、理想の人生を形にしていく。",         impact:"叶う。",       audio:null },
+        { image:"morning11", theme:"未来",     main:"私の未来は、さらに良くなっていく。", support:"今日までの積み重ねが、次の可能性につながっている。", impact:"楽しむ。",     audio:null },
+        { image:"morning12", theme:"締め",     main:"今日も、最高の一日になる。",         support:"今できることを、一つずつ進めればいい。",           impact:"行こう。",     audio:null },
+      ]
+    }
+  }
+};
+const currentLanguage = 'ja';   // 固定（言語選択UIは今回作らない）
+// 後方互換エイリアス：既存の生成/進行制御は morningSlides をそのまま参照できる
+const morningSlides = languagePacks[currentLanguage].morning.slides;
+
+/* 名前受け口：保存のみ。設定UIは今回作らない。未設定なら名前レイヤーを表示しない。
+   localStorage利用不可環境（プライベートモード等）でも落ちないよう保護。 */
+const userName = (function(){
+  try { return (localStorage.getItem('daimon.userName') || '').trim(); }
+  catch(e){ return ''; }
+})();
 
 /* =========================================================
    音声フック（現段階は無音。将来の受け口だけ用意）
@@ -357,7 +394,7 @@ const IMAGE_POS = {
   morning09: 'center 40%',   // 会議の顔の帯をやや上へ、下段③の余白を確保
 };
 const $ = id => document.getElementById(id);
-const layers = ['scrHome','scrBreath','scrMorning','scrClose','scrReturn','scrPlaceholder'];
+const layers = ['scrHome','scrBreath','scrName','scrMorning','scrClose','scrReturn','scrPlaceholder'];
 const extras = ['navDots','progressBar','hint'];
 function showLayer(id){
   layers.forEach(l => $(l).classList.toggle('on', l===id));
@@ -388,7 +425,42 @@ function startMorningFlow(){
   startBreath();
   if(CFG.BREATH_AUTO_MS>0){ setTimeout(()=>{ if($('scrBreath').classList.contains('on')) enterMorning(); }, CFG.BREATH_AUTO_MS); }
 }
-$('breathNext').addEventListener('click', enterMorning);
+$('breathNext').addEventListener('click', enterName);
+
+/* ---------- 名前レイヤー（呼吸終了後 → 朝12枚の直前に1回だけ） ---------- */
+let nameTimer=null;
+function buildNameLine(){
+  const el=$('nameLine'); if(!el) return;
+  el.classList.remove('wrap2');
+  el.style.fontSize='';                 // CSS基準サイズへ戻す
+  el.textContent='';                    // 初期化
+  el.appendChild(document.createTextNode('私は、'));   // textContentのみ＝エスケープ不要
+  const g=document.createElement('span'); g.className='g'; g.textContent=userName;
+  el.appendChild(g);
+  el.appendChild(document.createTextNode('。'));
+}
+function fitName(){
+  const el=$('nameLine'); if(!el) return;
+  const avail = window.innerWidth - cssPx('--sal') - cssPx('--sar') - 48; // 左右24pxパディング相当
+  el.classList.remove('wrap2'); el.style.whiteSpace='nowrap';
+  const MIN=22; let guard=0;
+  while(el.scrollWidth>avail && guard++<60){
+    const cur=parseFloat(getComputedStyle(el).fontSize);
+    if(cur<=MIN){ break; }
+    el.style.fontSize=(cur-1)+'px';
+  }
+  if(el.scrollWidth>avail){ el.classList.add('wrap2'); } // 下限でも収まらなければ最大2行
+}
+function enterName(){
+  stopBreath();
+  if(!userName){ enterMorning(); return; }   // 未設定はレイヤー自体を出さない
+  buildNameLine();
+  showLayer('scrName');
+  requestAnimationFrame(fitName);
+  clearTimeout(nameTimer);
+  nameTimer=setTimeout(()=>{ if($('scrName').classList.contains('on')) enterMorning(); }, CFG.NAME_HOLD_MS);
+}
+$('scrName').addEventListener('click', ()=>{ clearTimeout(nameTimer); enterMorning(); });
 
 // 呼吸ラベル（吸って/吐いて）を10秒周期で切替
 let breathTimer=null;
@@ -540,8 +612,12 @@ function resetMorning(){ clearTimeout(autoTimer); stopProgress(); current=0;
 
 /* ---------- バックグラウンド復帰：タイマー暴走を防ぐ ---------- */
 document.addEventListener('visibilitychange', ()=>{
-  if(document.hidden){ clearTimeout(autoTimer); stopProgress(); }
+  if(document.hidden){ clearTimeout(autoTimer); clearTimeout(nameTimer); stopProgress(); }
   else if($('scrMorning').classList.contains('on')){ /* 復帰時はその枚で待機、次操作で再開 */ }
+  else if($('scrName').classList.contains('on')){   // 名前画面のままなら自動送りを再開
+    clearTimeout(nameTimer);
+    nameTimer=setTimeout(()=>{ if($('scrName').classList.contains('on')) enterMorning(); }, CFG.NAME_HOLD_MS);
+  }
 });
 
 /* ---------- 画面回転・リサイズ：③はみ出しガードを再計算 ---------- */
