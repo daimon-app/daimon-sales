@@ -6,10 +6,10 @@
 <title>DAIMON</title>
 <style>
 /* =========================================================
-   DAIMON 販売版  基本骨格＋朝モード
+   DAIMON 販売版  共通Engine＋朝・仕事・夜Mode Pack
    - トーン（金/Georgia/ゴールドフレーム）は原本を踏襲
-   - 朝12枚は morningSlides データ1か所から生成
-   - 画像は assets/images.js（キー参照）に完全分離
+   - 各モード12枚は languagePacks.ja の各Mode Packから生成
+   - 朝画像dataURIはindex.html内にインライン保持
    ========================================================= */
 :root{
   --gold:#D4AF37; --gold2:#F5D080; --gold3:#B8860B;
@@ -80,9 +80,6 @@ button{font-family:inherit}
   background:radial-gradient(circle at 50% 40%, rgba(212,175,55,.28), rgba(212,175,55,.06));
   border:1px solid rgba(212,175,55,.35) }
 .mode-card.soon{ opacity:.72 }
-.mode-card.soon .badge-soon{ position:absolute; top:12px; right:14px; font-size:10px;
-  letter-spacing:.14em; color:#1a1000; background:linear-gradient(135deg,var(--gold),var(--gold2));
-  padding:3px 10px; border-radius:20px }
 
 /* ===== BREATH（呼吸・戻る時間） ===== */
 .breath-stage{ position:relative; width:230px;height:230px; display:flex;align-items:center;justify-content:center; margin:6px 0 26px }
@@ -108,7 +105,7 @@ button{font-family:inherit}
   display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden }
 #nameLine .g{ color:var(--gold) }
 
-/* ===== 朝ステージ ===== */
+/* ===== 共通モードステージ ===== */
 #scrMorning{ padding:0; background:#000 }
 .vb-wrap{ width:100%; height:100%; overflow:hidden; position:relative }
 .vb-stage{ display:flex; width:100%; height:100%;
@@ -116,6 +113,12 @@ button{font-family:inherit}
 .vb-page{ min-width:100vw; width:100vw; height:100%; position:relative; overflow:hidden }
 .vb-bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;
   background:linear-gradient(135deg,#1a1a1a,#2a2a2a) }
+.vb-page.image-pending{ background:
+  radial-gradient(80% 55% at 50% 28%,rgba(212,175,55,.12),transparent 72%),
+  linear-gradient(160deg,#171717,#080808 72%) }
+.vb-page.mode-night.image-pending{ background:
+  radial-gradient(90% 55% at 50% 18%,rgba(77,102,152,.23),transparent 72%),
+  linear-gradient(165deg,#101827,#05070d 76%) }
 /* 可読性のための暗幕（画像には文字を焼き込まない＝分離） */
 .vb-scrim{ position:absolute; inset:0; z-index:2; pointer-events:none;
   background:linear-gradient(180deg,rgba(0,0,0,.60) 0%,rgba(0,0,0,.20) 48%,rgba(0,0,0,.68) 100%) }
@@ -206,25 +209,35 @@ button{font-family:inherit}
         <div class="mc-note">自分に戻り、一日を始める</div>
       </div>
     </div>
-    <div class="mode-card soon" data-go="work">
-      <span class="badge-soon">準備中</span>
+    <div class="mode-card" data-go="work">
       <div class="mc-icon">◆</div>
       <div>
         <div class="mc-en">WORK</div>
         <div class="mc-jp">仕事</div>
-        <div class="mc-note">後続仕様で実装</div>
+        <div class="mc-note">迷いを減らし、今の一手へ戻る</div>
       </div>
     </div>
-    <div class="mode-card soon" data-go="night">
-      <span class="badge-soon">準備中</span>
+    <div class="mode-card" data-go="night">
       <div class="mc-icon">☾</div>
       <div>
         <div class="mc-en">NIGHT</div>
         <div class="mc-jp">夜</div>
-        <div class="mc-note">後続仕様で実装</div>
+        <div class="mc-note">今日を閉じ、静かに明日へつなぐ</div>
       </div>
     </div>
   </div>
+</div>
+
+<!-- ============================ MODE INTRO（仕事・夜） ============================ -->
+<div class="layer" id="scrModeIntro">
+  <div class="gold-frame"></div>
+  <div class="gold-corner tl"></div><div class="gold-corner tr"></div>
+  <div class="gold-corner bl"></div><div class="gold-corner br"></div>
+  <div class="eyebrow" id="modeIntroEn">WORK</div>
+  <div class="big" id="modeIntroMain">今やる一手へ戻る。</div>
+  <div class="sub" id="modeIntroSub">全部を一度に考えなくていい。</div>
+  <button class="gbtn" id="modeIntroNext">はじめる</button>
+  <button class="ghost" id="modeIntroBack">ホームへ戻る</button>
 </div>
 
 <!-- ============================ BREATH（呼吸・戻る） ============================ -->
@@ -254,7 +267,7 @@ button{font-family:inherit}
 <!-- ============================ 朝ステージ ============================ -->
 <div class="layer" id="scrMorning">
   <div class="vb-wrap">
-    <div class="vb-stage" id="stage"><!-- morningSlides から生成 --></div>
+    <div class="vb-stage" id="stage"><!-- 選択中のMode Packから共通Engineが生成 --></div>
     <div class="gold-frame"></div>
     <div class="gold-corner tl"></div><div class="gold-corner tr"></div>
     <div class="gold-corner bl"></div><div class="gold-corner br"></div>
@@ -269,8 +282,8 @@ button{font-family:inherit}
   <div class="gold-frame"></div>
   <div class="gold-corner tl"></div><div class="gold-corner tr"></div>
   <div class="gold-corner bl"></div><div class="gold-corner br"></div>
-  <div class="eyebrow">DECIDED</div>
-  <div class="peak">もう、決まっている。</div>
+  <div class="eyebrow" id="closeEyebrow">DECIDED</div>
+  <div class="peak" id="closePeak">もう、決まっている。</div>
   <!-- 「今日の一手」等の受け口：後続仕様で実装（構造のみ・現在は非表示） -->
   <div id="actionHook" data-placeholder="today-action" hidden></div>
   <button class="gbtn" id="closeNext">現実へ戻る</button>
@@ -281,21 +294,9 @@ button{font-family:inherit}
   <div class="gold-frame"></div>
   <div class="gold-corner tl"></div><div class="gold-corner tr"></div>
   <div class="gold-corner bl"></div><div class="gold-corner br"></div>
-  <div class="big">さあ、<span class="g">今日を動かそう</span>。</div>
-  <div class="sub">見た未来を、行動でつなげていく。</div>
+  <div class="big" id="returnMain">さあ、<span class="g">今日を動かそう</span>。</div>
+  <div class="sub" id="returnSub">見た未来を、行動でつなげていく。</div>
   <button class="ghost" id="returnHome">ホームへ戻る</button>
-</div>
-
-<!-- ============================ PLACEHOLDER（仕事・夜 共通） ============================ -->
-<div class="layer" id="scrPlaceholder">
-  <div class="gold-frame"></div>
-  <div class="gold-corner tl"></div><div class="gold-corner tr"></div>
-  <div class="gold-corner bl"></div><div class="gold-corner br"></div>
-  <div class="eyebrow" id="phEn">WORK</div>
-  <div class="big"><span class="g" id="phJp">仕事</span>モード</div>
-  <div class="sub">このモードは後続の専用仕様で実装します。<br>現段階は入口と器のみです。</div>
-  <div class="ph-tag">後続仕様で実装</div>
-  <button class="ghost" id="phBack">ホームへ戻る</button>
 </div>
 
 <!-- ===== 画像（キー参照・完全分離） ===== -->
@@ -357,12 +358,53 @@ const languagePacks = {
         { image:"morning11", theme:"未来",     main:"私の未来は、さらに良くなっていく。", support:"今日までの積み重ねが、次の可能性につながっている。", impact:"楽しむ。",     audio:null },
         { image:"morning12", theme:"締め",     main:"今日も、最高の一日になる。",         support:"今できることを、一つずつ進めればいい。",           impact:"行こう。",     audio:null },
       ]
+    },
+    work: {
+      intro:{ en:"WORK", main:"今やる一手へ戻る。", support:"迷いと焦りを置いて、目の前だけを見る。" },
+      timingScale:1,
+      close:{ eyebrow:"WORK COMPLETE", peak:"一手、進んだ。", button:"現実へ戻る", returnMain:"仕事は、ここから動いていく。", returnSub:"今の一手を、そのまま続ければいい。" },
+      slides: [
+        { image:"work01", main:"今やることだけを見る。", support:"全部を一度に考えなくていい。", impact:"一手だけ。", audio:null },
+        { image:"work02", main:"迷ったら、最初の一手に戻る。", support:"順番が見えれば、仕事は軽くなる。", impact:"戻ればいい。", audio:null },
+        { image:"work03", main:"速さは、焦りじゃなく判断から生まれる。", support:"余計な動きを減らせば自然に速くなる。", impact:"静かに速く。", audio:null },
+        { image:"work04", main:"正確さが、仕事を一番早く終わらせる。", support:"やり直しを減らすことが本当の時短になる。", impact:"一発で決める。", audio:null },
+        { image:"work05", main:"手を動かせば、次が見える。", support:"考え続けるより、一つ進める。", impact:"まず動く。", audio:null },
+        { image:"work06", main:"難しい所から逃げず、細かく分ける。", support:"大きな作業も、一手ずつなら処理できる。", impact:"分けて進む。", audio:null },
+        { image:"work07", main:"今の一手に集中する。", support:"次のことは、今が終わってから考える。", impact:"ここだけ。", audio:null },
+        { image:"work08", main:"丁寧さと速さは両立する。", support:"無駄を削れば、仕上がりはもっと良くなる。", impact:"速く、美しく。", audio:null },
+        { image:"work09", main:"判断に迷ったら、仕上がりから逆算する。", support:"最後の完成形が、今やることを教えてくれる。", impact:"完成から見る。", audio:null },
+        { image:"work10", main:"一つ終われば、流れが戻る。", support:"止まった時ほど、小さく終わらせる。", impact:"一つ終わらす。", audio:null },
+        { image:"work11", main:"今日の仕事は、今日の一手で決まる。", support:"完璧より、確実に前へ進める。", impact:"前へ。", audio:null },
+        { image:"work12", main:"私は、速く正確で美しい仕事をする。", support:"落ち着いて進めれば、仕事は最高の形に決まる。", impact:"もう決まってる。", audio:null }
+      ]
+    },
+    night: {
+      intro:{ en:"NIGHT", main:"今日を、ここで閉じる。", support:"進んだ証拠だけを残して、静かに力を抜く。" },
+      timingScale:1.35,
+      close:{ eyebrow:"DAY COMPLETE", peak:"もう決まってる。", button:"今日を終える", returnMain:"安心して、今日を終える。", returnSub:"必要なことは、明日また一手から始めればいい。" },
+      slides: [
+        { image:"night01", main:"今日も、必要なことを進めた。", support:"全部できなくても、進んだものは残っている。", impact:"今日も進んだ。", audio:null },
+        { image:"night02", main:"できたことは、ちゃんと残っている。", support:"小さなことも、今日の証拠になる。", impact:"証拠はある。", audio:null },
+        { image:"night03", main:"今日の経験は、私の力になっている。", support:"良かったことも、迷ったことも、次の判断につながる。", impact:"全部、力になる。", audio:null },
+        { image:"night04", main:"うまくいかなかったことは、ここで終わりにする。", support:"必要な学びだけ残して、あとは手放していい。", impact:"今日はここまで。", audio:null },
+        { image:"night05", main:"私は、必要な時に自分の軸へ戻れる。", support:"ズレても気づけば、また戻れる。", impact:"戻ればいい。", audio:null },
+        { image:"night06", main:"身体も頭も、休むほど整っていく。", support:"今は回復することが、明日の前進になる。", impact:"休めば整う。", audio:null },
+        { image:"night07", main:"今は、安心して力を抜いていい。", support:"今日の役目は終わった。", impact:"力を抜く。", audio:null },
+        { image:"night08", main:"静かな時間が、明日の判断を澄ませていく。", support:"眠る間にも、頭と身体は整っていく。", impact:"静かに整う。", audio:null },
+        { image:"night09", main:"明日の私は、自然に最初の一手を選べる。", support:"朝になれば、必要な一手から始めればいい。", impact:"一手から。", audio:null },
+        { image:"night10", main:"今日も、最高の一日だった。", support:"今日のすべてが、私の未来につながっている。", impact:"最高だった。", audio:null },
+        { image:"night11", main:"明日も、最高の一日になる。", support:"必要なことは、最適なタイミングで自然に決まっていく。", impact:"明日も最高。", audio:null },
+        { image:"night12", main:"もう決まってる。", support:"安心して、今日を終える。", impact:"もう決まってる。", audio:null }
+      ]
     }
   }
 };
 const currentLanguage = 'ja';   // 固定（言語選択UIは今回作らない）
 // 後方互換エイリアス：既存の生成/進行制御は morningSlides をそのまま参照できる
 const morningSlides = languagePacks[currentLanguage].morning.slides;
+let activeMode = 'morning';
+let activePack = languagePacks[currentLanguage].morning;
+let activeSlides = morningSlides;
 
 /* 名前受け口：保存のみ。設定UIは今回作らない。未設定なら名前レイヤーを表示しない。
    localStorage利用不可環境（プライベートモード等）でも落ちないよう保護。 */
@@ -385,7 +427,7 @@ const AudioHook = {
 /* =========================================================
    画面（レイヤー）管理
    ========================================================= */
-const IMAGES = window.MORNING_IMAGES || {};
+const IMAGES = window.MORNING_IMAGES || {}; // workXX/nightXXは個別素材確定後に同じインライン辞書へ追加
 /* 画像ごとの表示位置調整（文章データとは分離）。顔・主役が①②③や③拡大と衝突しないよう寄せる。
    未指定のキーは中央(既定)。実機を見て値だけ微調整すればよい。 */
 const IMAGE_POS = {
@@ -394,13 +436,12 @@ const IMAGE_POS = {
   morning09: 'center 40%',   // 会議の顔の帯をやや上へ、下段③の余白を確保
 };
 const $ = id => document.getElementById(id);
-const layers = ['scrHome','scrBreath','scrName','scrMorning','scrClose','scrReturn','scrPlaceholder'];
+const layers = ['scrHome','scrModeIntro','scrBreath','scrName','scrMorning','scrClose','scrReturn'];
 const extras = ['navDots','progressBar','hint'];
 function showLayer(id){
   layers.forEach(l => $(l).classList.toggle('on', l===id));
-  // 朝ステージ専用UIは朝のときだけ
-  const onMorning = (id==='scrMorning');
-  extras.forEach(e => $(e).classList.toggle('on', onMorning));
+  const onModeStage = (id==='scrMorning');
+  extras.forEach(e => $(e).classList.toggle('on', onModeStage));
 }
 
 /* ---------- HOME → 各モード ---------- */
@@ -408,19 +449,29 @@ document.querySelectorAll('.mode-card').forEach(card=>{
   card.addEventListener('click', ()=>{
     const go = card.getAttribute('data-go');
     if(go==='morning'){ startMorningFlow(); }
-    else { openPlaceholder(go); }
+    else { startModeIntro(go); }
   });
 });
 
-function openPlaceholder(kind){
-  if(kind==='work'){ $('phEn').textContent='WORK'; $('phJp').textContent='仕事'; }
-  else { $('phEn').textContent='NIGHT'; $('phJp').textContent='夜'; }
-  showLayer('scrPlaceholder');
+function selectMode(mode){
+  activeMode=mode;
+  activePack=languagePacks[currentLanguage][mode];
+  activeSlides=activePack.slides;
 }
-$('phBack').addEventListener('click', ()=> showLayer('scrHome'));
+function startModeIntro(mode){
+  selectMode(mode);
+  const intro=activePack.intro;
+  $('modeIntroEn').textContent=intro.en;
+  $('modeIntroMain').textContent=intro.main;
+  $('modeIntroSub').textContent=intro.support;
+  showLayer('scrModeIntro');
+}
+$('modeIntroNext').addEventListener('click', enterMode);
+$('modeIntroBack').addEventListener('click', ()=>{ resetMode(); showLayer('scrHome'); });
 
 /* ---------- 朝フロー：呼吸 → 12枚 → 締め → 戻る ---------- */
 function startMorningFlow(){
+  selectMode('morning');
   showLayer('scrBreath');
   startBreath();
   if(CFG.BREATH_AUTO_MS>0){ setTimeout(()=>{ if($('scrBreath').classList.contains('on')) enterMorning(); }, CFG.BREATH_AUTO_MS); }
@@ -471,18 +522,20 @@ function startBreath(){
 }
 function stopBreath(){ clearInterval(breathTimer); }
 
-/* ---------- 朝12枚：生成 ---------- */
-let built=false;
-function buildMorning(){
-  if(built) return; built=true;
+/* ---------- 共通Engine：選択中Mode Packから12枚を生成 ---------- */
+function buildMode(){
   const stage=$('stage'); const nav=$('navDots');
+  stage.textContent=''; nav.textContent='';
   const frag=document.createDocumentFragment();
-  morningSlides.forEach((s,i)=>{
-    const page=document.createElement('div'); page.className='vb-page'; page.dataset.idx=i;
+  activeSlides.forEach((s,i)=>{
+    const page=document.createElement('div');
+    page.className='vb-page mode-'+activeMode;
+    page.dataset.idx=i;
     const src=IMAGES[s.image]||'';
+    if(!src) page.classList.add('image-pending');
     const pos=IMAGE_POS[s.image];
     page.innerHTML =
-      '<img class="vb-bg" alt="" '+(src?('src="'+src+'"'):'')+(pos?(' style="object-position:'+pos+'"'):'')+'>' +
+      (src?('<img class="vb-bg" alt="" src="'+src+'"'+(pos?(' style="object-position:'+pos+'"'):'')+'>'):'') +
       '<div class="vb-scrim"></div>' +
       '<div class="ov-title">'+escapeHTML(s.main)+'</div>' +
       '<div class="ov-sub">'+escapeHTML(s.support)+'</div>' +
@@ -523,13 +576,20 @@ function cssPx(varName){
   const n = parseFloat(v); return isNaN(n)?0:n;
 }
 
-/* ---------- 朝12枚：進行制御 ---------- */
-const N = morningSlides.length;
-let current=0, autoTimer=null, playing=false;
+/* ---------- 共通Engine：進行制御 ---------- */
+let current=0, autoTimer=null, playToken=0;
 
 function enterMorning(){
   stopBreath();
-  buildMorning();
+  enterMode();
+}
+
+function enterMode(){
+  AudioHook.stop();
+  const timing=modeTiming();
+  document.documentElement.style.setProperty('--trans', timing.trans+'ms');
+  document.documentElement.style.setProperty('--impact', timing.impact+'ms');
+  buildMode();
   showLayer('scrMorning');
   current=0;
   // 初回ヒント
@@ -540,6 +600,9 @@ function enterMorning(){
 
 function playSlide(n, jump){
   clearTimeout(autoTimer);
+  AudioHook.stop();
+  const token=++playToken;
+  const N=activeSlides.length;
   const pages=document.querySelectorAll('.vb-page');
   const prev=pages[current];
   if(prev){ prev.classList.remove('show'); const a=prev.querySelector('.ov-affirm'); if(a) a.classList.remove('play'); }
@@ -548,8 +611,9 @@ function playSlide(n, jump){
   // ドット
   document.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('active', i===current));
   // ①②出現 →（間）→ ③演出 → 保持 → 次へ
-  const delay = jump ? 420 : (CFG.TRANS_MS+80);
+  const delay = jump ? 420 : (modeTiming().trans+80);
   setTimeout(()=>{
+    if(token!==playToken || !$('scrMorning').classList.contains('on')) return;
     const page=pages[current]; if(!page) return;
     page.classList.add('show');                 // ①② upSettle
     const affirm=page.querySelector('.ov-affirm');
@@ -557,30 +621,51 @@ function playSlide(n, jump){
     if(affirm){ affirm.classList.remove('play'); void affirm.offsetWidth; }
     startProgress();
     // ①②の後に③演出開始
-    setTimeout(()=>{ if(affirm) affirm.classList.add('play'); }, CFG.OV_LEADIN_MS);
+    const timing=modeTiming();
+    setTimeout(()=>{ if(token===playToken && affirm) affirm.classList.add('play'); }, timing.leadin);
     // ③演出（IMPACT）＋保持のあと自動送り
-    const total = CFG.OV_LEADIN_MS + CFG.IMPACT_MS + CFG.SLIDE_HOLD_MS;
+    const total = timing.leadin + timing.impact + timing.hold;
     autoTimer=setTimeout(()=>{
+      if(token!==playToken) return;
       if(current<N-1){ playSlide(current+1); }
-      else { finishMorning(); }
+      else { finishMode(); }
     }, total);
   }, delay);
 }
 
 function seekTo(n){ playSlide(n); }        // ドット/手動ジャンプ
-function next(){ if(current<N-1) playSlide(current+1); else finishMorning(); }
+function next(){ if(current<activeSlides.length-1) playSlide(current+1); else finishMode(); }
 function prev(){ if(current>0) playSlide(current-1); }
 
-function finishMorning(){
-  clearTimeout(autoTimer); stopProgress();
+function finishMode(){
+  clearTimeout(autoTimer); stopProgress(); AudioHook.stop(); ++playToken;
+  const close=activePack.close;
+  if(close){
+    $('closeEyebrow').textContent=close.eyebrow;
+    $('closePeak').textContent=close.peak;
+    $('closeNext').textContent=close.button;
+    $('returnMain').textContent=close.returnMain;
+    $('returnSub').textContent=close.returnSub;
+  }else{
+    $('closeEyebrow').textContent='DECIDED';
+    $('closePeak').textContent='もう、決まっている。';
+    $('closeNext').textContent='現実へ戻る';
+    $('returnMain').innerHTML='さあ、<span class="g">今日を動かそう</span>。';
+    $('returnSub').textContent='見た未来を、行動でつなげていく。';
+  }
   showLayer('scrClose');
+}
+
+function modeTiming(){
+  const scale=activePack.timingScale||1;
+  return { trans:CFG.TRANS_MS*scale, leadin:CFG.OV_LEADIN_MS*scale, impact:CFG.IMPACT_MS*scale, hold:CFG.SLIDE_HOLD_MS*scale };
 }
 
 /* ---------- プログレスバー（1枚の想定尺を可視化：タイマー基準） ---------- */
 let progRAF=null, progT0=0;
 function startProgress(){
   stopProgress();
-  const bar=$('progressBar'); const dur=CFG.OV_LEADIN_MS+CFG.IMPACT_MS+CFG.SLIDE_HOLD_MS;
+  const bar=$('progressBar'); const timing=modeTiming(); const dur=timing.leadin+timing.impact+timing.hold;
   progT0=performance.now();
   const step=()=>{
     const t=performance.now()-progT0;
@@ -593,11 +678,12 @@ function stopProgress(){ if(progRAF) cancelAnimationFrame(progRAF); progRAF=null
 
 /* ---------- 締め → 戻る → ホーム ---------- */
 $('closeNext').addEventListener('click', ()=> showLayer('scrReturn'));
-$('returnHome').addEventListener('click', ()=>{ showLayer('scrHome'); resetMorning(); });
-function resetMorning(){ clearTimeout(autoTimer); stopProgress(); current=0;
+$('returnHome').addEventListener('click', ()=>{ resetMode(); showLayer('scrHome'); });
+function resetMode(){ clearTimeout(autoTimer); clearTimeout(nameTimer); stopProgress(); stopBreath(); AudioHook.stop(); ++playToken; current=0;
   document.querySelectorAll('.vb-page').forEach(p=>p.classList.remove('show')); }
+const resetMorning=resetMode; // v7後方互換
 
-/* ---------- 手動スワイプ（朝ステージのみ） ---------- */
+/* ---------- 手動スワイプ（共通モードステージ） ---------- */
 (function swipe(){
   let x0=null,y0=null;
   const wrap=$('scrMorning');
@@ -612,7 +698,7 @@ function resetMorning(){ clearTimeout(autoTimer); stopProgress(); current=0;
 
 /* ---------- バックグラウンド復帰：タイマー暴走を防ぐ ---------- */
 document.addEventListener('visibilitychange', ()=>{
-  if(document.hidden){ clearTimeout(autoTimer); clearTimeout(nameTimer); stopProgress(); }
+  if(document.hidden){ clearTimeout(autoTimer); clearTimeout(nameTimer); stopProgress(); AudioHook.stop(); ++playToken; }
   else if($('scrMorning').classList.contains('on')){ /* 復帰時はその枚で待機、次操作で再開 */ }
   else if($('scrName').classList.contains('on')){   // 名前画面のままなら自動送りを再開
     clearTimeout(nameTimer);

@@ -1,7 +1,7 @@
 {
   "name": "DAIMON",
   "short_name": "DAIMON",
-  "description": "朝・仕事・夜のアファメーション（販売版・基本骨格＋朝モード）",
+  "description": "朝・仕事・夜の3モードで、自分の軸へ戻るDAIMON販売版",
   "lang": "ja",
   "start_url": "./index.html",
   "scope": "./",
