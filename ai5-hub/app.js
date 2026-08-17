@@ -1,59 +1,25 @@
-const AGENTS = [
-  { id: "codex", name: "Codex", mark: "C", role: "PC・コード・Git" },
-  { id: "gemini", name: "Gemini", mark: "G", role: "調査・Google・別解" },
-  { id: "claude", name: "Claude", mark: "Cl", role: "レビュー・設計監査" },
-  { id: "manus", name: "Manus", mark: "M", role: "Web実務・長時間作業" }
+const AGENTS=[
+  {id:"codex",name:"Codex",mark:"C",role:"PC・コード・Git"},{id:"gemini",name:"Gemini",mark:"G",role:"調査・Google・別解"},
+  {id:"claude",name:"Claude",mark:"Cl",role:"レビュー・設計監査"},{id:"manus",name:"Manus",mark:"M",role:"Web実務・長時間作業"}
 ];
-const initial = [{
-  role: "zero",
-  text: "AI5 HUBへようこそ。私、ゼロにだけ指示してください。目的を整理し、Codexを施工司令塔として必要な兄弟だけに振り分けます。",
-  at: new Date().toISOString(), routed: []
-}];
-const state = { messages: JSON.parse(localStorage.getItem("ai5.messages") || "null") || initial };
-const agentsEl = document.querySelector("#agents");
-const messagesEl = document.querySelector("#messages");
-const composer = document.querySelector("#composer");
-const promptEl = document.querySelector("#prompt");
-const jobStatus = document.querySelector("#jobStatus");
-
-agentsEl.innerHTML = AGENTS.map(a => `<div class="agent"><span class="avatar">${a.mark}</span><span><b>${a.name}</b><small>${a.role}</small></span><i class="status"></i></div>`).join("");
-
-function escapeHtml(value) {
-  return value.replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[c]);
-}
-function render() {
-  messagesEl.innerHTML = state.messages.map(message => {
-    const user = message.role === "user";
-    const chips = (message.routed || []).map(id => `<span class="chip">${AGENTS.find(a => a.id === id)?.name || id}</span>`).join("");
-    const time = new Date(message.at).toLocaleTimeString("ja-JP", {hour:"2-digit", minute:"2-digit"});
-    return `<article class="message ${user ? "user" : ""}"><span class="avatar">${user ? "本人" : "0"}</span><div><div class="bubble">${escapeHtml(message.text).replace(/\n/g,"<br>")}${chips ? `<div class="routing">${chips}</div>` : ""}</div><div class="meta">${time}</div></div></article>`;
-  }).join("");
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-}
-function route(text) {
-  const rules = [
-    ["claude", /レビュー|監査|設計|原因|難しい|バグ/],
-    ["gemini", /調査|最新|Google|画像|動画|資料|別解/],
-    ["manus", /ブラウザ|Web|販売|競合|LP|掲載|収集/],
-    ["codex", /コード|実装|修正|PC|Windows|Git|Excel|ファイル|テスト|作って/]
-  ];
-  const hits = rules.filter(([, pattern]) => pattern.test(text)).map(([id]) => id);
-  return hits.length ? [...new Set(["codex", ...hits])] : ["codex"];
-}
-function persist() { localStorage.setItem("ai5.messages", JSON.stringify(state.messages.slice(-100))); }
-
-composer.addEventListener("submit", event => {
-  event.preventDefault();
-  const text = promptEl.value.trim();
-  if (!text) return;
-  const routed = route(text);
-  state.messages.push({role:"user", text, at:new Date().toISOString(), routed:[]});
-  state.messages.push({role:"zero", text:`了解しました。目的を整理し、${routed.map(id => AGENTS.find(a => a.id === id).name).join("・")}へ施工を割り振ります。現在のMVPでは外部送信せず、振り分け案だけを表示しています。`, at:new Date().toISOString(), routed});
-  promptEl.value = "";
-  jobStatus.innerHTML = `<span>ROUTED</span><b>${routed.length}名で施工予定</b><small>${escapeHtml(text.slice(0, 46))}</small>`;
-  persist(); render();
-});
-promptEl.addEventListener("input", () => { promptEl.style.height = "auto"; promptEl.style.height = `${Math.min(promptEl.scrollHeight, 140)}px`; });
-document.querySelector("#flowButton").addEventListener("click", () => document.querySelector("#activity").classList.add("open"));
-document.querySelector("#closeFlow").addEventListener("click", () => document.querySelector("#activity").classList.remove("open"));
-render();
+const LABELS={queued:"受付",planning:"判断中",waiting_approval:"承認待ち",running:"施工中",reviewing:"検査中",completed:"完了",failed:"失敗",cancelled:"中止"};
+const initial=[{role:"zero",text:"AI5 HUBへようこそ。私、ゼロにだけ指示してください。Local APIが目的を整理し、必要な兄弟だけに振り分けます。",at:new Date().toISOString(),routed:[]}];
+const load=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}};
+const state={messages:load("ai5.messages",initial),taskIds:load("ai5.tasks",[]),reported:new Set(load("ai5.reported",[])),csrf:null,mode:"offline",activeTask:null,poll:null,agentStatus:{}};
+const $=selector=>document.querySelector(selector);const agentsEl=$("#agents"),messagesEl=$("#messages"),composer=$("#composer"),promptEl=$("#prompt"),jobStatus=$("#jobStatus"),progress=$("#taskProgress"),approval=$("#approvalArea");
+function escapeHtml(value=""){return String(value).replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[c])}
+function persist(){localStorage.setItem("ai5.messages",JSON.stringify(state.messages.slice(-100)));localStorage.setItem("ai5.tasks",JSON.stringify(state.taskIds.slice(-30)));localStorage.setItem("ai5.reported",JSON.stringify([...state.reported].slice(-30)))}
+function agentName(id){return AGENTS.find(agent=>agent.id===id)?.name||id}
+function renderMessages(){messagesEl.innerHTML=state.messages.map(message=>{const user=message.role==="user";const chips=(message.routed||[]).map(id=>`<span class="chip">${escapeHtml(agentName(id))}</span>`).join("");const time=new Date(message.at).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"});return `<article class="message ${user?"user":""}"><span class="avatar">${user?"本人":"0"}</span><div><div class="bubble">${escapeHtml(message.text).replace(/\n/g,"<br>")}${chips?`<div class="routing">${chips}</div>`:""}</div><div class="meta">${time}</div></div></article>`}).join("");messagesEl.scrollTop=messagesEl.scrollHeight}
+function renderAgents(status={}){agentsEl.innerHTML=AGENTS.map(agent=>{const info=status[agent.id]||{state:"offline",connection:"not_connected"};const connection=info.connection==="mock"?"Mock接続":info.connection==="not_connected"?"未接続":"接続済";return `<div class="agent"><span class="avatar">${agent.mark}</span><span><b>${agent.name}</b><small>${agent.role}・${connection}</small></span><i class="status ${escapeHtml(info.state)}" title="${connection}"></i></div>`}).join("")}
+function renderTask(task){if(!task){jobStatus.className="job-card idle";jobStatus.innerHTML="<span>現在</span><b>指示待ち</b><small>ゼロにメッセージを送ってください</small>";progress.innerHTML="";approval.className="approval-empty";approval.textContent="現在、本人確認が必要な操作はありません。";renderAgents(state.agentStatus);return}state.activeTask=task;const routed=[task.assignedPrimary,...(task.assignedSecondary||[])];const live=structuredClone(state.agentStatus);if(live[task.assignedPrimary])live[task.assignedPrimary].state=({planning:"thinking",waiting_approval:"waiting",running:"running",reviewing:"thinking",completed:"completed",failed:"error",cancelled:"ready"})[task.status]||"ready";renderAgents(live);jobStatus.className=`job-card ${task.status}`;jobStatus.innerHTML=`<span>${escapeHtml(LABELS[task.status]||task.status)}</span><b>${escapeHtml(task.objective)}</b><small>担当: ${routed.map(agentName).join("・")} / ${state.mode.toUpperCase()}</small>`;progress.innerHTML=(task.timeline||[]).map((item,index,array)=>`<div class="progress-row ${index===array.length-1?"current":"done"}"><i></i><span><b>${escapeHtml(LABELS[item.status]||item.status)}</b><small>${escapeHtml(item.label)}</small></span></div>`).join("");if(task.status==="waiting_approval"){approval.className="approval-card";approval.innerHTML=`<strong>本人承認が必要です</strong><p>${escapeHtml(task.approval?.summary||"")}</p><div><button data-action="approve">承認</button><button data-action="cancel" class="danger">中止</button></div>`}else{approval.className="approval-empty";approval.textContent="現在、本人確認が必要な操作はありません。"}}
+async function api(path,options={}){const headers={"Content-Type":"application/json",...(options.headers||{})};if(state.csrf&&options.method&&options.method!=="GET")headers["X-AI5-CSRF"]=state.csrf;const response=await fetch(path,{...options,headers});const value=await response.json();if(!response.ok)throw new Error(value.error||`HTTP ${response.status}`);return value}
+async function bootstrap(){try{const health=await api("/api/health");state.csrf=health.csrfToken;state.mode=health.mock?"mock":"live";$("#connectionDot").className="online-dot ready";$("#connectionText").textContent=`Local API接続済・${state.mode.toUpperCase()}`;const status=await api("/api/status");state.agentStatus=status.agents;renderAgents(status.agents);const latest=(status.tasks||[]).find(task=>state.taskIds.includes(task.taskId))||status.tasks?.[0];if(latest){renderTask(latest);watch(latest.taskId)}else renderTask(null)}catch(error){state.mode="offline";$("#connectionDot").className="online-dot error";$("#connectionText").textContent="Local API未接続";renderAgents();jobStatus.innerHTML=`<span>ERROR</span><b>Local APIを起動してください</b><small>${escapeHtml(error.message)}</small>`}}
+function zeroMessage(text,routed=[]){state.messages.push({role:"zero",text,at:new Date().toISOString(),routed});persist();renderMessages()}
+function report(task){if(state.reported.has(task.taskId))return;state.reported.add(task.taskId);if(task.status==="completed")zeroMessage(`完了。\n${task.result?.summary||"Mock施工が完了しました。"}\n検査: ${(task.result?.tests||[]).join("、")}\n残件: 実AI接続は未実装です。`,[task.assignedPrimary,...(task.assignedSecondary||[])]);else if(task.status==="failed")zeroMessage(`失敗しました。\n${task.result?.summary||task.error||"原因を確認してください。"}`);else if(task.status==="cancelled")zeroMessage("タスクを中止しました。");persist()}
+async function refreshTask(id){try{const task=await api(`/api/tasks/${id}`);renderTask(task);if(["completed","failed","cancelled"].includes(task.status)){clearInterval(state.poll);state.poll=null;report(task)}return task}catch(error){jobStatus.innerHTML=`<span>ERROR</span><b>状態取得失敗</b><small>${escapeHtml(error.message)}</small>`}}
+function watch(id){if(state.poll)clearInterval(state.poll);refreshTask(id);state.poll=setInterval(()=>refreshTask(id),650)}
+composer.addEventListener("submit",async event=>{event.preventDefault();const text=promptEl.value.trim();if(!text||state.mode==="offline")return;composer.classList.add("sending");state.messages.push({role:"user",text,at:new Date().toISOString(),routed:[]});promptEl.value="";persist();renderMessages();try{const key=crypto.randomUUID();const task=await api("/api/tasks",{method:"POST",headers:{"Idempotency-Key":key},body:JSON.stringify({message:text,source:"teppei",priority:"normal",conversationId:"local-default"})});if(!state.taskIds.includes(task.taskId))state.taskIds.push(task.taskId);const routed=[task.assignedPrimary,...(task.assignedSecondary||[])];zeroMessage(task.requiresApproval?`了解。${routed.map(agentName).join("・")}へ振り分けましたが、重大操作を含むため承認待ちです。`:`了解。目的と完了条件を整理し、${routed.map(agentName).join("・")}へ振り分けました。施工を開始します。`,routed);renderTask(task);watch(task.taskId)}catch(error){zeroMessage(`受付に失敗しました: ${error.message}`)}finally{composer.classList.remove("sending")}});
+approval.addEventListener("click",async event=>{const action=event.target.dataset.action;if(!action||!state.activeTask)return;try{const task=await api(`/api/tasks/${state.activeTask.taskId}/${action}`,{method:"POST",body:"{}"});renderTask(task);watch(task.taskId)}catch(error){zeroMessage(`承認操作に失敗しました: ${error.message}`)}});
+promptEl.addEventListener("input",()=>{promptEl.style.height="auto";promptEl.style.height=`${Math.min(promptEl.scrollHeight,140)}px`});$("#flowButton").addEventListener("click",()=>$("#activity").classList.add("open"));$("#closeFlow").addEventListener("click",()=>$("#activity").classList.remove("open"));
+renderMessages();renderAgents();bootstrap();

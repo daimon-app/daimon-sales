@@ -15,6 +15,9 @@ body { margin: 0; background: radial-gradient(circle at 70% 0, #123329 0, transp
 .brand small, .room small, .agent small { display: block; color: var(--muted); margin-top: 3px; }
 .room { width: 100%; border: 1px solid var(--line); background: var(--panel2); color: var(--text); border-radius: 16px; padding: 12px; display: flex; text-align: left; gap: 11px; align-items: center; }
 .room i, .status, .online-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; }
+.status.offline, .status.error, .online-dot.error { background: #ff6b6b; }
+.status.running, .status.thinking, .online-dot.checking { background: #ffd166; }
+.status.waiting { background: #9c89ff; }
 .room i { margin-left: auto; }
 .avatar { min-width: 38px; height: 38px; }
 .section-title { margin: 28px 8px 10px; color: var(--muted); font-size: 12px; letter-spacing: .12em; }
@@ -44,6 +47,7 @@ header p { color: var(--muted); font-size: 12px; margin-top: 5px; }
 .composer { padding: 16px max(24px, 8vw) 20px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 10px; }
 .composer textarea { resize: none; max-height: 140px; background: var(--panel2); border: 1px solid var(--line); border-radius: 15px; padding: 14px; color: var(--text); font: inherit; outline: none; }
 .composer button { border: 0; border-radius: 14px; background: var(--green); color: #06100d; font-weight: 800; padding: 0 20px; }
+.composer.sending button { opacity: .55; pointer-events: none; }
 .composer p { grid-column: 1/-1; color: var(--muted); font-size: 10px; }
 .activity-head { display: flex; justify-content: space-between; align-items: center; }
 .activity-head small, .job-card span { color: var(--green); }
@@ -60,5 +64,15 @@ header p { color: var(--muted); font-size: 12px; margin-top: 5px; }
 .route b, .route span { display: block; font-size: 12px; }
 .route span { margin-top: 3px; }
 .approval-empty { font-size: 12px; color: var(--muted); padding: 14px; border: 1px dashed var(--line); border-radius: 12px; }
+.task-progress { margin: -10px 0 20px; }
+.progress-row { display: flex; gap: 10px; padding: 7px 3px; color: var(--muted); }
+.progress-row i { width: 9px; height: 9px; margin-top: 4px; border-radius: 50%; background: #35624f; }
+.progress-row.current { color: var(--text); }
+.progress-row.current i { background: var(--green); box-shadow: 0 0 0 4px rgba(94,230,168,.12); }
+.progress-row span, .progress-row b, .progress-row small { display: block; }
+.progress-row b { font-size: 12px; }.progress-row small { margin-top: 2px; font-size: 11px; }
+.approval-card { padding: 14px; border: 1px solid #d6a84b; background: #2b2415; border-radius: 12px; font-size: 12px; }
+.approval-card p { color: #d9c9a6; margin: 8px 0 12px; }.approval-card div { display: flex; gap: 8px; }
+.approval-card button { border: 0; border-radius: 9px; padding: 8px 14px; background: var(--green); font-weight: 800; }.approval-card button.danger { background: #572525; color: #ffd8d8; }
 @media(max-width: 980px) { .shell { grid-template-columns: 220px 1fr; } .activity { position: fixed; z-index: 3; right: 0; top: 0; height: 100%; width: min(340px, 90vw); transform: translateX(100%); transition: .2s; } .activity.open { transform: none; } .ghost, .activity-head button { display: block; } }
 @media(max-width: 680px) { .shell { grid-template-columns: 1fr; } .rail { display: none; } .messages { padding: 20px 14px; } .composer { padding: 12px 14px 16px; } header { padding: 0 16px; } }
