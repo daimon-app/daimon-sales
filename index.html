@@ -185,6 +185,12 @@ button{font-family:inherit}
 .ph-tag{ margin-top:22px; display:inline-block; font-size:11px; letter-spacing:.16em;
   color:#1a1000; background:linear-gradient(135deg,var(--gold),var(--gold2));
   padding:5px 14px; border-radius:20px }
+.audio-controls{ position:fixed; z-index:200; top:calc(env(safe-area-inset-top,0px) + 10px);
+  right:calc(env(safe-area-inset-right,0px) + 10px); display:flex; gap:7px }
+.audio-btn{ min-width:44px; min-height:44px; padding:0 11px; border-radius:22px;
+  border:1px solid rgba(212,175,55,.55); background:rgba(5,7,10,.72); color:#f5e6ac;
+  font:700 11px/1 system-ui,sans-serif; letter-spacing:.08em; backdrop-filter:blur(8px); cursor:pointer }
+.audio-btn:focus-visible{ outline:2px solid #f5e6ac; outline-offset:2px }
 </style>
 </head>
 <body>
@@ -192,6 +198,10 @@ button{font-family:inherit}
 <!-- ===== 音声受け口（現段階は無音・構造のみ） ===== -->
 <!-- 将来: ユーザー自身の録音音声などを src へ差し替え、AudioHook.enabled=true で有効化 -->
 <audio id="userVoice" preload="none" playsinline></audio>
+<div class="audio-controls" aria-label="音声コントロール">
+  <button class="audio-btn" id="audioToggle" type="button" aria-pressed="true" onclick="AudioHook.setEnabled(!AudioHook.enabled)">音声 ON</button>
+  <button class="audio-btn" id="audioStop" type="button" onclick="AudioHook.stop()">停止</button>
+</div>
 
 <!-- ============================ HOME ============================ -->
 <div class="layer on" id="scrHome">
@@ -418,16 +428,51 @@ const userName = (function(){
    ========================================================= */
 const AudioHook = {
   el: document.getElementById('userVoice'),
-  enabled: false,                 // 現段階OFF。新規音声・TTSは追加しない
+  enabled: (()=>{ try{return localStorage.getItem('daimon.audioEnabled')!=='false';}catch(e){return true;} })(),
+  speechToken: 0,
   setUserVoice(src){ if(this.el){ this.el.src = src; } },  // 将来：ユーザー録音を差し替え
   play(){ if(this.enabled && this.el && this.el.src){ this.el.play().catch(()=>{}); } },
-  stop(){ if(this.el){ try{ this.el.pause(); this.el.currentTime=0; }catch(e){} } },
+  playSlide(slide, mode){
+    this.stop();
+    if(!this.enabled || !slide) return;
+    if(slide.audio){ this.setUserVoice(slide.audio); this.play(); return; }
+    if(!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance==='undefined') return;
+    const utterance=new SpeechSynthesisUtterance([slide.main, slide.support, slide.impact].filter(Boolean).join('。　。'));
+    utterance.lang='ja-JP'; utterance.pitch=1;
+    utterance.rate=mode==='night'?0.82:(mode==='work'?0.96:0.9);
+    const voices=speechSynthesis.getVoices();
+    const voice=voices.find(v=>v.lang==='ja-JP') || voices.find(v=>v.lang && v.lang.startsWith('ja'));
+    if(voice) utterance.voice=voice;
+    speechSynthesis.speak(utterance);
+  },
+  setEnabled(on){
+    this.enabled=!!on;
+    try{ localStorage.setItem('daimon.audioEnabled', String(this.enabled)); }catch(e){}
+    if(!this.enabled) this.stop(); updateAudioUI();
+  },
+  stop(){
+    ++this.speechToken;
+    if('speechSynthesis' in window) speechSynthesis.cancel();
+    if(this.el){ try{ this.el.pause(); this.el.currentTime=0; this.el.removeAttribute('src'); this.el.load(); }catch(e){} }
+  },
 };
-
+function updateAudioUI(){
+  const b=document.getElementById('audioToggle'); if(!b) return;
+  b.textContent=AudioHook.enabled?'音声 ON':'音声 OFF'; b.setAttribute('aria-pressed',String(AudioHook.enabled));
+}
 /* =========================================================
    画面（レイヤー）管理
    ========================================================= */
-const IMAGES = window.MORNING_IMAGES || {}; // workXX/nightXXは個別素材確定後に同じインライン辞書へ追加
+const IMAGES = Object.assign({}, window.MORNING_IMAGES || {}, {
+  work01:'assets/work/work01.jpg', work02:'assets/work/work02.jpg', work03:'assets/work/work03.jpg',
+  work04:'assets/work/work04.jpg', work05:'assets/work/work05.jpg', work06:'assets/work/work06.jpg',
+  work07:'assets/work/work07.jpg', work08:'assets/work/work08.jpg', work09:'assets/work/work09.jpg',
+  work10:'assets/work/work10.jpg', work11:'assets/work/work11.jpg', work12:'assets/work/work12.jpg',
+  night01:'assets/night/night01.jpg', night02:'assets/night/night02.jpg', night03:'assets/night/night03.jpg',
+  night04:'assets/night/night04.jpg', night05:'assets/night/night05.jpg', night06:'assets/night/night06.jpg',
+  night07:'assets/night/night07.jpg', night08:'assets/night/night08.jpg', night09:'assets/night/night09.jpg',
+  night10:'assets/night/night10.jpg', night11:'assets/night/night11.jpg', night12:'assets/night/night12.jpg'
+});
 /* 画像ごとの表示位置調整（文章データとは分離）。顔・主役が①②③や③拡大と衝突しないよう寄せる。
    未指定のキーは中央(既定)。実機を見て値だけ微調整すればよい。 */
 const IMAGE_POS = {
@@ -436,6 +481,7 @@ const IMAGE_POS = {
   morning09: 'center 40%',   // 会議の顔の帯をやや上へ、下段③の余白を確保
 };
 const $ = id => document.getElementById(id);
+updateAudioUI();
 const layers = ['scrHome','scrModeIntro','scrBreath','scrName','scrMorning','scrClose','scrReturn'];
 const extras = ['navDots','progressBar','hint'];
 function showLayer(id){
@@ -540,6 +586,8 @@ function buildMode(){
       '<div class="ov-title">'+escapeHTML(s.main)+'</div>' +
       '<div class="ov-sub">'+escapeHTML(s.support)+'</div>' +
       '<div class="ov-affirm">'+escapeHTML(s.impact)+'</div>';
+    const bg=page.querySelector('.vb-bg');
+    if(bg) bg.addEventListener('error',()=>{ bg.remove(); page.classList.add('image-pending'); },{once:true});
     frag.appendChild(page);
     const d=document.createElement('div'); d.className='nav-dot'+(i===0?' active':'');
     d.addEventListener('click', ()=> seekTo(i));
@@ -616,6 +664,7 @@ function playSlide(n, jump){
     if(token!==playToken || !$('scrMorning').classList.contains('on')) return;
     const page=pages[current]; if(!page) return;
     page.classList.add('show');                 // ①② upSettle
+    AudioHook.playSlide(activeSlides[current], activeMode);
     const affirm=page.querySelector('.ov-affirm');
     // ③はリフローを挟んでからplay（アニメ再発火を確実に）
     if(affirm){ affirm.classList.remove('play'); void affirm.offsetWidth; }

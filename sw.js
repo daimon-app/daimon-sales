@@ -1,13 +1,17 @@
 /* DAIMON 販売版 — Service Worker
    index.html は network-first（最新優先）、その他アセットは stale-while-revalidate。
    中身を差し替えたら VERSION を上げる（daimon-sales-v1 → v2 ...）。 */
-const VERSION = 'daimon-sales-v8-three-mode-engine';
+const VERSION = 'daimon-sales-v9-images-audio';
+const MODE_IMAGES = ['work', 'night'].flatMap((mode) =>
+  Array.from({ length: 12 }, (_, i) => `./assets/${mode}/${mode}${String(i + 1).padStart(2, '0')}.jpg`)
+);
 const SHELL = [
   './',
   './index.html',
   './manifest.json',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  ...MODE_IMAGES
 ];
 
 self.addEventListener('install', (e) => {
