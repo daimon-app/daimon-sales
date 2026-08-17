@@ -1,0 +1,84 @@
+function Initialize-AI5CodexService {
+    param([string]$ServerRoot, [string]$AppRoot)
+    $script:CodexServerRoot = $ServerRoot
+    $script:CodexAppRoot = $AppRoot
+    $script:CodexBridgeRoot = Join-Path $AppRoot 'integrations\codex\zero-codex-bridge'
+    $script:CodexInbox = Join-Path $ServerRoot 'data\codex-inbox'
+    $script:CodexRuntime = Join-Path $ServerRoot 'runtime'
+    $script:CodexSecretPath = Join-Path $script:CodexRuntime 'bridge.secret'
+    $script:CodexWorkerLock = Join-Path $script:CodexRuntime 'codex-worker.lock'
+    $script:CodexWorkerScript = Join-Path $ServerRoot 'task-service\CodexWorker.ps1'
+    @($script:CodexInbox, $script:CodexRuntime) | ForEach-Object { New-Item -ItemType Directory -Force $_ | Out-Null }
+    if (!(Test-Path $script:CodexSecretPath)) {
+        $bytes = New-Object byte[] 32
+        $generator = [Security.Cryptography.RandomNumberGenerator]::Create()
+        try { $generator.GetBytes($bytes) } finally { $generator.Dispose() }
+        [Convert]::ToBase64String($bytes) | Set-Content -LiteralPath $script:CodexSecretPath -Encoding ASCII
+    }
+}
+
+function Get-AI5CodexSignature {
+    param([string]$TaskId, [string]$Instruction)
+    $key = [Convert]::FromBase64String((Get-Content -Raw $script:CodexSecretPath).Trim())
+    $hmac = [Security.Cryptography.HMACSHA256]::new($key)
+    try {
+        $payload = [Text.Encoding]::UTF8.GetBytes("$TaskId`n$Instruction")
+        return [Convert]::ToBase64String($hmac.ComputeHash($payload))
+    } finally { $hmac.Dispose() }
+}
+
+function Get-AI5CodexHealth {
+    $disabled = $env:AI5_BRIDGE_DISABLED -eq 'true'
+    $available = !$disabled -and (Test-Path "$script:CodexBridgeRoot\bridge.ps1") -and (Test-Path $script:CodexWorkerScript)
+    $connection = if ($disabled) { 'stopped' } elseif ($available) { 'official_cli' } else { 'not_connected' }
+    return [ordered]@{ available = $available; connection = $connection; mode = 'live' }
+}
+
+function Start-AI5CodexWorker {
+    $health = Get-AI5CodexHealth
+    if (!$health.available) { return $false }
+    if (Test-Path $script:CodexWorkerLock) {
+        $pidText = (Get-Content -Raw $script:CodexWorkerLock -ErrorAction SilentlyContinue).Trim()
+        $process = $null
+        if ($pidText -match '^\d+$') { $process = Get-Process -Id ([int]$pidText) -ErrorAction SilentlyContinue }
+        if ($process) { return $true }
+        Remove-Item -LiteralPath $script:CodexWorkerLock -Force
+    }
+    'launching' | Set-Content -LiteralPath $script:CodexWorkerLock -Encoding ASCII
+    try {
+        $psi = [Diagnostics.ProcessStartInfo]::new()
+        $psi.FileName = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+        $psi.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$script:CodexWorkerScript`" -ServerRoot `"$script:CodexServerRoot`" -AppRoot `"$script:CodexAppRoot`" -UserHome `"$env:USERPROFILE`""
+        $psi.UseShellExecute = $false
+        $psi.CreateNoWindow = $true
+        $psi.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
+        $process = [Diagnostics.Process]::Start($psi)
+        $process.Id | Set-Content -LiteralPath $script:CodexWorkerLock -Encoding ASCII
+        return $true
+    } catch {
+        Remove-Item -LiteralPath $script:CodexWorkerLock -Force -ErrorAction SilentlyContinue
+        throw
+    }
+}
+
+function Submit-AI5CodexTask {
+    param($Task)
+    $envelope = [ordered]@{
+        task_id = $Task.taskId
+        created_at = [DateTime]::UtcNow.ToString('o')
+        source = 'ai5-hub'
+        requested_by = 'zero'
+        assigned_to = 'codex'
+        instruction = $Task.message
+        risk_level = $Task.route.risk
+        approval_required = $Task.requiresApproval
+        status = 'queued'
+    }
+    $envelope.signature = Get-AI5CodexSignature $envelope.task_id $envelope.instruction
+    $path = Join-Path $script:CodexInbox ($Task.taskId + '.json')
+    if (Test-Path $path) { return [ordered]@{ accepted = $false; duplicate = $true; workerStarted = (Start-AI5CodexWorker) } }
+    $temp = "$path.tmp"
+    $envelope | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $temp -Encoding UTF8
+    Move-Item -LiteralPath $temp -Destination $path
+    return [ordered]@{ accepted = $true; duplicate = $false; workerStarted = (Start-AI5CodexWorker) }
+}

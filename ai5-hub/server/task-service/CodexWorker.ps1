@@ -1,0 +1,183 @@
+param(
+    [Parameter(Mandatory = $true)][string]$ServerRoot,
+    [Parameter(Mandatory = $true)][string]$AppRoot,
+    [string]$UserHome
+)
+
+$ErrorActionPreference = 'Stop'
+if ($UserHome) {
+    $env:USERPROFILE = $UserHome
+    $env:HOME = $UserHome
+    $env:CODEX_HOME = Join-Path $UserHome '.codex'
+}
+$bridge = Join-Path $AppRoot 'integrations\codex\zero-codex-bridge'
+$inbox = Join-Path $ServerRoot 'data\codex-inbox'
+$secretPath = Join-Path $ServerRoot 'runtime\bridge.secret'
+$workerLock = Join-Path $ServerRoot 'runtime\codex-worker.lock'
+$taskRoot = Join-Path $ServerRoot 'data\tasks'
+$logRoot = Join-Path $ServerRoot 'logs\tasks'
+New-Item -ItemType Directory -Force $logRoot | Out-Null
+
+function Get-Signature($id, $instruction) {
+    $key = [Convert]::FromBase64String((Get-Content -Raw $secretPath).Trim())
+    $hmac = [Security.Cryptography.HMACSHA256]::new($key)
+    try {
+        $payload = [Text.Encoding]::UTF8.GetBytes("$id`n$instruction")
+        return [Convert]::ToBase64String($hmac.ComputeHash($payload))
+    } finally {
+        $hmac.Dispose()
+    }
+}
+
+function Save-Task($task, $path) {
+    $task.updatedAt = [DateTime]::UtcNow.ToString('o')
+    $temp = "$path.tmp"
+    $task | ConvertTo-Json -Depth 15 | Set-Content -LiteralPath $temp -Encoding UTF8
+    Move-Item -LiteralPath $temp -Destination $path -Force
+}
+
+function Set-TaskProperty($task, $name, $value) {
+    $task | Add-Member -NotePropertyName $name -NotePropertyValue $value -Force
+}
+
+function Set-TaskState($task, $path, $status, $label) {
+    $task.status = $status
+    $task.timeline += , [ordered]@{
+        status = $status
+        label = $label
+        at = [DateTime]::UtcNow.ToString('o')
+    }
+    Save-Task $task $path
+}
+
+function Write-WorkerLog($eventName, $fields) {
+    $item = [ordered]@{
+        timestamp = [DateTime]::UtcNow.ToString('o')
+        event = $eventName
+    }
+    foreach ($key in $fields.Keys) {
+        $item[$key] = $fields[$key]
+    }
+    $logPath = Join-Path $logRoot ((Get-Date).ToString('yyyy-MM-dd') + '.jsonl')
+    Add-Content -LiteralPath $logPath -Encoding UTF8 -Value ($item | ConvertTo-Json -Compress -Depth 8)
+}
+
+$currentTask = $null
+$currentTaskPath = $null
+$currentEnvelopePath = $null
+
+try {
+    $idlePasses = 0
+    while ($idlePasses -lt 2) {
+        $file = Get-ChildItem $inbox -Filter '*.json' | Sort-Object CreationTime | Select-Object -First 1
+        if (!$file) {
+            $idlePasses++
+            Start-Sleep -Milliseconds 350
+            continue
+        }
+
+        $idlePasses = 0
+        $currentEnvelopePath = $file.FullName
+        $envelope = Get-Content -Raw $file.FullName | ConvertFrom-Json
+        $currentTaskPath = Join-Path $taskRoot ($envelope.task_id + '.json')
+        if (!(Test-Path $currentTaskPath)) {
+            Remove-Item -LiteralPath $file.FullName -Force
+            continue
+        }
+
+        $currentTask = Get-Content -Raw $currentTaskPath | ConvertFrom-Json
+        $expected = Get-Signature $envelope.task_id $envelope.instruction
+        if ($envelope.signature -ne $expected) {
+            Set-TaskProperty $currentTask 'errorType' 'authentication_failed'
+            $currentTask.result = [ordered]@{
+                status = 'failed'
+                summary = 'Bridge authentication failed'
+                details = @()
+                filesChanged = @()
+                tests = @()
+                warnings = @()
+                failureReason = 'authentication_failed'
+                retryable = $false
+                userActionRequired = $false
+            }
+            Set-TaskState $currentTask $currentTaskPath 'failed' 'Bridge authentication rejected'
+            Write-WorkerLog 'codex_auth_failed' @{ task_id = $currentTask.taskId }
+            Remove-Item -LiteralPath $file.FullName -Force
+            $currentTask = $null
+            continue
+        }
+
+        Set-TaskState $currentTask $currentTaskPath 'planning' 'Zero prepared a structured Codex instruction'
+        Set-TaskState $currentTask $currentTaskPath 'running' 'Codex execution started'
+
+        & "$bridge\bridge.ps1" enqueue -TaskId $envelope.task_id -Instruction $envelope.instruction | Out-Null
+        $result = & "$bridge\bridge.ps1" run-once | ConvertFrom-Json
+        if (!$result -or $result.task_id -ne $envelope.task_id) {
+            $result = & "$bridge\bridge.ps1" show -TaskId $envelope.task_id | ConvertFrom-Json
+        }
+
+        Set-TaskProperty $currentTask 'bridge' ([ordered]@{
+            taskId = $result.task_id
+            status = $result.status
+            sessionId = $result.codex_session_id
+            attemptCount = $result.attempt_count
+            startedAt = $result.started_at
+            finishedAt = $result.finished_at
+        })
+        $summary = if ($result.result) { $result.result } else { 'Codex task failed' }
+        $currentTask.result = [ordered]@{
+            status = $result.status
+            summary = $summary
+            details = @($result.details)
+            filesChanged = @($result.files_changed)
+            tests = @($result.tests)
+            warnings = @($result.warnings)
+            commitId = $result.commit_id
+            failureReason = $result.error
+            retryable = [bool]$result.retryable
+            userActionRequired = [bool]$result.human_action_required
+        }
+
+        if ($result.status -eq 'success') {
+            Set-TaskState $currentTask $currentTaskPath 'reviewing' 'Bridge collected Codex evidence'
+            Set-TaskState $currentTask $currentTaskPath 'completed' 'Zero verified the Codex result'
+        } else {
+            Set-TaskProperty $currentTask 'errorType' 'task_failed'
+            Set-TaskState $currentTask $currentTaskPath 'failed' 'Codex execution failed'
+        }
+
+        Save-Task $currentTask $currentTaskPath
+        Write-WorkerLog 'codex_finished' @{
+            task_id = $currentTask.taskId
+            status = $currentTask.status
+            session_id = $result.codex_session_id
+        }
+        Remove-Item -LiteralPath $file.FullName -Force
+        $currentTask = $null
+        $currentTaskPath = $null
+        $currentEnvelopePath = $null
+    }
+} catch {
+    $message = $_.Exception.Message
+    Write-WorkerLog 'codex_worker_crash' @{ error = $message }
+    if ($currentTask -and $currentTaskPath -and (Test-Path $currentTaskPath)) {
+        Set-TaskProperty $currentTask 'errorType' 'bridge_unavailable'
+        $currentTask.result = [ordered]@{
+            status = 'failed'
+            summary = 'Codex worker stopped unexpectedly'
+            details = @()
+            filesChanged = @()
+            tests = @()
+            warnings = @($message)
+            failureReason = 'bridge_unavailable'
+            retryable = $true
+            userActionRequired = $false
+        }
+        Set-TaskState $currentTask $currentTaskPath 'failed' 'Codex worker stopped unexpectedly'
+    }
+} finally {
+    if ($currentEnvelopePath -and (Test-Path $currentEnvelopePath)) {
+        Remove-Item -LiteralPath $currentEnvelopePath -Force -ErrorAction SilentlyContinue
+    }
+    Remove-Item -LiteralPath $workerLock -Force -ErrorAction SilentlyContinue
+}

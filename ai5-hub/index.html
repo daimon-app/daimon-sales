@@ -36,11 +36,12 @@
       <div class="activity-head"><div><small>LIVE STATUS</small><h2>施工状況</h2></div><button id="closeFlow" aria-label="閉じる">×</button></div>
       <div id="jobStatus" class="job-card idle"><span>現在</span><b>指示待ち</b><small>ゼロにメッセージを送ってください</small></div>
       <div id="taskProgress" class="task-progress" aria-live="polite"></div>
+      <div id="resultDetails" class="result-details" hidden></div>
       <h3>基本ルート</h3>
       <ol class="route">
         <li><b>本人 → ゼロ</b><span>目的と優先順位を整理</span></li>
         <li><b>ゼロ → Codex</b><span>施工計画と安全確認</span></li>
-        <li><b>担当AIが実行</b><span>必要最小構成で並行処理</span></li>
+        <li><b>CodexがPC施工</b><span>Bridge経由で安全に実行</span></li>
         <li><b>ゼロ → 本人</b><span>統合結果を最終報告</span></li>
       </ol>
       <h3>承認待ち</h3>

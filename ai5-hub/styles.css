@@ -71,6 +71,10 @@ header p { color: var(--muted); font-size: 12px; margin-top: 5px; }
 .progress-row.current i { background: var(--green); box-shadow: 0 0 0 4px rgba(94,230,168,.12); }
 .progress-row span, .progress-row b, .progress-row small { display: block; }
 .progress-row b { font-size: 12px; }.progress-row small { margin-top: 2px; font-size: 11px; }
+.result-details { margin: 0 0 20px; padding: 13px; border: 1px solid var(--line); border-radius: 12px; background: #0c1d17; font-size: 11px; color: var(--muted); }
+.result-details summary { cursor: pointer; color: var(--text); font-weight: 700; }
+.result-details dl { display: grid; grid-template-columns: 82px 1fr; gap: 7px; margin: 12px 0 0; }
+.result-details dt { color: var(--green); }.result-details dd { margin: 0; overflow-wrap: anywhere; }
 .approval-card { padding: 14px; border: 1px solid #d6a84b; background: #2b2415; border-radius: 12px; font-size: 12px; }
 .approval-card p { color: #d9c9a6; margin: 8px 0 12px; }.approval-card div { display: flex; gap: 8px; }
 .approval-card button { border: 0; border-radius: 9px; padding: 8px 14px; background: var(--green); font-weight: 800; }.approval-card button.danger { background: #572525; color: #ffd8d8; }
