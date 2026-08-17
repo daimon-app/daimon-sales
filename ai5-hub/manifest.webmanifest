@@ -1,0 +1,14 @@
+{
+  "name": "AI5 HUB",
+  "short_name": "AI5 HUB",
+  "description": "Zeroを窓口にAI5兄弟へ施工を依頼する専用ハブ",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#06100d",
+  "theme_color": "#07120f",
+  "icons": [
+    {"src":"/icons/ai5-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}

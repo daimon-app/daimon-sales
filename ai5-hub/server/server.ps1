@@ -3,10 +3,11 @@ $ErrorActionPreference = 'Stop'
 $ServerRoot = if ($global:AI5ServerRoot) { $global:AI5ServerRoot } else { $PSScriptRoot }
 $AppRoot = Split-Path $ServerRoot
 
-foreach ($module in @('router\Router.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1', 'security\Security.ps1', 'task-service\CodexService.ps1')) {
+foreach ($module in @('router\Router.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'task-service\CodexService.ps1')) {
     . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $ServerRoot $module))))
 }
 Initialize-AI5Store $ServerRoot
+Initialize-AI5MobileSecurity $ServerRoot
 Initialize-AI5CodexService $ServerRoot $AppRoot
 $Mock = if ($env:AI5_MOCK) { $env:AI5_MOCK -ne 'false' } else { $false }
 $Csrf = [guid]::NewGuid().ToString('N')
@@ -14,18 +15,20 @@ $listener = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Parse($HostName), $P
 $listener.Start()
 Write-Host "AI5 HUB: http://$HostName`:$Port/ (mock=$Mock)"
 
-function Send-Response($stream, [int]$status, [string]$type, [byte[]]$bytes) {
-    $names = @{ 200 = 'OK'; 202 = 'Accepted'; 400 = 'Bad Request'; 403 = 'Forbidden'; 404 = 'Not Found'; 409 = 'Conflict'; 500 = 'Internal Server Error' }
-    $head = "HTTP/1.1 $status $($names[$status])`r`nContent-Type: $type`r`nContent-Length: $($bytes.Length)`r`nCache-Control: no-store`r`nConnection: close`r`n`r`n"
+function Send-Response($stream, [int]$status, [string]$type, [byte[]]$bytes, $extraHeaders = @{}) {
+    $names = @{ 200 = 'OK'; 202 = 'Accepted'; 400 = 'Bad Request'; 401 = 'Unauthorized'; 403 = 'Forbidden'; 404 = 'Not Found'; 409 = 'Conflict'; 500 = 'Internal Server Error' }
+    $custom = ''
+    foreach ($entry in $extraHeaders.GetEnumerator()) { $custom += "$($entry.Key): $($entry.Value)`r`n" }
+    $head = "HTTP/1.1 $status $($names[$status])`r`nContent-Type: $type`r`nContent-Length: $($bytes.Length)`r`nCache-Control: no-store`r`nX-Content-Type-Options: nosniff`r`nX-Frame-Options: DENY`r`nReferrer-Policy: no-referrer`r`nContent-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self'; script-src 'self'`r`n${custom}Connection: close`r`n`r`n"
     $header = [Text.Encoding]::ASCII.GetBytes($head)
     $stream.Write($header, 0, $header.Length)
     $stream.Write($bytes, 0, $bytes.Length)
     $stream.Flush()
 }
 
-function Send-Json($stream, $value, [int]$status = 200) {
+function Send-Json($stream, $value, [int]$status = 200, $extraHeaders = @{}) {
     $bytes = [Text.Encoding]::UTF8.GetBytes(($value | ConvertTo-Json -Depth 15))
-    Send-Response $stream $status 'application/json; charset=utf-8' $bytes
+    Send-Response $stream $status 'application/json; charset=utf-8' $bytes $extraHeaders
 }
 
 function Send-Static($stream, [string]$path) {
@@ -35,7 +38,7 @@ function Send-Static($stream, [string]$path) {
         Send-Json $stream @{ error = 'not_found' } 404
         return
     }
-    $types = @{ '.html' = 'text/html; charset=utf-8'; '.js' = 'text/javascript; charset=utf-8'; '.css' = 'text/css; charset=utf-8'; '.json' = 'application/json; charset=utf-8' }
+    $types = @{ '.html' = 'text/html; charset=utf-8'; '.js' = 'text/javascript; charset=utf-8'; '.css' = 'text/css; charset=utf-8'; '.json' = 'application/json; charset=utf-8'; '.webmanifest' = 'application/manifest+json; charset=utf-8'; '.svg' = 'image/svg+xml' }
     Send-Response $stream 200 $types[[IO.Path]::GetExtension($full)] ([IO.File]::ReadAllBytes($full))
 }
 
@@ -110,6 +113,22 @@ function Dispatch-Task($task) {
     }
 }
 
+function Get-MobileHealth {
+    $bridge = Get-AI5CodexHealth
+    $worker = 'idle'
+    $lockPath = Join-Path $ServerRoot 'runtime\codex-worker.lock'
+    if (Test-Path $lockPath) {
+        $pidText = (Get-Content -Raw $lockPath -ErrorAction SilentlyContinue).Trim()
+        if ($pidText -match '^\d+$' -and (Get-Process -Id ([int]$pidText) -ErrorAction SilentlyContinue)) { $worker = 'running' }
+    }
+    $tailscalePath = Join-Path $env:ProgramFiles 'Tailscale\tailscale.exe'
+    $tailscaleState = 'not_installed'
+    if (Test-Path $tailscalePath) {
+        try { $tailStatus = & $tailscalePath status --json 2>$null | ConvertFrom-Json; $tailscaleState = if ($tailStatus.BackendState -eq 'Running') { 'connected' } else { 'authentication_required' } } catch { $tailscaleState = 'error' }
+    }
+    return [ordered]@{ server = 'online'; localApi = 'online'; bridge = $(if ($bridge.available) { 'ready' } else { 'unavailable' }); codex = $(if ($bridge.available) { 'available' } else { 'unavailable' }); worker = $worker; remote = $tailscaleState }
+}
+
 function New-Task($body, [string]$idem) {
     $route = Get-AI5Route $body.message
     $id = if ($body.taskId) { $body.taskId } else { 'task_' + [guid]::NewGuid().ToString('N').Substring(0, 12) }
@@ -133,12 +152,33 @@ try {
             if (!$request) { continue }
             $path = $request.Path
             $method = $request.Method
+            if ($path -eq '/api/session' -and $method -eq 'GET') {
+                $session = Get-AI5Session $request
+                if ($session) { Send-Json $stream @{ authenticated = $true; login = $session.login; name = $session.name; expiresAt = $session.expiresAt; local = [bool]$session.local } }
+                else { Send-Json $stream @{ authenticated = $false; identityAvailable = [bool](Get-AI5TailscaleIdentity $request) } 401 }
+                continue
+            }
+            if ($path -eq '/api/session' -and $method -eq 'POST') {
+                if (Test-AI5LoopbackHost $request) { Send-Json $stream @{ authenticated = $true; login = 'local-windows'; local = $true }; continue }
+                $identity = Get-AI5TailscaleIdentity $request
+                $origin = [string]$request.Headers['Origin']
+                $hostValue = [string]$request.Headers['Host']
+                if (!$identity -or ($origin -and $origin -ne "https://$hostValue")) { Write-AI5Log 'security' 'login_rejected' @{ host = $hostValue }; Send-Json $stream @{ error = 'authentication_failed' } 401; continue }
+                $created = New-AI5Session $identity
+                Write-AI5Log 'remote_access' 'login' @{ login = $identity.login }
+                Send-Json $stream @{ authenticated = $true; login = $created.record.login; name = $created.record.name; expiresAt = $created.record.expiresAt } 200 @{ 'Set-Cookie' = $created.cookie }
+                continue
+            }
+            if (!(Test-AI5LoopbackHost $request) -and !(Get-AI5TailscaleIdentity $request)) { Write-AI5Log 'security' 'anonymous_remote_rejected' @{ path = $path }; Send-Json $stream @{ error = 'authentication_required' } 401; continue }
+            $session = Get-AI5Session $request
+            if ($path.StartsWith('/api/') -and !$session) { Write-AI5Log 'security' 'anonymous_rejected' @{ path = $path }; Send-Json $stream @{ error = 'authentication_required' } 401; continue }
+            if ($path -eq '/api/logout' -and $method -eq 'POST') { $cookie = Remove-AI5Session $request; Write-AI5Log 'remote_access' 'logout' @{ login = $session.login }; Send-Json $stream @{ authenticated = $false } 200 @{ 'Set-Cookie' = $cookie }; continue }
             if ($path.StartsWith('/api/') -and $method -ne 'GET' -and $Csrf -ne $request.Headers['X-AI5-CSRF']) {
                 Write-AI5Log 'security' 'csrf_rejected' @{ path = $path }
                 Send-Json $stream @{ error = 'csrf' } 403
                 continue
             }
-            if ($method -eq 'GET' -and $path -eq '/api/health') { Send-Json $stream @{ ok = $true; service = 'ai5-hub'; mock = $Mock; csrfToken = $Csrf; time = [DateTime]::UtcNow.ToString('o') }; continue }
+            if ($method -eq 'GET' -and $path -eq '/api/health') { Send-Json $stream @{ ok = $true; service = 'ai5-hub'; mock = $Mock; csrfToken = $Csrf; components = (Get-MobileHealth); time = [DateTime]::UtcNow.ToString('o') }; continue }
             if ($method -eq 'GET' -and $path -eq '/api/status') {
                 $bridgeHealth = Get-AI5CodexHealth
                 $codexState = if ($Mock -or $bridgeHealth.available) { 'ready' } else { 'offline' }
@@ -158,14 +198,15 @@ try {
                 if ($task.requiresApproval) { $task.timeline += , [ordered]@{ status = 'waiting_approval'; label = 'Waiting for user approval'; at = [DateTime]::UtcNow.ToString('o') } }
                 Save-AI5Task $task
                 Write-AI5Log 'tasks' 'task_created' @{ task_id = $task.taskId; primary = $task.assignedPrimary; approval = $task.requiresApproval }
+                if ($task.requiresApproval) { $task | Add-Member -NotePropertyName approvalToken -NotePropertyValue (New-AI5ApprovalToken $task.taskId) -Force }
                 Send-Json $stream $task 202
                 if (!$task.requiresApproval) { Dispatch-Task $task }
                 continue
             }
-            if ($path -match '^/api/tasks/([^/]+)$' -and $method -eq 'GET') { $task = Get-AI5Task $Matches[1]; if ($task -and !$Mock -and $task.assignedPrimary -eq 'codex' -and $task.status -in @('queued', 'running')) { Start-AI5CodexWorker | Out-Null }; if ($task) { Send-Json $stream $task } else { Send-Json $stream @{ error = 'not_found' } 404 }; continue }
+            if ($path -match '^/api/tasks/([^/]+)$' -and $method -eq 'GET') { $task = Get-AI5Task $Matches[1]; if ($task -and !$Mock -and $task.assignedPrimary -eq 'codex' -and $task.status -in @('queued', 'running')) { Start-AI5CodexWorker | Out-Null }; if ($task) { if ($task.status -eq 'waiting_approval') { $task | Add-Member -NotePropertyName approvalToken -NotePropertyValue (New-AI5ApprovalToken $task.taskId) -Force }; Send-Json $stream $task } else { Send-Json $stream @{ error = 'not_found' } 404 }; continue }
             if ($path -match '^/api/tasks/([^/]+)/result$' -and $method -eq 'GET') { $task = Get-AI5Task $Matches[1]; if (!$task) { Send-Json $stream @{ error = 'not_found' } 404 } elseif ($task.result) { Send-Json $stream @{ taskId = $task.taskId; status = $task.status; result = $task.result; bridge = $task.bridge } } else { Send-Json $stream @{ taskId = $task.taskId; status = $task.status; result = $null } 202 }; continue }
-            if ($path -match '^/api/tasks/([^/]+)/approve$' -and $method -eq 'POST') { $task = Get-AI5Task $Matches[1]; if (!$task) { Send-Json $stream @{ error = 'not_found' } 404; continue }; if ($task.status -ne 'waiting_approval') { Send-Json $stream @{ error = 'invalid_state' } 409; continue }; $task.approval.status = 'approved'; Update-State $task 'queued' 'User approved'; Send-Json $stream $task; Dispatch-Task $task; continue }
-            if ($path -match '^/api/tasks/([^/]+)/cancel$' -and $method -eq 'POST') { $task = Get-AI5Task $Matches[1]; if (!$task) { Send-Json $stream @{ error = 'not_found' } 404; continue }; if ($task.status -in @('completed', 'failed', 'cancelled')) { Send-Json $stream @{ error = 'invalid_state' } 409; continue }; Update-State $task 'cancelled' 'User cancelled'; Send-Json $stream $task; continue }
+            if ($path -match '^/api/tasks/([^/]+)/approve$' -and $method -eq 'POST') { $task = Get-AI5Task $Matches[1]; if (!$task) { Send-Json $stream @{ error = 'not_found' } 404; continue }; if ($task.status -ne 'waiting_approval') { Send-Json $stream @{ error = 'invalid_state' } 409; continue }; $body = Parse-Body $request; if (!(Use-AI5ApprovalToken $task.taskId $body.approvalToken)) { Write-AI5Log 'security' 'approval_rejected' @{ task_id = $task.taskId }; Send-Json $stream @{ error = 'invalid_approval_token' } 403; continue }; $task.approval.status = 'approved'; Update-State $task 'queued' 'User approved'; Write-AI5Log 'security' 'approval' @{ task_id = $task.taskId; login = $session.login }; Send-Json $stream $task; Dispatch-Task $task; continue }
+            if ($path -match '^/api/tasks/([^/]+)/(cancel|reject)$' -and $method -eq 'POST') { $task = Get-AI5Task $Matches[1]; if (!$task) { Send-Json $stream @{ error = 'not_found' } 404; continue }; if ($task.status -in @('completed', 'failed', 'cancelled')) { Send-Json $stream @{ error = 'invalid_state' } 409; continue }; Update-State $task 'cancelled' 'User rejected'; Write-AI5Log 'security' 'rejection' @{ task_id = $task.taskId; login = $session.login }; Send-Json $stream $task; continue }
             if ($path.StartsWith('/api/')) { Send-Json $stream @{ error = 'not_found' } 404 } else { Send-Static $stream $path }
         } catch {
             Write-AI5Log 'errors' 'request_failed' @{ error = $_.Exception.Message }

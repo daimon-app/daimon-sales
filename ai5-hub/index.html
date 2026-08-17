@@ -4,7 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#07120f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AI5 HUB">
   <title>AI5 HUB</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/ai5-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/ai5-icon.svg">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -20,7 +26,7 @@
     <main class="chat">
       <header>
         <div><h1>ゼロ</h1><p><span id="connectionDot" class="online-dot checking"></span><span id="connectionText">Local API確認中</span></p></div>
-        <button id="flowButton" class="ghost">施工フロー</button>
+        <div class="header-actions"><button id="logoutButton" class="ghost subtle">ログアウト</button><button id="flowButton" class="ghost">施工フロー</button></div>
       </header>
 
       <section id="messages" class="messages" aria-live="polite"></section>
@@ -48,6 +54,7 @@
       <div id="approvalArea" class="approval-empty">現在、本人確認が必要な操作はありません。</div>
     </aside>
   </div>
+  <div id="authGate" class="auth-gate" hidden><div><span class="brand-mark">五</span><h2>AI5 HUB</h2><p>本人認証が必要です。Tailscale接続を確認してログインしてください。</p><button id="loginButton">ログイン</button><small id="authError"></small></div></div>
   <script src="app.js"></script>
 </body>
 </html>

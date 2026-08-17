@@ -2,6 +2,8 @@
 
 AI5 HUBは、鉄兵がZeroだけへ自然文で指示し、Zeroが目的・安全条件・担当AI・完了条件を判断するローカル施工司令室です。Phase 2では、既存LINE風UIと実証済みZero-Codex Bridgeを統合し、公式Codex CLIによるPC施工と結果返却まで実働します。
 
+Phase 2.5のスマホ実働化コードは施工済みです。PWA、Tailscale Serve向け本人認証、8時間セッション、one-time承認token、offline表示、自動起動スクリプトを追加しました。現在のPCはWindows Installerの再起動待ち状態のため、Tailscale本体の導入・OAuth・実機試験のみ保留です。詳細は [MOBILE_SETUP.md](./MOBILE_SETUP.md) を参照してください。
+
 ## 実装状況
 
 | 機能 | 状態 |
@@ -12,6 +14,10 @@ AI5 HUBは、鉄兵がZeroだけへ自然文で指示し、Zeroが目的・安�
 | 承認UI | ✅ 承認・中止 |
 | Zero-Codex Bridge | ✅ Phase 1資産を統合 |
 | Codex Remote | ✅ 公式 `codex exec --json` 実接続 |
+| PWA / スマホUI | ✅ 実装・4幅検査済み |
+| Tailscale private HTTPS | 🚧 PC再起動・本人OAuth待ち |
+| Mobile session / logout | ✅ 実装・擬似identity検査済み |
+| One-time承認token | ✅ 期限・再利用拒否 |
 | Claude Code CLI | ⬜ 未接続 |
 | Gemini Chrome | ⬜ 未接続 |
 | Manus Chrome | ⬜ 未接続 |
@@ -25,7 +31,9 @@ AI5 HUBは、鉄兵がZeroだけへ自然文で指示し、Zeroが目的・安�
 ai5-hub/
 ├─ index.html / styles.css / app.js      # 既存LINE風UI
 ├─ launch-ai5-hub.cmd                    # 通常起動（ダブルクリック）
-├─ start.ps1 / test.ps1
+├─ start.ps1 / start-mobile.ps1 / test.ps1
+├─ manifest.webmanifest / service-worker.js / icons/
+├─ install-autostart.ps1                 # ログイン時自動起動
 ├─ integrations/codex/zero-codex-bridge # commit 09632f5由来Bridge
 └─ server/
    ├─ server.ps1                         # localhost API
@@ -43,7 +51,7 @@ ai5-hub/
 
 ## 起動方法
 
-通常は `launch-ai5-hub.cmd` をダブルクリックします。サーバーと `http://127.0.0.1:43125/` が起動し、PowerShell・queue・JSONを本人が操作する必要はありません。
+通常は `launch-ai5-hub.cmd` をダブルクリックします。Tailscale設定済みならprivate HTTPS Serveも起動します。サーバーは引き続き `127.0.0.1:43125` だけで待受け、ルーターのポート開放は不要です。
 
 開発時は次でも起動できます。
 
@@ -74,6 +82,10 @@ $env:AI5_MOCK='true'
 
 - サーバーは `127.0.0.1` のみにbindし、外部公開しません。
 - UI書込は起動ごとのCSRFトークンを要求します。
+- スマホ経路はTailscale端末identityとtailnet ACLで匿名アクセスを拒否します。
+- remote sessionは8時間。cookieはSecure、HttpOnly、SameSite=Strictです。
+- logout時はサーバー側sessionを無効化します。
+- dangerous task承認tokenはtask ID紐付け、5分期限、SHA-256保存、一度だけ利用可能です。
 - Local APIからBridgeへの投入は、実行時生成する256-bit HMAC shared secretで署名します。
 - secretは `server/runtime/bridge.secret` にのみ置き、Git・UI・ログへ出しません。
 - task ID、Idempotency-Key、Bridge queue、worker lockの各層で二重実行を防ぎます。
@@ -105,6 +117,8 @@ Phase 2受け入れ実績（2026-08-17）：
 | H 完了後の再読込 | ✅ 結果を会話履歴へ復元 |
 
 ブラウザE2EではCodex接続表示、状態遷移、技術詳細、360/390/412/430pxの横あふれなしも確認済みです。
+
+Phase 2.5検査では、既存Codex実施工、匿名401、擬似Tailscale identity login、Secure session、logout、通信断後の結果保持、Bridge停止、PC offline UX、duplicate、CSRF、HMAC改ざん、dangerous task停止、one-time承認、4種類のスマホ幅を確認済みです。private HTTPS実機、Android/iPhoneホーム画面追加はTailscale導入後に実施します。
 
 ## 環境変数
 
