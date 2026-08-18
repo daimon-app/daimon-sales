@@ -16,8 +16,8 @@
   if ($usesKnowledge -and $primary -ne 'notebooklm') { $secondary += 'notebooklm' }
   if ($usesKnowledge -and $text -match '実装|コード|現在|正本|矛盾') { $secondary += 'claude' }
   $approvalPatterns = [ordered]@{
-    external_publish='公開|本番公開|販売開始|リリース'; payment='課金|購入|決済|送金|契約|プラン変更';
-    destructive='削除|消去|reset --hard|push --force'; credential='認証情報|パスワード|api.?key|トークン|アカウント変更'; external_send='メール送信|sns投稿|第三者へ送信'
+    payment='課金|購入|決済|送金|契約|プラン変更'; destructive='削除|消去|reset --hard|push --force';
+    credential='認証情報|パスワード|api.?key|トークン|アカウント変更'; external_send='メール送信|sns投稿|第三者へ送信'; external_publish='公開|本番公開|販売開始|リリース'
   }
   $approvalType=$null
   foreach($entry in $approvalPatterns.GetEnumerator()){if($text -match $entry.Value){$approvalType=$entry.Key;break}}
