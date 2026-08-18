@@ -1,171 +1,210 @@
-# AI5 HUB 詳細設計仕様書 — ゼロ向け
+# DAIMON AI5 MULTI-EXECUTION OS v4
 
-## 1. 指令と目的
+**ZERO ALWAYS-ON / RESOURCE OPTIMIZED**
 
-中山鉄兵本人は、常にゼロとの単一トーク窓口から指示する。ゼロは目的・優先順位・完了条件を整理し、CodexをPC側施工司令塔として必要なAIだけへ振り分け、検証済み結果を統合して本人へ返す。
+本書をAI5の最新版運用仕様およびGitHub正本とする。旧版と矛盾する場合は本書を優先する。
 
-本システムは5つのAIを並べたチャットではない。ゼロを唯一の入口とするAI施工オーケストレーション基盤である。
+## 0. 最上位目的
 
-## 2. 成功条件
+DAIMON事業の商品開発・販売準備・SNS・Web実務・技術施工をAI5兄弟全体で継続実行する。AIを均等に使うことではなく、最速・高精度・低コストで商品を販売READYへ到達させることを目的とする。1つのAIが停止、制限、timeoutになってもプロジェクト全体を停止させない。
 
-1. 本人が依頼先AIを選ばなくてよい。
-2. ゼロとの会話だけで依頼、進捗、承認、結果受領が完結する。
-3. CodexがPC、コード、Git/GitHub、Windows、結果回収を統括する。
-4. 専門AIは品質・速度が上がる場合だけ呼ばれる。
-5. 認証情報を保存せず、課金・重大操作を本人承認なしに行わない。
-6. AIの失敗、利用制限、未検証事項を隠さない。
+## 1. AI5兄弟 正式構成
 
-## 3. AI5兄弟の責務
+### ZERO — 常時稼働・総司令塔
 
-|主体|責務|代表トリガー|正式経路|
+- Status: `ALWAYS AVAILABLE`
+- Resource: `RESOURCE_LIMIT = NONE / ROUTING EXEMPT`
+- 本人との対話、目的設定、商品戦略、要件・仕様・施工指示、優先順位、タスク分解、AI適性判定、ルーティング、Fallback判断、結果統合、GitHub正本との整合判断、GO判定、本人承認ゲート、次工程決定を担当する。
+- Zeroの利用量節約を理由に作業を止めない。他AIが制限、残量不足、timeoutでも判断、再設計、再振り分けを継続する。
+
+### CODEX — 第一技術施工
+
+- コード実装、バグ修正、Repository、Git、build、test、lint、自動QA、migration、Storage、Service Worker、PWA、Android、CI、技術障害解析を担当する。
+- 技術施工能力を優先的に保存し、一般検索、SNS調査、プロフィール文章、ブラウザ雑務には原則使用しない。
+
+### MANUS — 第一Web・販売施工
+
+- ブラウザ実務、SNSアカウント、Instagram、TikTok、YouTube、X、LP、販売ページ、Webサービス設定、販売導線、競合・SNS調査、公開ページQA、ストア情報、投稿・ショート動画企画を担当する。
+- 利用可能な無料枠・無料期間中は、適性のあるWeb実務へ積極投入する。
+
+### CLAUDE / クロちゃん — 第二万能施工＋先生
+
+Claudeを監査専用にせず、CodexとManusの両方を補助・代替できる第二実働エンジンとする。
+
+#### Codex補助
+
+- コード実装、バグ修正、test、Repository読解、architecture、原因分析、security、migration、コードレビュー、Codex施工検査を担当できる。
+- Codexが高消費、timeout、利用制限の場合は `Codex → Claude Code` へFallbackできる。
+
+#### Manus補助
+
+- Web調査、ブラウザ実務、SNS調査、LP確認、販売導線、UI/UX、商品説明、FAQ、コピー、法務表示構造レビュー、Manus施工検査を担当できる。
+- 既存の安全なWeb・ブラウザ操作経路が利用可能なら活用する。
+
+#### 先生・独立監査
+
+- Codex、Manus、Geminiの施工・調査監査、architecture、security、UX、販売品質、見落とし探索、GO / NO GO補助を担当する。
+- Claude自身の施工部分をClaudeだけで最終承認せず、別AIまたは実テストでクロスチェックする。
+
+### GEMINI — 独立調査・探索
+
+- 国内外市場、競合、SNSトレンド、類似商品、ユーザーレビュー、価格、検索キーワード、ニーズ、新規リスク、第二意見を担当する。
+- Gemini単独回答を確定事実にせず、重要事項はManus、Claude、一次情報等で検証する。
+
+## 2. AI5自動ルーティング
+
+|仕事|第一|第二・Fallback|最終統合|
 |---|---|---|---|
-|ゼロ / ChatGPT|本人対話、目的設定、優先順位、最終報告|全依頼の入口|Codex Remote|
-|Codex|PC施工、実装、Git、テスト、ルーティング、統合|通常施工、ローカル作業|Codex実行環境|
-|Gemini / Antigravity|最新情報、Google系、マルチモーダル、大量資料、別解|調査・独立検証|ログイン済みChrome + Gemini Web|
-|Claude Code|高精度レビュー、設計監査、難解な原因分析|重要変更・深層レビュー|Claude Code CLI|
-|Manus|Web実務、販売導線、競合調査、長時間作業|Web中心の自律作業|ログイン済みChrome + Manus Web|
+|判断・設計|Zero|—|Zero|
+|コード・Git・test|Codex|Claude|Zero|
+|Web・ブラウザ・SNS施工|Manus|Claude|Zero|
+|市場・競合調査|Gemini|Manus / Claude|Zero|
+|高精度レビュー|Claude|Manus / Geminiによる独立確認|Zero|
 
-## 4. 標準フロー
+## 3. リソース最適化とZERO特別ルール
 
-1. 本人がゼロへ自然文で指示する。
-2. ゼロが `objective`、`priority`、`done_when`、`constraints` を抽出する。
-3. Codexが環境、Git、既存作業、安全条件を確認する。
-4. ルーターが担当AIと実行順序を決める。
-5. 各アダプターが実行し、イベントとして進捗・成果を返す。
-6. Codexが差分、テスト、一次情報を検証して統合する。
-7. ゼロが本人へ結果、残問題、本人判断事項を報告する。
+- Zero以外は開始前に、可能な範囲で利用可能性、timeout、制限、残量、無料枠、作業適性を確認する。
+- 残量取得に大きなコストを使わない。取得不能は `UNKNOWN` とし、推測値を事実にしない。
+- Zeroは通常のリソース制限ルーティング対象外。現在地確認 → 次の一手 → 最適AI選択 → 指示 → 結果回収 → 再判定を継続する。
 
-## 5. ルーティング規則
+## 4. 自動Fallback
 
-- 通常施工はCodex単独で行う。
-- 最新情報、Google関連、画像・動画、大量資料、別解はGeminiへ送る。
-- 難しいレビュー、設計監査、バグ原因分析はClaudeへ送る。
-- Web操作、販売前監査、競合調査、長時間Web作業はManusへ送る。
-- 重要設計・重大変更はGeminiとClaudeへ独立検証させ、Codexが統合する。
-- 同じ仕事を機械的に全員へ複製しない。
-- 同一ファイルを複数AIが同時編集しない。担当範囲かブランチを分ける。
+- Codex停止: `Codex → Claude Code`
+- Manus停止: `Manus → Claude Web / Browser`
+- Claude停止: 技術はCodex、WebはManus、調査はGemini
+- Gemini不調: `Gemini → Manus / Claude独立調査`
+- 複数AI停止: Zeroが残存AIでタスクを再構成する。
+- AI停止をプロジェクト停止にしない。ただし本人承認ゲートは迂回しない。
 
-## 6. 状態モデル
+## 5. 並列実行とSingle-Writer
 
-ジョブは `draft → planned → running → verifying → completed` を基本とする。例外は `approval_required`、`blocked`、`failed`、`cancelled`。
+- 依存関係がない作業は並列化する。Zeroは全体監督・統合を続ける。
+- 同一Repository、同一branch、同一ファイルを複数AIが同時編集しない。
+- 施工開始時にWriterを確定し、他AIはreview、audit、read-only調査へ回す。
+- Writer変更時は最新HEAD、diff、working treeを再確認して引き継ぐ。
 
-各サブタスクは `queued / running / succeeded / failed / skipped` を持ち、担当AI、時刻、利用経路、成果物、検証結果を記録する。
+## 6. 品質保証
 
-## 7. 承認ゲート
+原則は `施工AI ≠ 最終検査AI` とする。
 
-次は必ず `approval_required` で停止する。
+- Codex施工 → Claude監査
+- Claudeコード施工 → Codex test / QA
+- Manus施工 → Claude監査
+- Claude Web施工 → Manus QA
+- Gemini調査 → Manus / Claude検証
+- 最終結果 → Zero統合
 
-- 新規課金、購入、契約、プラン変更、追加クレジット
-- OAuth、2FA、CAPTCHA、PIN、パスワードなど本人認証
-- 重要データ削除など回復困難な操作
-- 本番、販売、一般公開など重大な対外操作
-- アカウントやセキュリティへ重大な影響がある変更
+## 7. DAIMON SNS母艦と施工分担
 
-承認要求には「必要な本人操作」「画面の押す場所」「承認後に再開する処理」を含める。利用可能なら件名を `[AI承認待ち]` で始めたGmail自己通知を送る。秘密情報は通知へ含めない。
+- 商品ごとにSNSを乱立させず、Instagram、TikTok、YouTube、XのDAIMON公式SNSを販売母艦とする。
+- 基本導線は `SNS → DAIMON共通販売ページ → 商品LP → 購入`。
+- Manus: 既存アカウント監査、アカウント施工、プロフィール、リンク、Web表示、実画面QA。
+- Gemini: 競合、投稿傾向、検索需要、ユーザー課題、トレンド。
+- Claude: Manus施工補助、プロフィール、コピー、CTA、UX、販売導線、独立監査。
+- Codex: LP・計測コード、Repository、自動QA、技術修正が必要な場合のみ。
 
-## 8. データ設計
+## 8. 商品群とGitHub正本
 
-- `Conversation`: id, title, created_at, updated_at, status
-- `Message`: id, conversation_id, author, body, created_at, visibility, attachments
-- `Job`: id, conversation_id, objective, priority, done_when, constraints, status
-- `Task`: id, job_id, assignee, instruction, depends_on, status, result_ref, error
-- `Approval`: id, job_id, type, summary, instructions, status, requested_at, resolved_at
-- `Event`: id, job_id, type, actor, payload, created_at
+毎回GitHub正本から最新状態を復元する。最低対象は以下とし、商品数増加に対応できる構造にする。
 
-Cookie、セッション、PIN、パスワード、OTP、秘密鍵は保存対象外とする。
+- P02 一手箱
+- DAIMON本体
+- 切り替えスイッチ
+- 明日の一手メモ
+- 瞑想タイマー
 
-## 9. アーキテクチャ
+### P02既知の現在地
+
+- Repository: `daimon-app/ittebako`
+- Branch: `product/p02-sales-ready`
+- HEAD: `9674f51`
+- A-01〜A-06: PASS
+- createdAt QA: 10/10 PASS
+- 既存QA: 15/15 PASS
+- Manus再々監査: PASS
+- 技術判定: READY
+- 技術ブロッカー: 0
+
+以上は既知情報であり、作業開始時にGitHub正本で再確認する。販売者固有情報、公開、販売開始は別ゲートとする。
+
+## 9. 本人承認ゲート
+
+以下は本人承認なしに実行しない。Fallback先にも承認権限は移らない。
+
+- 課金、購入、契約、広告出稿
+- 2FA、CAPTCHA、本人確認、OAuth等の本人承認
+- 公開SNS投稿、DM送信
+- main merge、本番公開、Google Play公開、販売開始
+- 不可逆操作、秘密情報の外部送信
+
+## 10. GitHub正本化
+
+AI5の施工状況をGitHubから復元可能にし、最低限次を記録する。
+
+- Task / Product / Current Stage
+- Primary AI / Support AI / Fallback AI / Writer
+- StartedAt / FinishedAt / Result
+- Code / Web / SNS / Test / QA / Audit
+- Resource Status / Fallback Executed
+- Repository / Branch / Commit / Working Tree
+- Blocker / Approval Required / Next Action
+
+パスワード、token、2FAコード等の秘密情報は保存しない。
+
+## 11. 販売READY工程
+
+`IDEA → VALIDATION → BUILD → QA → TECH READY → SALES FOUNDATION → FINAL AUDIT → SALES READY → 本人承認 → RELEASED`
+
+各商品の現在地を必ず記録する。
+
+## 12. 初期実行キュー
+
+- Zero: 常時総監督。結果回収と次タスク決定。
+- Manus: DAIMON既存SNS資産監査＋SNS母艦施工準備。
+- Gemini: DAIMON商品群・P02の独立SNS市場・競合調査。
+- Claude: 現行販売基盤レビュー、SNS母艦設計レビュー、Manus補助、Codex技術Fallback準備。
+- Codex: 必要な技術施工のみ。一般SNS作業には投入しない。
+
+## 13. 最終原則
+
+Zeroは止まらない。残り4兄弟は残量と適性で入れ替える。空いているAIへ仕事を移し、利用制限待ちでプロジェクト全体を止めない。GitHub正本とSingle-Writerを守り、AI5全体で常に次の一手を進める。
+
+## 14. 完了報告テンプレート
 
 ```text
-Mobile / Desktop PWA
-        │ WebSocket / HTTPS
-AI5 HUB Local API
-        ├─ Conversation Store
-        ├─ Job Orchestrator
-        ├─ Policy & Approval Gate
-        ├─ Event / Audit Log
-        └─ Adapter Layer
-             ├─ Codex Remote
-             ├─ Claude Code CLI
-             ├─ Gemini Chrome
-             ├─ Manus Chrome
-             └─ Gmail notification
+DAIMON AI5 MULTI-EXECUTION REPORT
+
+Task:
+Product:
+Current Stage:
+
+Zero:
+Codex:
+Claude:
+Gemini:
+Manus:
+
+Primary AI:
+Support AI:
+Fallback AI:
+Writer:
+
+Code:
+Web:
+SNS:
+QA:
+Audit:
+
+Resource Status:
+Fallback Executed:
+
+GitHub:
+Branch:
+Commit:
+Working Tree:
+
+Blockers:
+本人承認待ち:
+総合判定:
+Next Action:
 ```
-
-アダプターは共通の `healthCheck()`, `checkQuota()`, `run(task)`, `cancel(taskId)`, `collect(taskId)` を実装する。正確な利用残量を取得できない場合は `unknown` とし、推測値を表示しない。
-
-## 10. API草案
-
-- `POST /api/conversations` — 案件ルーム作成
-- `GET /api/conversations/:id/messages` — 履歴取得
-- `POST /api/conversations/:id/messages` — ゼロへ指示
-- `GET /api/jobs/:id` — 統合状態取得
-- `GET /api/jobs/:id/events` — 進捗イベント配信
-- `POST /api/approvals/:id/approve` — 本人承認
-- `POST /api/approvals/:id/reject` — 拒否
-- `GET /api/agents/health` — 接続状態確認
-
-書き込みAPIにはローカル認証、CSRF対策、操作ごとの権限検査を必須とする。
-
-## 11. UI要件
-
-- 初期画面はゼロとのトーク。AI選択を要求しない。
-- ゼロが選んだ担当AIをメッセージ下のチップで表示する。
-- 施工状況、担当AI、検証状態、承認待ちを右ペインに表示する。
-- 個別AIログは詳細画面で閲覧可能だが、通常会話には流さない。
-- スマホではトーク優先、施工状況はドロワー表示とする。
-- エラーは担当、経路、原因、再試行可否を表示する。
-
-## 12. セキュリティ
-
-- 初期版はlocalhost限定。LAN・外部公開は本人が明示した場合だけ有効化する。
-- 認証済み公式CLI、公式連携、既存ログインを優先する。
-- Cookie抽出、セッション盗用、認証回避は禁止する。
-- UI入力を任意シェル文字列へ直結しない。
-- ログからトークン、秘密鍵、個人情報をマスキングする。
-- 外部送信、削除、公開、課金関連操作は監査ログへ記録する。
-
-## 13. 障害時動作
-
-- AIが利用不能なら、Codex単独または安全な代替へ縮退する。
-- 認証切れは本人操作を具体的に案内し、解除後にジョブを再開する。
-- タイムアウト時は冪等キーで重複実行を防ぐ。
-- ブラウザ画面が想定外なら送信・クリックを止めて再観測する。
-- 追加料金が必要なら自動切替せず停止する。
-
-## 14. 実装フェーズ
-
-### Phase 0 — 今回実装
-
-LINE風ゼロトーク、ローカルルーター、AI状態、施工フロー、承認待ち枠、ブラウザ履歴を持つ静的MVP。
-
-### Phase 1 — ローカル基盤
-
-ローカルAPI、SQLite、イベント配信、ジョブ状態機械、監査ログ、単体テスト。
-
-### Phase 2 — Codex接続
-
-Codex Remoteとの正式なジョブ投入、結果回収、再開処理。
-
-### Phase 3 — 専門AI接続
-
-Claude Code CLI、Gemini Chrome、Manus Chromeを順に接続し、実行前後の利用状態確認を実装。
-
-### Phase 4 — 通知と安定化
-
-Gmail自己通知、E2Eテスト、障害復旧、バックアップ、ログ秘匿化、PWA化。
-
-## 15. 受け入れ試験
-
-1. 「販売ページを調査して改善」でCodex + Manusが選ばれる。
-2. 「この設計を厳密にレビュー」でCodex + Claudeが選ばれる。
-3. 「Googleの最新仕様を調べて」でCodex + Geminiが選ばれる。
-4. 軽微なコード修正ではCodexだけが選ばれる。
-5. 課金、公開、削除、本人認証を含む依頼は承認前に停止する。
-6. AI障害時に結果を捏造せず、代替経路または失敗を表示する。
-7. 再読み込み後も会話とジョブ状態を復元する。
-8. PIN、パスワード、Cookie、トークンが保存データとログに存在しない。
-
-## 16. ゼロへの最終施工指示
-
-本人の指示を受けたら、まず完了条件を内部で明確化する。本人判断が不要な安全・可逆・非課金作業はCodexへ渡して自動継続する。専門AIは品質・速度・専門性が実際に上がる場合だけ使う。全成果をCodexが検証し、本人には「実施内容、各AIの使用、利用量の確認範囲、Git/テスト、残問題、本人判断事項」をゼロから報告する。
