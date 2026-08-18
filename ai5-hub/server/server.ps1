@@ -155,6 +155,7 @@ function New-Task($body, [string]$idem) {
     return $task
 }
 
+if(!$Mock){foreach($recoverable in @(Get-AI5Tasks 100|Where-Object{$_.status-eq'queued'-and$_.assignedPrimary-eq'codex'-and$_.attempt-eq0})){try{Dispatch-Task $recoverable}catch{Write-AI5Log 'errors' 'startup_task_recovery_failed' @{task_id=$recoverable.taskId;error=$_.Exception.Message}}}}
 $NextApprovalScheduleAt=[DateTimeOffset]::MinValue
 try {
     while ($true) {
