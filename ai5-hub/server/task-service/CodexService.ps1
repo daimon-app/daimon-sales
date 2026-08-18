@@ -17,6 +17,12 @@ function Initialize-AI5CodexService {
     }
 }
 
+function Write-AI5Utf8Json {
+    param($Value, [string]$Path, [int]$Depth = 8)
+    $json = $Value | ConvertTo-Json -Depth $Depth
+    [IO.File]::WriteAllText($Path, $json, [Text.UTF8Encoding]::new($false))
+}
+
 function Get-AI5CodexSignature {
     param([string]$TaskId, [string]$Instruction)
     $key = [Convert]::FromBase64String((Get-Content -Raw $script:CodexSecretPath).Trim())
@@ -78,7 +84,7 @@ function Submit-AI5CodexTask {
     $path = Join-Path $script:CodexInbox ($Task.taskId + '.json')
     if (Test-Path $path) { return [ordered]@{ accepted = $false; duplicate = $true; workerStarted = (Start-AI5CodexWorker) } }
     $temp = "$path.tmp"
-    $envelope | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $temp -Encoding UTF8
+    Write-AI5Utf8Json $envelope $temp 8
     Move-Item -LiteralPath $temp -Destination $path
     return [ordered]@{ accepted = $true; duplicate = $false; workerStarted = (Start-AI5CodexWorker) }
 }

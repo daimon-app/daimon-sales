@@ -17,6 +17,15 @@ $taskRoot = Join-Path $ServerRoot 'data\tasks'
 $logRoot = Join-Path $ServerRoot 'logs\tasks'
 New-Item -ItemType Directory -Force $logRoot | Out-Null
 
+function Read-Utf8Json([string]$path) {
+    return [IO.File]::ReadAllText($path, [Text.UTF8Encoding]::new($false)) | ConvertFrom-Json
+}
+
+function Write-Utf8Json($value, [string]$path, [int]$depth = 15) {
+    $json = $value | ConvertTo-Json -Depth $depth
+    [IO.File]::WriteAllText($path, $json, [Text.UTF8Encoding]::new($false))
+}
+
 function Get-Signature($id, $instruction) {
     $key = [Convert]::FromBase64String((Get-Content -Raw $secretPath).Trim())
     $hmac = [Security.Cryptography.HMACSHA256]::new($key)
@@ -31,7 +40,7 @@ function Get-Signature($id, $instruction) {
 function Save-Task($task, $path) {
     $task.updatedAt = [DateTime]::UtcNow.ToString('o')
     $temp = "$path.tmp"
-    $task | ConvertTo-Json -Depth 15 | Set-Content -LiteralPath $temp -Encoding UTF8
+    Write-Utf8Json $task $temp 15
     Move-Item -LiteralPath $temp -Destination $path -Force
 }
 
@@ -79,14 +88,14 @@ try {
 
         $idlePasses = 0
         $currentEnvelopePath = $file.FullName
-        $envelope = Get-Content -Raw $file.FullName | ConvertFrom-Json
+        $envelope = Read-Utf8Json $file.FullName
         $currentTaskPath = Join-Path $taskRoot ($envelope.task_id + '.json')
         if (!(Test-Path $currentTaskPath)) {
             Remove-Item -LiteralPath $file.FullName -Force
             continue
         }
 
-        $currentTask = Get-Content -Raw $currentTaskPath | ConvertFrom-Json
+        $currentTask = Read-Utf8Json $currentTaskPath
         Set-TaskProperty $currentTask 'attempt' ([int]$currentTask.attempt + 1)
         $expected = Get-Signature $envelope.task_id $envelope.instruction
         if ($envelope.signature -ne $expected) {
