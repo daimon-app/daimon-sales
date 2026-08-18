@@ -4,7 +4,7 @@ if ($HostName -notin @('127.0.0.1','::1','localhost')) { throw 'AI5 HUB refuses 
 $ServerRoot = if ($global:AI5ServerRoot) { $global:AI5ServerRoot } else { $PSScriptRoot }
 $AppRoot = Split-Path $ServerRoot
 
-foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\NotebookLMAdapter.ps1')) {
+foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\NotebookLMAdapter.ps1')) {
     . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $ServerRoot $module))))
 }
 Initialize-AI5Store $ServerRoot
@@ -143,11 +143,12 @@ function New-Task($body, [string]$idem) {
         task_id=$id;taskId = $id; parent_task_id=$null;title=$route.objective;conversationId = $body.conversationId; message = Protect-AI5Text $body.message; objective = $route.objective;constraints=@($body.constraints)
         source = $(if ($body.source) { $body.source } else { 'teppei' }); priority = $(if ($body.priority) { $body.priority } else { 'normal' })
         assigned_agent=$route.primary;status = $(if ($route.requiresApproval) { 'waiting_approval' } else { 'queued' });canonical_status=$(if ($route.requiresApproval){'WAITING_APPROVAL'}else{'RECEIVED'});approval_level=$(if($route.requiresApproval){'RED'}elseif($route.risk-eq'medium'){'YELLOW'}else{'GREEN'});attempt=0;max_attempts=3;assignedPrimary = $route.primary; assignedSecondary = $route.secondary
-        requiresApproval = $route.requiresApproval; approval = $approval; field_mode=$(if($null-ne$body.fieldMode){[bool]$body.fieldMode}else{$true}); route = $route; validation=[ordered]@{};artifacts=@();result = $null
+        requiresApproval = $route.requiresApproval; approval = $approval; field_mode=$(if($null-ne$body.fieldMode){[bool]$body.fieldMode}else{$true}); field_decision=$null; execution_plan=(Get-AI5ExecutionPlan $route); failure_fingerprints=@(); route = $route; validation=[ordered]@{};artifacts=@();result = $null
         timeline = @([ordered]@{ status = 'RECEIVED'; label = '依頼受付'; at = $now })
         children=@();idempotencyKey = $idem; created_at=$now;updated_at=$now;createdAt = $now; updatedAt = $now
     }
     $task.children=New-AI5Children $task $route
+    $task.field_decision=Get-AI5FieldModeDecision $route $task.field_mode
     return $task
 }
 
