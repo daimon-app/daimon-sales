@@ -10,8 +10,8 @@ Updated: 2026-08-18
 | HUB承認完結 | PASS (local API) | one-time token + `/api/tasks/:id/approve` E2E |
 | Codex実働 | PASS (Phase 2.5 evidence) | Android/iPhoneから実施工・結果返却 |
 | Claude実働 | PASS | 2026-08-18 CLI read-only result `PHASE3_CLAUDE_OK` |
-| Gemini実働 | UNVERIFIED (Phase 3) | Phase 2.5疎通記録のみ |
-| Manus実働 | UNVERIFIED (Phase 3) | Phase 2.5疎通記録のみ |
+| Gemini実働 | PASS | 2026-08-18 Chrome read-only result `PHASE3_GEMINI_OK` |
+| Manus実働 | PASS | 2026-08-18 Chrome read-only result `PHASE3_MANUS_OK`; 前後ともクレジット消費なし表示 |
 | NotebookLM read-only | PASS (interactive Chrome) | `AI5 HUB Knowledge Base`, 3 sources, cited answer |
 | NotebookLM unattended Adapter | UNVERIFIED | consumer公式APIなし。常駐Chrome controller未実証 |
 | AI自動ルーティング | PASS (decision engine) | Router tests + mixed knowledge/code route |
@@ -36,4 +36,4 @@ Updated: 2026-08-18
 
 Phase 3: `PARTIAL`
 
-Phase 3 SUCCESSには、Gemini/ManusのPhase 3実疎通、unattended NotebookLM経路、background通知、実配信後のAndroid/iPhone/再起動E2Eが必要。
+Phase 3 SUCCESSには、unattended NotebookLM経路、background通知、実配信後のAndroid/iPhone/再起動E2Eが必要。
