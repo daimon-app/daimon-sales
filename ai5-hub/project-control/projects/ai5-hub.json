@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1, "projectId": "ai5-hub", "name": "AI5 HUB / Zero-Codex Bridge",
+  "repository": {"owner":"daimon-app","name":"daimon-sales","defaultBranch":"main","activeBranch":"feat/project-control","latestCommit":"478171edd0c7f21b1896f25afe4e4356020cd0a9","path":"ai5-hub","linkState":"LINKED"},
+  "phase":"BUILDING", "status":"RUNNING", "blockedBy":"NONE", "stopCode":"NONE",
+  "autoExecution":{"enabled":false},
+  "executionPolicy":{"risk":"LOW","costClass":"NORMAL","maxRetry":2,"dailyAutoRuns":3,"requireApprovalAbove":"HIGH","retryCount":0,"runsToday":0,"failureFingerprint":"","consecutiveFailures":0},
+  "timestamps":{"createdAt":"2026-08-17T00:00:00+09:00","updatedAt":"2026-08-18T00:00:00+09:00","stoppedAt":"","resumedAt":"","workStartedAt":"","workCompletedAt":"","lastGitHubSyncAt":"","lastZeroActionAt":"","lastCodexActionAt":"","lastClaudeActionAt":"","lastGeminiActionAt":"","lastManusActionAt":"","lastTeppeiActionAt":"","publishedAt":"","lastMaintenanceAt":"","heartbeatAt":""},
+  "currentTask":"PROJECT CONTROL施工","lastCompletedTask":"AI5 HUB Phase 3","nextAction":"PC-1からPC-8を統合","stopReason":"",
+  "aiState":{"zero":"DONE","codex":"RUNNING","claude":"NOT_REQUIRED","gemini":"NOT_REQUIRED","manus":"NOT_REQUIRED","notebooklm":"NOT_REQUIRED"},
+  "qualityGate":{"tests":"UNKNOWN","review":"UNKNOWN","fieldValidation":"UNKNOWN","release":"UNKNOWN"},
+  "versions":[], "history":[{"at":"2026-08-18T00:00:00+09:00","type":"PROJECT_REGISTERED","actor":"CODEX","detail":"既存AI5 HUBから登録"}]
+}

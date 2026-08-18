@@ -1,3 +1,4 @@
+$ErrorActionPreference='Stop'
 $global:AI5TestRoot=Join-Path $PSScriptRoot 'server\tests'
 $code=Get-Content -Raw -Encoding UTF8 (Join-Path $global:AI5TestRoot 'phase1.tests.ps1')
 & ([ScriptBlock]::Create($code))
@@ -7,3 +8,4 @@ $code=Get-Content -Raw -Encoding UTF8 (Join-Path $global:AI5TestRoot 'phase1.tes
 & (Join-Path $global:AI5TestRoot 'PwaInstallability.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'ZeroApproval.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'NotebookLMAdapter.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'ProjectControl.Tests.ps1')
