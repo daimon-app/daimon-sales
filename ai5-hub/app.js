@@ -62,6 +62,6 @@ document.querySelectorAll('.bottom-nav button').forEach(button=>button.addEventL
 $('#taskLists').addEventListener('click',event=>{const id=event.target.closest('[data-task]')?.dataset.task;if(id){refreshTask(id);watch(id)}});
 window.addEventListener("offline",()=>{$("#connectionDot").className="online-dot error";$("#connectionText").textContent="通信切断・施工はPCで継続中"});
 window.addEventListener("online",()=>bootstrap());
-if("serviceWorker" in navigator)navigator.serviceWorker.register("/service-worker.js?v=39",{scope:"/"}).then(async registration=>{state.pushSubscribed=!!(await registration.pushManager?.getSubscription())}).catch(error=>{console.error('AI5 HUB service worker registration failed',error);zeroMessage(`PWA初期化に失敗しました: ${error.message}`)});
+if("serviceWorker" in navigator)navigator.serviceWorker.register("/service-worker.js?v=40",{scope:"/"}).then(async registration=>{state.pushSubscribed=!!(await registration.pushManager?.getSubscription())}).catch(error=>{console.error('AI5 HUB service worker registration failed',error);zeroMessage(`PWA初期化に失敗しました: ${error.message}`)});
 setInterval(()=>{refreshTaskLists();if(!$('#ai5View').hidden)refreshCommandCenter()},3000);
 selectTarget('auto');renderMessages();renderAgents();bootstrap();refreshTaskLists();
