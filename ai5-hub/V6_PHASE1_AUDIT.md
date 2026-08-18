@@ -18,7 +18,7 @@ Branch: `feat/ai5-sales-factory-v6`
 - Repository path/branch/HEAD/writer固定lock。同一対象の第二Writer拒否。
 - Approval語彙拡張: 課金、契約、広告、OAuth、2FA、CAPTCHA、本人確認、SNS、DM、main merge、本番、Play、販売、秘密、不可逆操作。
 - nested secret redaction、全task idempotency検索、payload conflict拒否。
-- M1〜M5 Project正本とSales Factory dashboard、AI別LINE風結果表示。
+- M1〜M5とSNS母艦のProject正本、Sales Factory dashboard、AI別LINE風結果表示。
 - Service Worker cache削除をAI5 HUB prefixへ限定。
 
 ## M1〜M5固定対象
@@ -38,9 +38,17 @@ Branch: `feat/ai5-sales-factory-v6`
 - Repository Writer Lock: 同一repo/branchへの第二Writer拒否PASS。
 - Zero Return: task ID不一致拒否、正常result変換PASS。
 - Local API: session/health/factory取得PASS。
-- Sales Factory DRY RUN: 10/10 task生成。Manus 5、Gemini 5、永続化0。
+- Sales Factory DRY RUN（初期5商品）: 10/10 task生成。Manus 5、Gemini 5、永続化0。
+- SNS母艦を追加し、LIVE時は合計12 task（Manus 6、Gemini 6）を独立outboxへ発行する構成。公開操作は禁止。
 - `git diff --check`: PASS。
+
+## 独立監査状態
+
+- Claude Code CLI: `2.1.233`、ログイン済みProを確認。
+- 正確な残り利用枠: 公式CLIから取得不可。
+- 読み取り専用監査を2回試行したが、1回目は120秒timeout、2回目は`ConnectionRefused`で結果未回収。
+- 自己監査だけでPhase 2を開始しないため、独立監査は`TIMEOUT / NOT PASSED`として扱う。
 
 ## LIVE gate
 
-`PHASE 1 code → Claude独立監査 → Zero修正判定 → 全QA再実行` がPASSするまでLIVE投入しない。main merge、本番公開、SNS投稿、販売開始、課金、AAB/Play公開は未実施。
+`PHASE 1 code → Claude独立監査 → Zero修正判定 → 全QA再実行` がPASSするまでLIVE投入しない。現時点のPhase 2判定は`NO-GO（独立監査未完）`。main merge、本番公開、SNS投稿、販売開始、課金、AAB/Play公開は未実施。
