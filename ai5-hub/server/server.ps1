@@ -5,16 +5,18 @@ $CodeServerRoot = if ($global:AI5CodeServerRoot) { $global:AI5CodeServerRoot } e
 $ServerRoot = if ($global:AI5ServerRoot) { $global:AI5ServerRoot } else { $PSScriptRoot }
 $AppRoot = Split-Path $CodeServerRoot
 
-foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1','storage\Attachments.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'notifications\PushNotification.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1','orchestrator\AutonomousLoop.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1','command-center\CommandCenter.ps1')) {
+foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1','storage\Attachments.ps1','storage\LongMessageIngestion.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'notifications\PushNotification.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1','orchestrator\AutonomousLoop.ps1','orchestrator\TaskQueue.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1','command-center\CommandCenter.ps1','deployment\StableRuntime.ps1')) {
     . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $CodeServerRoot $module))))
 }
 Initialize-AI5Store $ServerRoot
 Initialize-AI5Attachments $ServerRoot
+Initialize-AI5LongMessages $ServerRoot
 Initialize-AI5MobileSecurity $ServerRoot
 Initialize-AI5PushNotifications $ServerRoot $AppRoot
 Initialize-AI5CodexService $ServerRoot $AppRoot
 Initialize-AI5SpecialistRegistry $ServerRoot
 Initialize-AI5ProjectControl $ServerRoot $AppRoot
+Initialize-AI5StableRuntime $ServerRoot $AppRoot
 Invoke-AI5ProjectRecovery
 $Mock = if ($env:AI5_MOCK) { $env:AI5_MOCK -ne 'false' } else { $false }
 $script:MockMode=$Mock
@@ -169,9 +171,9 @@ function New-Task($body, [string]$idem) {
     $route = Get-AI5Route $body.message $target
     $id = if ($body.taskId) { $body.taskId } else { Get-AI5NextTaskId }
     $approval = if ($route.requiresApproval) { [ordered]@{ type = $route.approvalType; summary = '本人の最終承認が必要です'; status = 'pending'; zero_review = (Get-AI5ZeroApprovalReview $route) } } else { $null }
-    $now=[DateTime]::UtcNow.ToString('o')
+    $now=[DateTime]::UtcNow.ToString('o');$displayObjective=if(([string]$route.objective).Length-gt240){([string]$route.objective).Substring(0,240)+'…'}else{[string]$route.objective}
     $task=[pscustomobject][ordered]@{
-        task_id=$id;taskId = $id; parent_task_id=$null;title=$route.objective;conversationId = $body.conversationId;reply_to=$body.replyTo;attachment_id=$body.attachmentId; message = Protect-AI5Text $body.message; objective = $route.objective;constraints=@($body.constraints)
+        task_id=$id;taskId = $id; parent_task_id=$null;title=$displayObjective;conversationId = $body.conversationId;reply_to=$body.replyTo;attachment_id=$body.attachmentId; message = Protect-AI5Text $body.message;original_message_length=([string]$body.message).Length;long_message_id=$body.longMessageId;objective = $displayObjective;constraints=@($body.constraints);project_id=$body.projectId;queue_reason='';queue_position=0;execution_class=''
         source = $(if ($body.source) { $body.source } else { 'teppei' }); priority = $(if ($body.priority) { $body.priority } else { 'normal' })
         assigned_agent=$route.primary;requested_target=$route.requestedTarget;routing_mode=$route.routingMode;status = $(if ($route.requiresApproval) { 'waiting_approval' } else { 'queued' });canonical_status=$(if ($route.requiresApproval){'WAITING_APPROVAL'}else{'RECEIVED'});approval_level=$(if($route.requiresApproval){'RED'}elseif($route.risk-eq'medium'){'YELLOW'}else{'GREEN'});attempt=0;max_attempts=3;assignedPrimary = $route.primary; assignedSecondary = $route.secondary
         requiresApproval = $route.requiresApproval; approval = $approval; field_mode=$(if($null-ne$body.fieldMode){[bool]$body.fieldMode}else{$true}); field_decision=$null; execution_plan=(Get-AI5ExecutionPlan $route); failure_fingerprints=@(); route = $route; validation=[ordered]@{};artifacts=@();result = $null
@@ -185,7 +187,29 @@ function New-Task($body, [string]$idem) {
     return $task
 }
 
-if(!$Mock){foreach($recoverable in @(Get-AI5Tasks 100|Where-Object{$_.assignedPrimary-eq'codex'-and(($_.status-in@('running','retrying'))-or($_.status-eq'queued'-and$_.attempt-eq0)-or($_.status-eq'failed'-and$_.result.retryable-and!$_.result.userActionRequired-and$_.attempt-lt$_.max_attempts-and([DateTime]::UtcNow-[DateTime]::Parse($_.updatedAt)).TotalHours-lt24))}|Select-Object -First 1)){try{if(Restore-AI5TaskFromStoredCodexResult $recoverable){continue};if($recoverable.status-eq'failed'){Set-AI5TaskStatus $recoverable 'RETRYING' 'PC再起動後に安全な未完Taskを1件復旧'};Dispatch-Task $recoverable}catch{Write-AI5Log 'errors' 'startup_task_recovery_failed' @{task_id=$recoverable.taskId;error=$_.Exception.Message}}}}
+function Submit-AI5TaskBody($body,[string]$idem) {
+    if($body.attachmentId -and !(Get-AI5AttachmentPath ([string]$body.attachmentId))){throw'attachment_not_found'}
+    $problem=Test-AI5Instruction $body.message -Long:([bool]$body.longMessageId);if($problem){throw$problem}
+    if($body.taskId-and$body.taskId-notmatch'^task_[A-Za-z0-9_.-]{3,80}$'){throw'invalid_task_id'}
+    if($body.taskId){$same=Get-AI5Task $body.taskId;if($same){return$same}}
+    if($idem){$existing=Get-AI5Tasks|Where-Object{$_.idempotencyKey-eq$idem}|Select-Object -First 1;if($existing){return$existing}}
+    $task=New-Task $body $idem;$decision=Get-AI5TaskQueueDecision $task @(Get-AI5Tasks 100) @(Get-AI5ActiveLocks)
+    $task.execution_class=$(if($decision.readOnly){'READ_ONLY'}else{'WRITE'});if($decision.projectId){$task.project_id=$decision.projectId}
+    if($decision.action-eq'QUEUE'){$task.queue_reason=$decision.reason;$task.timeline+=,[ordered]@{status='QUEUED';label='同一ProjectのWriter完了後にZeroが再評価';at=[DateTime]::UtcNow.ToString('o')};$task.queue_position=@(Get-AI5Tasks 100|Where-Object{$_.queue_reason-and$_.status-eq'queued'}).Count+1}
+    if($task.requiresApproval){$task.timeline+=,[ordered]@{status='WAITING_APPROVAL';label='本人承認待ち';at=[DateTime]::UtcNow.ToString('o')}}
+    Save-AI5Task $task;Write-AI5Log 'tasks' 'task_created' @{task_id=$task.taskId;primary=$task.assignedPrimary;approval=$task.requiresApproval;queue_reason=$task.queue_reason;long_message_id=$task.long_message_id}
+    if(!$task.requiresApproval-and!$task.queue_reason){Dispatch-Task $task};$task
+}
+
+function Invoke-AI5QueuedTaskDispatch {
+    $candidate=Get-AI5Tasks 100|Where-Object{$_.status-eq'queued'-and$_.queue_reason-eq'SINGLE_WRITER_BUSY'}|Sort-Object createdAt|Select-Object -First 1;if(!$candidate){return}
+    $decision=Get-AI5TaskQueueDecision $candidate @(Get-AI5Tasks 100) @(Get-AI5ActiveLocks);if($decision.action-ne'DISPATCH'){return}
+    $candidate.queue_reason='';$candidate.queue_position=0;$candidate|Add-Member queue_revalidated_at ([DateTime]::UtcNow.ToString('o')) -Force
+    Add-AI5LineMessage $candidate 'zero' 'CONTINUE' 'Writer解放を確認し、最新状態を再評価して施工を開始します。' 'queue';Save-AI5Task $candidate
+    Write-AI5Log 'tasks' 'queued_task_released' @{task_id=$candidate.taskId;project_id=$candidate.project_id};Dispatch-Task $candidate
+}
+
+if(!$Mock){foreach($recoverable in @(Get-AI5Tasks 100|Where-Object{$_.assignedPrimary-eq'codex'-and(($_.status-in@('running','retrying'))-or($_.status-eq'queued'-and$_.attempt-eq0-and!$_.queue_reason)-or($_.status-eq'failed'-and$_.result.retryable-and!$_.result.userActionRequired-and$_.attempt-lt$_.max_attempts-and([DateTime]::UtcNow-[DateTime]::Parse($_.updatedAt)).TotalHours-lt24))}|Select-Object -First 1)){try{if(Restore-AI5TaskFromStoredCodexResult $recoverable){continue};if($recoverable.status-eq'failed'){Set-AI5TaskStatus $recoverable 'RETRYING' 'PC再起動後に安全な未完Taskを1件復旧'};Dispatch-Task $recoverable}catch{Write-AI5Log 'errors' 'startup_task_recovery_failed' @{task_id=$recoverable.taskId;error=$_.Exception.Message}}}}
 $NextApprovalScheduleAt=[DateTimeOffset]::MinValue
 try {
     while ($true) {
@@ -193,6 +217,7 @@ try {
             $scheduler=Get-AI5SchedulerStatus
             $due=!$scheduler.nextScan-or([DateTimeOffset]::Parse($scheduler.nextScan)-le[DateTimeOffset]::Now)
             if($due){try{Invoke-AI5ProjectScan -Fetch $true|Out-Null}catch{Write-AI5Log 'errors' 'project_scheduler_failed' @{error=$_.Exception.Message}}}
+            try{Invoke-AI5QueuedTaskDispatch}catch{Write-AI5Log 'errors' 'queued_task_dispatch_failed' @{error=$_.Exception.Message}}
             if([DateTimeOffset]::Now-ge$NextApprovalScheduleAt){try{$null=Invoke-AI5ApprovalNotificationSchedule -Tasks @(Get-AI5Tasks 100)}catch{Write-AI5Log 'errors' 'approval_notification_schedule_failed' @{error=$_.Exception.Message}};$NextApprovalScheduleAt=[DateTimeOffset]::Now.AddSeconds(30)}
             Start-Sleep -Milliseconds 200
             continue
@@ -230,7 +255,8 @@ try {
                 Send-Json $stream @{ error = 'csrf' } 403
                 continue
             }
-            if ($method -eq 'GET' -and $path -eq '/api/health') { Send-Json $stream @{ ok = $true; service = 'ai5-hub'; mock = $Mock; csrfToken = $Csrf; components = (Get-MobileHealth); time = [DateTime]::UtcNow.ToString('o') }; continue }
+            if ($method -eq 'GET' -and $path -eq '/api/health') { Send-Json $stream @{ ok = $true; service = 'ai5-hub'; mock = $Mock; csrfToken = $Csrf; components = (Get-MobileHealth); deployment=(Get-AI5Deployment); time = [DateTime]::UtcNow.ToString('o') }; continue }
+            if ($method -eq 'GET' -and $path -eq '/api/update-status') {Send-Json $stream (Get-AI5Deployment);continue}
             if ($method -eq 'GET' -and $path -eq '/api/status') {
                 $bridgeHealth = Get-AI5CodexHealth
                 $claudeHealth = Get-AI5ClaudeHealth
@@ -246,6 +272,10 @@ try {
             if ($method -eq 'GET' -and $path -eq '/api/chat') {$level=if($request.Headers['X-AI5-Chat-Level']){[string]$request.Headers['X-AI5-Chat-Level']}else{'NORMAL'};if($level-notin@('SIMPLE','NORMAL','DETAIL')){$level='NORMAL'};Send-Json $stream @{level=$level;messages=@(Get-AI5LineMessages @(Get-AI5Tasks 100) $level)};continue }
             if ($method -eq 'GET' -and $path -eq '/api/push/public-key') { $key=Get-AI5PushPublicKey;if($key){Send-Json $stream @{available=$true;publicKey=$key;background=$true}}else{Send-Json $stream @{available=$false;error='push_unavailable'} 503};continue }
             if ($method -eq 'POST' -and $path -eq '/api/attachments') {try{Send-Json $stream (Save-AI5Attachment (Parse-Body $request)) 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
+            if($method-eq'POST'-and$path-eq'/api/message-drafts'){try{Send-Json $stream (New-AI5LongMessageDraft (Parse-Body $request)) 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
+            if($path-match'^/api/message-drafts/([^/]+)$'-and$method-eq'GET'){try{Send-Json $stream (Get-AI5LongMessageStatus $Matches[1])}catch{Send-Json $stream @{error=$_.Exception.Message} 404};continue}
+            if($path-match'^/api/message-drafts/([^/]+)/chunks/(\d+)$'-and$method-eq'POST'){try{Send-Json $stream (Save-AI5LongMessageChunk $Matches[1] ([int]$Matches[2]) (Parse-Body $request)) 202}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
+            if($path-match'^/api/message-drafts/([^/]+)/commit$'-and$method-eq'POST'){$draftId=$Matches[1];try{$completed=Complete-AI5LongMessage $draftId;if($completed.alreadyCompleted){$existing=Get-AI5Task $completed.taskId;if(!$existing){throw'completed_task_not_found'};Send-Json $stream $existing;continue};$body=Parse-Body $request;$body|Add-Member message $completed.message -Force;$body|Add-Member longMessageId $draftId -Force;$task=Submit-AI5TaskBody $body ("long:$draftId");Set-AI5LongMessageCompleted $completed $task.taskId;Send-Json $stream $task 202}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
             if ($method -eq 'POST' -and $path -eq '/api/push/subscribe') { try{Send-Json $stream (Save-AI5PushSubscription (Parse-Body $request)) 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue }
             if ($method -eq 'GET' -and $path -eq '/api/projects') { Send-Json $stream (Get-AI5ProjectSummary); continue }
             if ($method -eq 'POST' -and $path -eq '/api/projects') { $body=Parse-Body $request; if(!$body.name-or!$body.projectId){Send-Json $stream @{error='name_and_project_id_required'} 400;continue}; try{Send-Json $stream (New-AI5Project $body) 202}catch{Send-Json $stream @{error=$_.Exception.Message} 409}; continue }
@@ -259,24 +289,14 @@ try {
             if ($path -match '^/api/projects/([^/]+)/sync$' -and $method -eq 'POST') { $project=Get-AI5Project $Matches[1];if(!$project){Send-Json $stream @{error='not_found'} 404}else{Send-Json $stream (Sync-AI5ProjectGit $project)};continue }
             if ($method -eq 'POST' -and $path -eq '/api/tasks') {
                 $body = Parse-Body $request
-                if($body.attachmentId-and!(Get-AI5AttachmentPath ([string]$body.attachmentId))){Send-Json $stream @{error='attachment_not_found'} 400;continue}
-                $problem = Test-AI5Instruction $body.message
-                if ($problem) { Send-Json $stream @{ error = $problem } 400; continue }
-                if ($body.taskId -and $body.taskId -notmatch '^task_[A-Za-z0-9_.-]{3,80}$') { Send-Json $stream @{ error = 'invalid_task_id' } 400; continue }
-                if ($body.taskId) { $same = Get-AI5Task $body.taskId; if ($same) { Send-Json $stream $same; continue } }
                 $idem = $request.Headers['Idempotency-Key']
-                if ($idem) { $existing = Get-AI5Tasks | Where-Object { $_.idempotencyKey -eq $idem } | Select-Object -First 1; if ($existing) { Send-Json $stream $existing; continue } }
-                $task = New-Task $body $idem
-                if ($task.requiresApproval) { $task.timeline += , [ordered]@{ status = 'WAITING_APPROVAL'; label = '本人承認待ち'; at = [DateTime]::UtcNow.ToString('o') } }
-                Save-AI5Task $task
-                Write-AI5Log 'tasks' 'task_created' @{ task_id = $task.taskId; primary = $task.assignedPrimary; approval = $task.requiresApproval }
+                try{$task=Submit-AI5TaskBody $body $idem}catch{Send-Json $stream @{error=$_.Exception.Message} 400;continue}
                 if ($task.requiresApproval) { $task | Add-Member -NotePropertyName approvalToken -NotePropertyValue (New-AI5ApprovalToken $task.taskId) -Force }
                 Send-Json $stream $task 202
-                if (!$task.requiresApproval) { Dispatch-Task $task }
                 continue
             }
             if ($method -eq 'GET' -and $path -eq '/api/tasks') { Send-Json $stream @{ tasks=@(Get-AI5Tasks 100) }; continue }
-            if ($path -match '^/api/tasks/([^/]+)$' -and $method -eq 'GET') { $task = Get-AI5Task $Matches[1]; if ($task -and !$Mock -and $task.assignedPrimary -eq 'codex' -and $task.status -in @('queued', 'running')) { Start-AI5CodexWorker | Out-Null }; if ($task) { if ($task.status -eq 'waiting_approval') { $task | Add-Member -NotePropertyName approvalToken -NotePropertyValue (New-AI5ApprovalToken $task.taskId) -Force }; Send-Json $stream $task } else { Send-Json $stream @{ error = 'not_found' } 404 }; continue }
+            if ($path -match '^/api/tasks/([^/]+)$' -and $method -eq 'GET') { $task = Get-AI5Task $Matches[1]; if ($task -and !$Mock -and !$task.queue_reason -and $task.assignedPrimary -eq 'codex' -and $task.status -in @('queued', 'running')) { Start-AI5CodexWorker | Out-Null }; if ($task) { if ($task.status -eq 'waiting_approval') { $task | Add-Member -NotePropertyName approvalToken -NotePropertyValue (New-AI5ApprovalToken $task.taskId) -Force }; Send-Json $stream $task } else { Send-Json $stream @{ error = 'not_found' } 404 }; continue }
             if ($path -match '^/api/tasks/([^/]+)/result$' -and $method -eq 'GET') { $task = Get-AI5Task $Matches[1]; if (!$task) { Send-Json $stream @{ error = 'not_found' } 404 } elseif ($task.result) { Send-Json $stream @{ taskId = $task.taskId; status = $task.status; result = $task.result; bridge = $task.bridge } } else { Send-Json $stream @{ taskId = $task.taskId; status = $task.status; result = $null } 202 }; continue }
             if ($path -match '^/api/tasks/([^/]+)/approve$' -and $method -eq 'POST') { $task = Get-AI5Task $Matches[1]; if (!$task) { Send-Json $stream @{ error = 'not_found' } 404; continue }; if ($task.status -ne 'waiting_approval') { Send-Json $stream @{ error = 'invalid_state' } 409; continue }; $body = Parse-Body $request; if (!(Use-AI5ApprovalToken $task.taskId $body.approvalToken)) { Write-AI5Log 'security' 'approval_rejected' @{ task_id = $task.taskId }; Send-Json $stream @{ error = 'invalid_approval_token' } 403; continue }; $task.approval.status = 'approved'; Set-AI5TaskStatus $task 'RECEIVED' '本人承認済み'; Write-AI5Log 'security' 'approval' @{ task_id = $task.taskId; login = $session.login }; Send-Json $stream $task; Dispatch-Task $task; continue }
             if ($path -match '^/api/tasks/([^/]+)/(cancel|reject)$' -and $method -eq 'POST') { $task = Get-AI5Task $Matches[1]; if (!$task) { Send-Json $stream @{ error = 'not_found' } 404; continue }; if ($task.status -in @('completed', 'failed', 'cancelled')) { Send-Json $stream @{ error = 'invalid_state' } 409; continue }; Update-State $task 'cancelled' 'User rejected'; Write-AI5Log 'security' 'rejection' @{ task_id = $task.taskId; login = $session.login }; Send-Json $stream $task; continue }

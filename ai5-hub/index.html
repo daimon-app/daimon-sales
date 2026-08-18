@@ -11,7 +11,7 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="icons/ai5-icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=42">
+  <link rel="stylesheet" href="styles.css?v=43">
 </head>
 <body>
   <div class="shell">
@@ -54,6 +54,7 @@
         <label class="attach-button" aria-label="スクリーンショットを添付">＋画像<input id="attachmentInput" type="file" accept="image/jpeg,image/png,image/webp" hidden></label><span id="attachmentStatus" class="attachment-status"></span>
         <textarea id="prompt" rows="1" placeholder="ゼロに指示を入力…" aria-label="ゼロへの指示"></textarea>
         <button type="submit" aria-label="送信">送信</button>
+        <div id="longMessageProgress" class="long-message-progress" hidden><span>長文指示を受付中</span><progress value="0" max="100"></progress><b>0%</b></div>
         <p>ゼロが目的を整理し、必要な兄弟だけに施工を振り分けます。</p>
       </form>
     </main>
@@ -88,6 +89,6 @@
   <dialog id="agentDialog"><form method="dialog" class="project-dialog"><button class="dialog-close" value="cancel">×</button><div id="agentDetail"></div></form></dialog>
   <dialog id="projectCreateDialog"><form id="projectCreateForm" class="project-dialog"><button type="button" class="dialog-close" data-close-project>×</button><h2>Project登録</h2><label>Project Name<input name="name" required></label><label>Project ID<input name="projectId" required pattern="[a-z0-9][a-z0-9._-]{1,79}"></label><label>Repository（未確定なら空欄）<input name="repository"></label><p>AUTO EXECUTIONは安全のためOFFで登録されます。</p><button class="project-primary" type="submit">登録</button></form></dialog>
   <div id="authGate" class="auth-gate" hidden><div><span class="brand-mark">五</span><h2>AI5 HUB</h2><p>本人認証が必要です。Tailscale接続を確認してログインしてください。</p><button id="loginButton">ログイン</button><small id="authError"></small></div></div>
-  <script src="app.js?v=42"></script>
+  <script src="app.js?v=43"></script>
 </body>
 </html>

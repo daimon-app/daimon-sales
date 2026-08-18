@@ -52,6 +52,8 @@ header p { color: var(--muted); font-size: 12px; margin-top: 5px; }
 .composer textarea { resize: none; max-height: 140px; background: var(--panel2); border: 1px solid var(--line); border-radius: 15px; padding: 14px; color: var(--text); font: inherit; outline: none; }
 .composer button { border: 0; border-radius: 14px; background: var(--green); color: #06100d; font-weight: 800; padding: 0 20px; }
 .composer.sending button { opacity: .55; pointer-events: none; }
+.long-message-progress{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;color:var(--green);font-size:12px}.long-message-progress[hidden]{display:none}.long-message-progress progress{width:100%;accent-color:var(--green)}
+.update-banner{padding:7px 14px;background:#16392f;color:#b8ffe3;border-bottom:1px solid #285747;font-size:12px}.update-banner b{margin-right:8px}
 .attach-button{grid-column:1;color:var(--green);font-size:11px;cursor:pointer}.attachment-status{grid-column:2;color:var(--muted);font-size:10px;text-align:right}
 .ai5-card .agent-top{gap:7px}.ai5-card .agent-top b{white-space:nowrap;font-size:14px}.ai5-card .agent-state{flex:0 0 auto;white-space:nowrap}
 .target-select{grid-column:1/-1;color:var(--muted);font-size:11px;display:flex;align-items:center;gap:7px}.target-select select{min-height:34px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);padding:5px 9px;font-weight:700}

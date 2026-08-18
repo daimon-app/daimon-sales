@@ -124,6 +124,15 @@ FULL AUTONOMOUS LOOPは各AIの短文report、Zero目的判定、Codex技術判�
 
 設定例は `integrations/codex/zero-codex-bridge/config.example.json`。実設定、queue、results、logs、runtimeはGit対象外です。
 
+## v43 無停止自己更新・長文指示
+
+- 検証済みStable Runtimeは、Codexが隔離Working Copyを施工中でもCHAT・Task・承認・Project・履歴を提供し続けます。
+- Candidateはunit/security/E2E/PWAの全Gate通過時だけStableへ切替可能です。失敗候補はStableを置換しません。
+- 4,000文字超は認証・CSRF配下のLong Message Ingestionへ移行します。最大64 chunk、1 chunk 16,384文字、全体262,144文字です。
+- chunkと再構成全文をSHA-256検証し、同一再送は冪等、内容が違う重複・欠損・不正IDは拒否します。
+- 全chunk検証後にだけTaskを1件生成し、原文はTask正本に保持します。
+- 同一ProjectのWRITE競合は拒否せずQUEUEDとし、Writer解放後にZeroが再評価します。READ ONLYと別Projectは書込Lockの対象外です。
+
 ## テスト
 
 ```powershell
