@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1, "projectId": "ai5-hub", "name": "AI5 HUB / Zero-Codex Bridge",
-  "repository": {"owner":"daimon-app","name":"daimon-sales","defaultBranch":"main","activeBranch":"feat/project-control","latestCommit":"478171edd0c7f21b1896f25afe4e4356020cd0a9","path":"ai5-hub","linkState":"LINKED"},
+  "repository": {"owner":"daimon-app","name":"daimon-sales","defaultBranch":"main","activeBranch":"feat/project-control","latestCommit":"fb1de9ba014d8cd593589d5ac239d291a19750a5","path":"ai5-hub","linkState":"LINKED","sync":{"state":"SYNCED","localHead":"fb1de9ba014d8cd593589d5ac239d291a19750a5","remoteHead":"fb1de9ba014d8cd593589d5ac239d291a19750a5","defaultHead":"7df7e2bb423593535dced1b7277587cd97bdc9c6","ahead":0,"behind":0,"dirty":false,"checkedAt":"2026-08-18T23:00:00+09:00","error":""}},
   "phase":"BUILDING", "status":"RUNNING", "blockedBy":"NONE", "stopCode":"NONE",
-  "autoExecution":{"enabled":false},
-  "executionPolicy":{"risk":"LOW","costClass":"NORMAL","maxRetry":2,"dailyAutoRuns":3,"requireApprovalAbove":"HIGH","retryCount":0,"runsToday":0,"failureFingerprint":"","consecutiveFailures":0},
+  "autoExecution":{"enabled":false,"mode":"OFF"},
+  "executionPolicy":{"risk":"LOW","costClass":"NORMAL","maxRetry":2,"dailyAutoRuns":3,"requireApprovalAbove":"HIGH","retryCount":0,"runsToday":0,"autoRunsToday":0,"autoRunsDate":"","failureFingerprint":"","consecutiveFailures":0},
+  "execution":{"taskId":"","lockId":"","submittedAt":"","resultRecoveredAt":"","lastResult":"","recoveryRequired":false},
   "timestamps":{"createdAt":"2026-08-17T00:00:00+09:00","updatedAt":"2026-08-18T00:00:00+09:00","stoppedAt":"","resumedAt":"","workStartedAt":"","workCompletedAt":"","lastGitHubSyncAt":"","lastZeroActionAt":"","lastCodexActionAt":"","lastClaudeActionAt":"","lastGeminiActionAt":"","lastManusActionAt":"","lastTeppeiActionAt":"","publishedAt":"","lastMaintenanceAt":"","heartbeatAt":""},
   "currentTask":"PROJECT CONTROL施工","lastCompletedTask":"AI5 HUB Phase 3","nextAction":"PC-1からPC-8を統合","stopReason":"",
   "aiState":{"zero":"DONE","codex":"RUNNING","claude":"NOT_REQUIRED","gemini":"NOT_REQUIRED","manus":"NOT_REQUIRED","notebooklm":"NOT_REQUIRED"},

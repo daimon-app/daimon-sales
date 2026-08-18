@@ -6,7 +6,9 @@ AI5の最新版運用正本は [DAIMON AI5 MULTI-EXECUTION OS v4](./ZERO_SPEC.md
 
 Phase 3ではTask Engine、共通Result Schema、検査・再振分け、Repository Lock、4画面スマホUIを追加しました。Tailscale Serveのprivate HTTPSと本人認証は実働確認済みです。Android Pixel 10aとiPhoneではstandalone起動、本人認証、キーボード表示、Task送信、Codex施工、結果返却、再起動後復元まで実測PASSしました。モバイル回線とWindows実再起動後の自動復旧もPASSし、Phase 2.5の必須確認は完了しています。詳細は [MOBILE_SETUP.md](./MOBILE_SETUP.md) を参照してください。
 
-PROJECT CONTROL基盤では `CHAT / PROJECTS / SYSTEM` のスマホ導線、GitHub保存用Project JSON、一覧・詳細・Timeline、検索・フィルタ、Project登録、AUTO ON/OFF、停止・再開日時、承認ゲート、Credit Protection、Project単位Single Writer、stale RUNNING復旧、Git同期・巡回APIを追加しました。安全のため既存・新規ProjectともAUTO初期値はOFFで、巡回設定の `autoDispatch` もOFFです。
+PROJECT CONTROL基盤では `CHAT / PROJECTS / SYSTEM` のスマホ導線、GitHub保存用Project JSON、一覧・詳細・Timeline、検索・フィルタ、Project登録、AUTO制御、停止・再開日時、承認ゲート、Credit Protection、Project単位Single Writer、stale RUNNING復旧、Git同期・巡回APIを追加しました。安全のため既存・新規ProjectともAUTO初期値はOFFです。
+
+AUTO EXECUTION統合ではRemote HEAD・ahead/behind・dirty判定、1時間常駐Scheduler、OFF / DRY RUN / LIVE、最大並列1、既存HMAC Bridgeへの署名済みProject payload、結果回収、日次施工回数、Repository候補検出、SYSTEM監視画面を追加しました。既存Projectは引き続きOFFで、未登録Repositoryは候補表示だけ行います。
 
 ## 実装状況
 

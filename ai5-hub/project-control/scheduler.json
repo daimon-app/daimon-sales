@@ -1,7 +1,8 @@
 {
   "schemaVersion": 1,
   "enabled": true,
-  "schedule": {"type": "daily", "time": "06:00", "timezone": "Asia/Tokyo"},
-  "autoDispatch": false,
-  "note": "PROJECT CONTROLの土台検証完了まで自動投入しない"
+  "schedule": {"type": "interval", "intervalMinutes": 60, "timezone": "Asia/Tokyo"},
+  "maxParallel": 1,
+  "autoDispatch": true,
+  "note": "AUTO mode LIVEのProjectだけを直列投入する"
 }

@@ -155,6 +155,13 @@ function New-Task($body, [string]$idem) {
 
 try {
     while ($true) {
+        if(!$listener.Pending()){
+            $scheduler=Get-AI5SchedulerStatus
+            $due=!$scheduler.nextScan-or([DateTimeOffset]::Parse($scheduler.nextScan)-le[DateTimeOffset]::Now)
+            if($due){try{Invoke-AI5ProjectScan -Fetch $true|Out-Null}catch{Write-AI5Log 'errors' 'project_scheduler_failed' @{error=$_.Exception.Message}}}
+            Start-Sleep -Milliseconds 200
+            continue
+        }
         $client = $listener.AcceptTcpClient()
         $stream = $client.GetStream()
         try {
@@ -201,11 +208,13 @@ try {
             }
             if ($method -eq 'GET' -and $path -eq '/api/projects') { Send-Json $stream (Get-AI5ProjectSummary); continue }
             if ($method -eq 'POST' -and $path -eq '/api/projects') { $body=Parse-Body $request; if(!$body.name-or!$body.projectId){Send-Json $stream @{error='name_and_project_id_required'} 400;continue}; try{Send-Json $stream (New-AI5Project $body) 202}catch{Send-Json $stream @{error=$_.Exception.Message} 409}; continue }
-            if ($path -match '^/api/projects/([^/]+)$' -and $method -eq 'GET') { try{$project=Get-AI5Project $Matches[1]}catch{$project=$null};if($project){Send-Json $stream $project}else{Send-Json $stream @{error='not_found'} 404};continue }
+            if ($method -eq 'GET' -and $path -eq '/api/projects/repositories') { Send-Json $stream @{repositories=@(Get-AI5RepositoryCandidates)};continue }
+            if ($path -match '^/api/projects/(?!(system|repositories)$)([^/]+)$' -and $method -eq 'GET') { try{$project=Get-AI5Project $Matches[2]}catch{$project=$null};if($project){Send-Json $stream $project}else{Send-Json $stream @{error='not_found'} 404};continue }
             if ($path -match '^/api/projects/([^/]+)/state$' -and $method -eq 'POST') { $project=Get-AI5Project $Matches[1];if(!$project){Send-Json $stream @{error='not_found'} 404;continue};Send-Json $stream (Set-AI5ProjectState $project (Parse-Body $request) 'TEPPEI');continue }
-            if ($path -match '^/api/projects/([^/]+)/auto-execution$' -and $method -eq 'POST') { $project=Get-AI5Project $Matches[1];if(!$project){Send-Json $stream @{error='not_found'} 404;continue};$body=Parse-Body $request;Send-Json $stream (Set-AI5ProjectAuto $project ([bool]$body.enabled));continue }
+            if ($path -match '^/api/projects/([^/]+)/auto-execution$' -and $method -eq 'POST') { $project=Get-AI5Project $Matches[1];if(!$project){Send-Json $stream @{error='not_found'} 404;continue};$body=Parse-Body $request;$mode=if($body.mode){[string]$body.mode}elseif([bool]$body.enabled){'DRY_RUN'}else{'OFF'};try{Send-Json $stream (Set-AI5ProjectAuto $project $mode)}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue }
             if ($path -match '^/api/projects/([^/]+)/execution-check$' -and $method -eq 'GET') { $project=Get-AI5Project $Matches[1];if(!$project){Send-Json $stream @{error='not_found'} 404}else{Send-Json $stream (Test-AI5ProjectExecution $project)};continue }
-            if ($method -eq 'POST' -and $path -eq '/api/projects/scan') { Send-Json $stream (Invoke-AI5ProjectScan);continue }
+            if ($method -eq 'POST' -and $path -eq '/api/projects/scan') { $body=Parse-Body $request;Send-Json $stream (Invoke-AI5ProjectScan -Fetch ($body.fetch-ne$false) -DryRun ([bool]$body.dryRun));continue }
+            if ($method -eq 'GET' -and $path -eq '/api/projects/system') { $projects=@(Get-AI5Projects);$locks=@(Get-AI5ActiveLocks);$bridge=Get-AI5CodexHealth;Send-Json $stream @{scheduler=Get-AI5SchedulerStatus;bridge=$bridge;locks=$locks;queue=@(Get-ChildItem (Join-Path $ServerRoot 'data\codex-inbox') -Filter '*.json' -ErrorAction SilentlyContinue).Count;autoLive=@($projects|Where-Object{$_.autoExecution.mode-eq'LIVE'}).Count;dryRun=@($projects|Where-Object{$_.autoExecution.mode-eq'DRY_RUN'}).Count;creditStops=@($projects|Where-Object{$_.stopCode-eq'CREDIT_PROTECTION_STOP'}).Count;approvalStops=@($projects|Where-Object{$_.status-eq'APPROVAL_REQUIRED'}).Count};continue }
             if ($path -match '^/api/projects/([^/]+)/sync$' -and $method -eq 'POST') { $project=Get-AI5Project $Matches[1];if(!$project){Send-Json $stream @{error='not_found'} 404}else{Send-Json $stream (Sync-AI5ProjectGit $project)};continue }
             if ($method -eq 'POST' -and $path -eq '/api/tasks') {
                 $body = Parse-Body $request
