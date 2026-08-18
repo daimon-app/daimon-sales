@@ -1,0 +1,9 @@
+channel,placement,source,medium,campaign,content,account_url,utm_lp_url,play_url,status
+TikTok,profile,tiktok,organic_social,prelaunch,profile,[ACCOUNT_URL],[GENERATED_AFTER_LP_URL],[PLAY_URL],account-uncreated
+TikTok,pinned,tiktok,organic_social,prelaunch,pinned,[ACCOUNT_URL],[GENERATED_AFTER_LP_URL],[PLAY_URL],account-uncreated
+Instagram,profile,instagram,organic_social,prelaunch,profile,[ACCOUNT_URL],[GENERATED_AFTER_LP_URL],[PLAY_URL],account-uncreated
+Instagram,pinned,instagram,organic_social,prelaunch,pinned,[ACCOUNT_URL],[GENERATED_AFTER_LP_URL],[PLAY_URL],account-uncreated
+YouTube,profile,youtube,organic_social,prelaunch,profile,[ACCOUNT_URL],[GENERATED_AFTER_LP_URL],[PLAY_URL],account-uncreated
+YouTube,pinned,youtube,organic_social,prelaunch,pinned,[ACCOUNT_URL],[GENERATED_AFTER_LP_URL],[PLAY_URL],account-uncreated
+X,profile,x,organic_social,prelaunch,profile,[ACCOUNT_URL],[GENERATED_AFTER_LP_URL],[PLAY_URL],account-uncreated
+Threads,profile,threads,organic_social,prelaunch,profile,[ACCOUNT_URL],[GENERATED_AFTER_LP_URL],[PLAY_URL],account-uncreated

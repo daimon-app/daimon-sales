@@ -8,9 +8,9 @@ Manus初回独立監査はNO-GO。公開・販売は `release-gates.md` の全�
 
 Repositoryルートの `preview-marketing.cmd` をダブルクリックする。`http://127.0.0.1:4173/` を既定ブラウザで開き、ウィンドウを閉じるかCtrl+Cで停止する。Loopback限定で外部公開しない。
 
-## CM-A
+## CM-A/B/C
 
-`cm/README.md` に従って初回だけFFmpegをRepositoryローカルへ取得し、`cm/build/build-cm-a.ps1` で再生成する。
+`cm/README.md` に従って初回だけFFmpegをRepositoryローカルへ取得し、`cm/build/build-cm-sales.ps1` で実画面版A/B/Cを再生成する。
 
 ## 自動検査
 
@@ -23,7 +23,8 @@ Repositoryルートの `preview-marketing.cmd` をダブルクリックする。
 ## 公開前残作業
 
 - 正式な事業者・問い合わせ情報と法務ページ最終確認
-- 確定実機スクリーンショット
+- production署名鍵、実機QA
+- 販売ソース保存用private Repository
 - Play Consoleの価格・国・Data safety・IARC入力
 - SNS本人認証とハンドル確定
 - LP公開、審査提出、販売開始の本人承認

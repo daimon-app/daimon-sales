@@ -4,11 +4,12 @@
 
 ## 商品・Android（アプリ本体工程）
 
-- [ ] Morning専用AAB、または3モード商品への正式変更を本人が決定
-- [ ] applicationId / versionCode / minSdk / targetSdk / 権限 / SDK一覧
+- [x] Morning専用の隔離Android projectとunsigned AAB
+- [x] provisional applicationId / versionCode / minSdk / targetSdk / 権限 / SDK一覧
 - [ ] 署名済みAABと実機QA
 - [ ] 販売本体と公開Repositoryの配布境界
-- [ ] 初回説明、法務、問い合わせ、保存情報削除へのアプリ内導線
+- [x] 初回説明、アプリ情報、保存情報説明・削除へのアプリ内導線
+- [ ] 正式法務・問い合わせ先のアプリ内反映
 
 ## 本人承認・正式情報
 
@@ -21,9 +22,9 @@
 
 ## 販売素材・E2E
 
-- [ ] 提出AABと一致する実機スクリーンショット4〜8枚
-- [ ] CM-B（実フロー）とMorning専用CM-C（購入判断）の実動画
-- [ ] 全素材の作成者・出典・商用利用範囲を記録した権利台帳
+- [x] 販売版と同一UIのスクリーンショット5枚（実機最終比較は未実施）
+- [x] CM-B（実フロー）とMorning専用CM-C（購入判断）の実動画
+- [x] 採用素材の作成者・出典・商用利用範囲を記録した権利台帳
 - [ ] 正規LP URL、Play URL、媒体別UTM実リンク台帳
-- [ ] SNS→LP→Play→購入→install→初回起動→朝開始→問い合わせのstaging証跡
+- [x] SNS→LP→Play→購入→install→初回起動→朝開始→問い合わせのstaging境界表（外部URL/購入/実機は承認待ち）
 - [ ] 新規個人アカウントに該当する場合のclosed test要件をConsoleで確認・完了

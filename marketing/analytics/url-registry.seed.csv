@@ -1,0 +1,14 @@
+platform,role,account_status,handle,utm_medium,utm_campaign,utm_content,url_template,live_url,owner_check
+TikTok,primary,unclaimed,{{HANDLE_TIKTOK}},organic_social,prelaunch,profile,{{LP_BASE_URL}}?utm_source=tiktok&utm_medium=organic_social&utm_campaign=prelaunch&utm_content=profile,,handle/LP確認後に生成
+Instagram,primary,unclaimed,{{HANDLE_INSTAGRAM}},organic_social,prelaunch,profile,{{LP_BASE_URL}}?utm_source=instagram&utm_medium=organic_social&utm_campaign=prelaunch&utm_content=profile,,handle/LP確認後に生成
+YouTube,primary,unclaimed,{{HANDLE_YOUTUBE}},organic_social,prelaunch,profile,{{LP_BASE_URL}}?utm_source=youtube&utm_medium=organic_social&utm_campaign=prelaunch&utm_content=profile,,handle/LP確認後に生成
+X,supporting,unclaimed,{{HANDLE_X}},organic_social,prelaunch,profile,{{LP_BASE_URL}}?utm_source=x&utm_medium=organic_social&utm_campaign=prelaunch&utm_content=profile,,handle/LP確認後に生成
+Threads,supporting,unclaimed,{{HANDLE_THREADS}},organic_social,prelaunch,profile,{{LP_BASE_URL}}?utm_source=threads&utm_medium=organic_social&utm_campaign=prelaunch&utm_content=profile,,handle/LP確認後に生成
+ALL,all,not_applicable,not_applicable,organic_social,prelaunch,pinned,{{LP_BASE_URL}}?utm_source={{platform}}&utm_medium=organic_social&utm_campaign=prelaunch&utm_content=pinned,,公開前固定投稿
+ALL,all,not_applicable,not_applicable,organic_social,launch,pinned,{{LP_BASE_URL}}?utm_source={{platform}}&utm_medium=organic_social&utm_campaign=launch&utm_content=pinned,,公開後固定投稿
+ALL,all,not_applicable,not_applicable,organic_social,prelaunch,p01-p10,{{LP_BASE_URL}}?utm_source={{platform}}&utm_medium=organic_social&utm_campaign=prelaunch&utm_content={{p01-p10}},,発売前投稿
+ALL,all,not_applicable,not_applicable,organic_social,launch,p11-p20,{{LP_BASE_URL}}?utm_source={{platform}}&utm_medium=organic_social&utm_campaign=launch&utm_content={{p11-p20}},,発売日投稿
+ALL,all,not_applicable,not_applicable,organic_social,evergreen,p21-p30,{{LP_BASE_URL}}?utm_source={{platform}}&utm_medium=organic_social&utm_campaign=evergreen&utm_content={{p21-p30}},,発売後投稿
+ALL,all,not_applicable,not_applicable,organic_social,prelaunch,cm-a,{{LP_BASE_URL}}?utm_source={{platform}}&utm_medium=organic_social&utm_campaign=prelaunch&utm_content=cm-a,,CM-Aティザー
+ALL,all,not_applicable,not_applicable,organic_social,launch,cm-b,{{LP_BASE_URL}}?utm_source={{platform}}&utm_medium=organic_social&utm_campaign=launch&utm_content=cm-b,,CM-B実フロー
+ALL,all,not_applicable,not_applicable,organic_social,launch,cm-c,{{LP_BASE_URL}}?utm_source={{platform}}&utm_medium=organic_social&utm_campaign=launch&utm_content=cm-c,,CM-C購入判断

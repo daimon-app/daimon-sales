@@ -6,17 +6,15 @@
 
 - Repository: `daimon-app/daimon-sales`
 - Branch: `feat/marketing-foundation`
-- Status: Manus初回独立監査後の是正中（公開判定NO-GO）
+- Status: Morning専用隔離AAB・実画面・CM-A/B/C完成、本人承認ゲート前（公開判定NO-GO）
 - 基本方針: 無料優先・有料広告0円スタート
 
 ## 1. 販売対象
 
-### A. DAIMON販売版
-- 朝
-- 仕事
-- 夜
-- 現在は朝モードを先行施工する。
-- 朝を完成・固定後、同じ共通構造へ仕事・夜を横展開する。
+### A. 今回の販売商品
+- `DAIMON MORNING Edition` 単品のみ。
+- 販売AABへWORK / NIGHT / 将来モードを混在させない。
+- 仕事・夜は将来の別Edition候補であり、今回のLP・Play・CM・SNSでは販売機能として扱わない。
 
 ### B. DAIMON 切り替えスイッチ
 - 別アプリ。
@@ -179,7 +177,7 @@ DAIMONは人を管理するアプリではなく、自分の意図・行動・�
 1. ファーストビュー
 2. 問題: 人はズレる
 3. DAIMONの答え: 戻ればいい
-4. 朝・仕事・夜の説明
+4. Morning専用体験の説明
 5. 実画面GIF / 動画 / スクリーンショット
 6. 3構成メッセージ（①メイン ②補助 ③一声）
 7. DAIMON思想
@@ -239,14 +237,10 @@ Play Console登録・課金・契約・公開確定は本人承認が必要な�
 
 ## 13. 現在の優先順位
 
-1. DAIMON販売版の朝モード完成
-2. 朝固定
-3. 仕事
-4. 仕事固定
-5. 夜
-6. 夜固定
-7. 全体QA
-8. 販売開始
+1. Morning専用販売AABをAPI 36・production署名で固定
+2. 実機QA、法務・サポート、Play Console項目を確定
+3. closed testing / production access条件を満たす
+4. LP・Play・SNSの本人承認後に販売開始
 
 イヤホン仕様は現時点で保留。
 新機能を足さず、完成した箇所を固定して次へ進む。
@@ -272,7 +266,8 @@ Play Console登録・課金・契約・公開確定は本人承認が必要な�
 - 正式商品名: `DAIMON MORNING Edition`
 - 販売条件: 490円・買い切り・広告なし・Android初版
 - LP: `marketing/lp/`、localhostプレビューはルート `preview-marketing.cmd`
-- CM-A: `marketing/cm/exports/cm-a-morning-1080x1920.mp4`
+- CM-A/B/C: `marketing/cm/exports/cm-a-teaser-1080x1920.mp4`、`cm-b-product-flow-1080x1920.mp4`、`cm-c-purchase-1080x1920.mp4`
+- Android販売ソース: 公開Repoでgitignoreされた `private-sales-workspace/`。private Repository承認後に移管する。
 - CM生成: `marketing/cm/README.md`
 - 自動検査: `marketing/test-marketing.ps1`
 - 未確定: 正式事業者情報、問い合わせ先、対象国、Console価格設定、Data safety最終回答、公開日

@@ -17,4 +17,5 @@ FFmpeg公式ダウンロードページから案内されるGyan Windows build�
 - 1080×1920 / 30fps / 7秒 / H.264 / yuv420p / faststart
 - BGM・音声なし。字幕だけで意味が通る
 - 使用素材: DAIMON MORNING Editionの公式 `morning01` とブランドガイド準拠の自作エンドカード
-- B〜EはCM-A検証後に同じ `build/` 構造へ追加する
+- CM-Aはティザー。販売実画面版A/B/Cは `build/build-cm-sales.ps1` で一括生成する。
+- CM-Bは実フロー理解、CM-Cは購入判断用。すべて実画面と自作カードのみ、BGM・音声なし。
