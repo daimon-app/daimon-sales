@@ -3,7 +3,8 @@ param(
   [ValidateSet('enqueue','run-once','show','doctor')]
   [string]$Command,
   [string]$TaskId,
-  [string]$Instruction
+  [string]$Instruction,
+  [string]$Workspace
 )
 $ErrorActionPreference='Stop'
 $PSDefaultParameterValues['Get-Content:Encoding']='UTF8'
@@ -32,12 +33,18 @@ function Enqueue {
   if(!$TaskId -or !$Instruction){throw 'TaskId and Instruction required'}
   $path=PathOf $TaskId
   if(Test-Path $path){$old=Get-Content -Raw $path|ConvertFrom-Json;Log 'duplicate_rejected' @{task_id=$TaskId;status=$old.status};return [ordered]@{accepted=$false;duplicate=$true;task=$old}}
-  $task=[ordered]@{task_id=$TaskId;created_at=Now;instruction=$Instruction;status='queued';started_at=$null;finished_at=$null;result=$null;error=$null;details=@();files_changed=@();tests=@();warnings=@();commit_id='';codex_session_id=$null;retryable=$null;human_action_required=$null;attempt_count=0}
+  $task=[ordered]@{task_id=$TaskId;created_at=Now;instruction=$Instruction;workspace=$Workspace;status='queued';started_at=$null;finished_at=$null;result=$null;error=$null;details=@();files_changed=@();tests=@();warnings=@();commit_id='';codex_session_id=$null;retryable=$null;human_action_required=$null;attempt_count=0}
   WriteJ $task $path;Log 'task_received' @{task_id=$TaskId;instruction=$Instruction};[ordered]@{accepted=$true;duplicate=$false;task=$task}
 }
-function Execute([string]$Text) {
+function Execute([string]$Text,[string]$WorkspaceOverride) {
   $config=Config;$exe=Resolve-CodexExecutable;$workspace=$config.workspace
   if(![IO.Path]::IsPathRooted($workspace)){$workspace=Join-Path $Root $workspace}
+  if($WorkspaceOverride){
+    $workspace=[IO.Path]::GetFullPath($WorkspaceOverride)
+    $allowedRoot=[IO.Path]::GetFullPath((Join-Path $env:USERPROFILE 'Documents\GitHub')).TrimEnd('\')+'\'
+    if(!$workspace.StartsWith($allowedRoot,[StringComparison]::OrdinalIgnoreCase)){throw 'Project workspace is outside the approved GitHub root'}
+    if(!(Test-Path (Join-Path $workspace '.git'))){throw 'Project workspace is not a Git worktree'}
+  }
   New-Item -ItemType Directory -Force $workspace|Out-Null
   $output=Join-Path $Runtime 'last.json';$events=Join-Path $Runtime 'events.jsonl';$errors=Join-Path $Runtime 'stderr.txt';Remove-Item -LiteralPath $output -Force -ErrorAction SilentlyContinue
   $arguments=@('exec','--json','--color','never','--approve-for-me','--cd',$workspace,'--output-schema',(Join-Path $Root 'result.schema.json'),'--output-last-message',$output)
@@ -55,7 +62,7 @@ function Execute([string]$Text) {
 }
 function Run {
   $lock=Join-Path $Queue '.worker.lock';try{$stream=[IO.File]::Open($lock,'CreateNew','Write','None')}catch{throw 'Another worker is running'}
-  try{$file=Get-ChildItem $Queue -Filter '*.json'|Sort-Object CreationTime|Where-Object{(Get-Content -Raw -LiteralPath $_.FullName|ConvertFrom-Json).status -eq 'queued'}|Select-Object -First 1;if(!$file){return $null};$task=Get-Content -Raw $file.FullName|ConvertFrom-Json;$task.status='running';$task.started_at=Now;$task.attempt_count++;WriteJ $task $file.FullName;Log 'task_started' @{task_id=$task.task_id;instruction=$task.instruction};$outcome=Execute $task.instruction;$task.status=$outcome.status;$task.finished_at=Now;$task.result=Redact $outcome.result;$task.error=Redact $outcome.error;$task.details=$outcome.details;$task.files_changed=$outcome.files_changed;$task.tests=$outcome.tests;$task.warnings=$outcome.warnings;$task.commit_id=$outcome.commit_id;$task.codex_session_id=$outcome.session;$task.retryable=$outcome.retryable;$task.human_action_required=$outcome.human_action_required;WriteJ $task $file.FullName;WriteJ $task (Join-Path $Results ((Safe $task.task_id)+'.json'));Log 'task_finished' @{task_id=$task.task_id;status=$task.status;result=$task.result;error=$task.error;codex_session_id=$task.codex_session_id};$task}finally{$stream.Dispose();Remove-Item $lock -Force}
+  try{$file=Get-ChildItem $Queue -Filter '*.json'|Sort-Object CreationTime|Where-Object{(Get-Content -Raw -LiteralPath $_.FullName|ConvertFrom-Json).status -eq 'queued'}|Select-Object -First 1;if(!$file){return $null};$task=Get-Content -Raw $file.FullName|ConvertFrom-Json;$task.status='running';$task.started_at=Now;$task.attempt_count++;WriteJ $task $file.FullName;Log 'task_started' @{task_id=$task.task_id;instruction=$task.instruction};$outcome=Execute $task.instruction $task.workspace;$task.status=$outcome.status;$task.finished_at=Now;$task.result=Redact $outcome.result;$task.error=Redact $outcome.error;$task.details=$outcome.details;$task.files_changed=$outcome.files_changed;$task.tests=$outcome.tests;$task.warnings=$outcome.warnings;$task.commit_id=$outcome.commit_id;$task.codex_session_id=$outcome.session;$task.retryable=$outcome.retryable;$task.human_action_required=$outcome.human_action_required;WriteJ $task $file.FullName;WriteJ $task (Join-Path $Results ((Safe $task.task_id)+'.json'));Log 'task_finished' @{task_id=$task.task_id;status=$task.status;result=$task.result;error=$task.error;codex_session_id=$task.codex_session_id};$task}finally{$stream.Dispose();Remove-Item $lock -Force}
 }
 if($Command -eq 'enqueue'){$value=Enqueue}elseif($Command -eq 'run-once'){$value=Run}elseif($Command -eq 'show'){$path=PathOf $TaskId;if(Test-Path $path){$value=Get-Content -Raw $path|ConvertFrom-Json}}else{$exe=Resolve-CodexExecutable;$value=[ordered]@{executable=$exe;version=((& $exe --version)-join'')}}
 $value|ConvertTo-Json -Depth 12

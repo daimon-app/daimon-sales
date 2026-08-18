@@ -26,6 +26,22 @@ function Write-Utf8Json($value, [string]$path, [int]$depth = 15) {
     [IO.File]::WriteAllText($path, $json, [Text.UTF8Encoding]::new($false))
 }
 
+function Resolve-ProjectWorkspace($context) {
+    if (!$context) { return $null }
+    $repository = [string]$context.repository
+    if ($repository -notmatch '^[A-Za-z0-9_.-]{2,100}$') { throw 'Invalid project repository name' }
+    $currentRoot = [IO.Path]::GetFullPath((Split-Path $AppRoot))
+    $origin = (& git -C $currentRoot remote get-url origin 2>$null) -join ''
+    $currentMatches = $origin -match ('[/:]' + [regex]::Escape($repository) + '(?:\.git)?$')
+    $candidate = if ($currentMatches) { $currentRoot } else { Join-Path (Split-Path $currentRoot) $repository }
+    $candidate = [IO.Path]::GetFullPath($candidate)
+    $allowedRoot = [IO.Path]::GetFullPath((Join-Path $UserHome 'Documents\GitHub')).TrimEnd('\') + '\'
+    if (!$candidate.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase) -or !(Test-Path (Join-Path $candidate '.git'))) { throw 'Project workspace is not an approved Git worktree' }
+    $branch = (& git -C $candidate branch --show-current 2>$null) -join ''
+    if (!$branch -or ($context.branch -and $branch -ne [string]$context.branch)) { throw 'Project workspace branch does not match signed context' }
+    return $candidate
+}
+
 function Get-Signature($id, $instruction, [string]$contextJson=$null) {
     $key = [Convert]::FromBase64String((Get-Content -Raw $secretPath).Trim())
     $hmac = [Security.Cryptography.HMACSHA256]::new($key)
@@ -123,7 +139,8 @@ try {
         Set-TaskState $currentTask $currentTaskPath 'planning' 'Zero prepared a structured Codex instruction'
         Set-TaskState $currentTask $currentTaskPath 'running' 'Codex execution started'
 
-        & "$bridge\bridge.ps1" enqueue -TaskId $envelope.task_id -Instruction $envelope.instruction | Out-Null
+        $workspace = Resolve-ProjectWorkspace $envelope.project_context
+        & "$bridge\bridge.ps1" enqueue -TaskId $envelope.task_id -Instruction $envelope.instruction -Workspace $workspace | Out-Null
         $result = & "$bridge\bridge.ps1" run-once | ConvertFrom-Json
         if (!$result -or $result.task_id -ne $envelope.task_id) {
             $result = & "$bridge\bridge.ps1" show -TaskId $envelope.task_id | ConvertFrom-Json
