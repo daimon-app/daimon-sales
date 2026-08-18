@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "enabled": true,
+  "schedule": {"type": "daily", "time": "06:00", "timezone": "Asia/Tokyo"},
+  "autoDispatch": false,
+  "note": "PROJECT CONTROLの土台検証完了まで自動投入しない"
+}
