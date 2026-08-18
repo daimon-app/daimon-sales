@@ -170,7 +170,7 @@ function New-Task($body, [string]$idem) {
     return $task
 }
 
-if(!$Mock){foreach($recoverable in @(Get-AI5Tasks 100|Where-Object{$_.assignedPrimary-eq'codex'-and(($_.status-eq'queued'-and$_.attempt-eq0)-or($_.status-eq'failed'-and$_.result.retryable-and!$_.result.userActionRequired-and$_.attempt-lt$_.max_attempts-and([DateTime]::UtcNow-[DateTime]::Parse($_.updatedAt)).TotalHours-lt1))})){try{if($recoverable.status-eq'failed'){Set-AI5TaskStatus $recoverable 'RETRYING' 'PC再起動後に安全な未完Taskを復旧'};Dispatch-Task $recoverable}catch{Write-AI5Log 'errors' 'startup_task_recovery_failed' @{task_id=$recoverable.taskId;error=$_.Exception.Message}}}}
+if(!$Mock){foreach($recoverable in @(Get-AI5Tasks 100|Where-Object{$_.assignedPrimary-eq'codex'-and(($_.status-eq'queued'-and$_.attempt-eq0)-or($_.status-eq'failed'-and$_.result.retryable-and!$_.result.userActionRequired-and$_.attempt-lt$_.max_attempts-and([DateTime]::UtcNow-[DateTime]::Parse($_.updatedAt)).TotalHours-lt24))}|Select-Object -First 1)){try{if($recoverable.status-eq'failed'){Set-AI5TaskStatus $recoverable 'RETRYING' 'PC再起動後に安全な未完Taskを1件復旧'};Dispatch-Task $recoverable}catch{Write-AI5Log 'errors' 'startup_task_recovery_failed' @{task_id=$recoverable.taskId;error=$_.Exception.Message}}}}
 $NextApprovalScheduleAt=[DateTimeOffset]::MinValue
 try {
     while ($true) {
