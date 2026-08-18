@@ -9,3 +9,4 @@ $code=Get-Content -Raw -Encoding UTF8 (Join-Path $global:AI5TestRoot 'phase1.tes
 & (Join-Path $global:AI5TestRoot 'NotebookLMAdapter.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'ExecutionPolicy.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'BrowserSpecialistAdapter.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'NotificationUi.Tests.ps1')
