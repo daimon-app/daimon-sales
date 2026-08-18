@@ -1,8 +1,10 @@
-# DAIMON AI5 MULTI-EXECUTION OS v4
+# AI5 SALES FACTORY v6
 
-**ZERO ALWAYS-ON / RESOURCE OPTIMIZED**
+**HUB ZERO ORCHESTRATOR / 5-PRODUCT PARALLEL SALES EXECUTION**
 
 本書をAI5の最新版運用仕様およびGitHub正本とする。旧版と矛盾する場合は本書を優先する。
+
+通常入口と全結果返却先はAI5 HUB / Zeroへ統一する。各AIは担当結果をZero Return Result v6で返し、ZeroがPASS / FAIL / BLOCKED / APPROVAL_REQUIREDを統合判定する。施工AIだけで最終確定せず、Manus施工はClaude、Gemini調査はManusまたはClaude、Codex施工はClaudeが独立確認する。
 
 ## 0. 最上位目的
 

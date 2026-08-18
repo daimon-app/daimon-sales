@@ -1,0 +1,8 @@
+function Initialize-AI5ExternalTaskAdapter {param([string]$ServerRoot);$script:ExternalOutboxRoot=Join-Path $ServerRoot 'data\external-outbox';foreach($agent in @('manus','gemini')){New-Item -ItemType Directory -Force (Join-Path $script:ExternalOutboxRoot $agent)|Out-Null}}
+function Submit-AI5ExternalTask {
+  param($Task,[ValidateSet('manus','gemini')][string]$Agent)
+  $request=[ordered]@{task_id=$Task.task_id;project_id=$Task.project_id;product_id=$Task.product_id;objective=$Task.objective;assigned_ai=$Agent;support_ai=@($Task.support_ai);writer=$Task.writer;priority=$Task.priority;source_commit=$Task.source_commit;expected_output=$Task.expected_output;acceptance_criteria=@($Task.acceptance_criteria);constraints=@($Task.constraints);return_route="POST /api/tasks/$($Task.task_id)/result";created_at=[DateTime]::UtcNow.ToString('o')}
+  $path=Join-Path (Join-Path $script:ExternalOutboxRoot $Agent) ($Task.task_id+'.json');$temp=$path+'.tmp';$request|ConvertTo-Json -Depth 12|Set-Content -LiteralPath $temp -Encoding UTF8;Move-Item -LiteralPath $temp -Destination $path -Force;$request
+}
+function Get-AI5ExternalOutbox {param([ValidateSet('manus','gemini')][string]$Agent);@(Get-ChildItem (Join-Path $script:ExternalOutboxRoot $Agent)-Filter'*.json'-ErrorAction SilentlyContinue|Sort-Object LastWriteTime|ForEach-Object{Get-Content -Raw -Encoding UTF8 $_.FullName|ConvertFrom-Json})}
+function Complete-AI5ExternalTask {param([string]$TaskId,[string]$Agent);$path=Join-Path (Join-Path $script:ExternalOutboxRoot $Agent) ($TaskId+'.json');if(Test-Path $path){Remove-Item -LiteralPath $path -Force}}

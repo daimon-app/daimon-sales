@@ -1,7 +1,8 @@
-const CACHE='ai5-hub-v37-auto-execution';
-const ASSETS=['/','/index.html','/styles.css','/app.js','/manifest.webmanifest','/icons/ai5-icon-192.png','/icons/ai5-icon-512.png','/icons/apple-touch-icon.png'];
+const CACHE_PREFIX='ai5-hub-';
+const CACHE='ai5-hub-v38-auto-execution-sales-factory-v6';
+const ASSETS=['/','/index.html','/styles.css','/factory.css','/app.js','/manifest.webmanifest','/icons/ai5-icon-192.png','/icons/ai5-icon-512.png','/icons/apple-touch-icon.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
+self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith(CACHE_PREFIX)&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{
   const url=new URL(event.request.url);
   if(event.request.method!=='GET'||url.pathname.startsWith('/api/'))return;

@@ -12,6 +12,7 @@
   <link rel="icon" href="icons/ai5-icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
   <link rel="stylesheet" href="styles.css?v=35">
+  <link rel="stylesheet" href="factory.css?v=1">
 </head>
 <body>
   <div class="shell">
@@ -33,6 +34,7 @@
       <section id="projectsView" class="projects-view" hidden>
         <div class="projects-head"><div><small>PROJECT CONTROL</small><h2>全プロジェクト</h2></div><button id="addProjectButton">＋ 登録</button></div>
         <div id="projectStats" class="project-stats"></div>
+        <section class="factory-panel"><div class="factory-title"><div><small>HUB ZERO ORCHESTRATOR</small><h3>SALES FACTORY M1–M5</h3></div><span>投入はZero安全判定後</span></div><div id="salesFactory" class="factory-grid"></div></section>
         <div class="project-tools"><input id="projectSearch" type="search" placeholder="Project名 / Repository名"><select id="projectFilter"><option value="all">全件</option><option value="autoOn">自動実行ON</option><option value="autoOff">自動実行OFF</option><option value="TEPPEI">本人待ち</option><option value="error">異常停止</option><option value="running">施工中</option><option value="selling">販売中</option><option value="ARCHIVED">Archived</option></select></div>
         <div id="projectList" class="project-list"></div>
       </section>
@@ -73,6 +75,6 @@
   <dialog id="projectDialog"><form method="dialog" class="project-dialog"><button class="dialog-close" value="cancel">×</button><div id="projectDetail"></div></form></dialog>
   <dialog id="projectCreateDialog"><form id="projectCreateForm" class="project-dialog"><button type="button" class="dialog-close" data-close-project>×</button><h2>Project登録</h2><label>Project Name<input name="name" required></label><label>Project ID<input name="projectId" required pattern="[a-z0-9][a-z0-9._-]{1,79}"></label><label>Repository（未確定なら空欄）<input name="repository"></label><p>AUTO EXECUTIONは安全のためOFFで登録されます。</p><button class="project-primary" type="submit">登録</button></form></dialog>
   <div id="authGate" class="auth-gate" hidden><div><span class="brand-mark">五</span><h2>AI5 HUB</h2><p>本人認証が必要です。Tailscale接続を確認してログインしてください。</p><button id="loginButton">ログイン</button><small id="authError"></small></div></div>
-  <script src="app.js?v=36"></script>
+  <script src="app.js?v=38"></script>
 </body>
 </html>

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 2,
+  "projectId": "sales-sns-daimon",
+  "productId": "SNS",
+  "name": "DAIMON公式SNS母艦",
+  "repository": {"owner": "daimon-app", "name": "daimon-sales", "defaultBranch": "main", "activeBranch": "feat/ai5-sales-factory-v6", "latestCommit": "f20e001084d10810304a6fbf56215bdac70638b1", "linkState": "LINKED", "sync": {"state": "PROTECTED", "localHead": "", "remoteHead": "", "defaultHead": "", "ahead": 0, "behind": 0, "dirty": false, "checkedAt": "2026-08-19T00:00:00+09:00", "error": ""}},
+  "phase": "VALIDATION", "stage": "VALIDATION", "progress": 10, "status": "READY", "primaryAI": "manus", "writer": "NONE", "currentTask": "既存SNS母艦と販売導線のread-only監査", "lastResult": "未実行", "nextAction": "Manus監査とGemini独立調査", "blockedBy": "NONE", "stopCode": "NONE", "stopReason": "",
+  "approval": {"status": "NONE", "requiredFor": ["SNS公開投稿", "DM送信", "広告出稿", "アカウント作成"]},
+  "autoExecution": {"enabled": false, "mode": "OFF"},
+  "executionPolicy": {"risk": "LOW", "costClass": "NORMAL", "maxRetry": 2, "dailyAutoRuns": 3, "requireApprovalAbove": "HIGH", "retryCount": 0, "runsToday": 0, "autoRunsToday": 0, "autoRunsDate": "", "failureFingerprint": "", "consecutiveFailures": 0},
+  "execution": {"taskId": "", "lockId": "", "submittedAt": "", "resultRecoveredAt": "", "lastResult": ""},
+  "timestamps": {"createdAt": "2026-08-19T00:00:00+09:00", "updatedAt": "2026-08-19T00:00:00+09:00", "stoppedAt": "", "resumedAt": "", "workStartedAt": "", "workCompletedAt": "", "lastGitHubSyncAt": "", "lastZeroActionAt": "", "lastCodexActionAt": "", "lastClaudeActionAt": "", "lastGeminiActionAt": "", "lastManusActionAt": "", "lastTeppeiActionAt": "", "publishedAt": "", "lastMaintenanceAt": "", "heartbeatAt": ""},
+  "aiState": {"zero": "READY", "codex": "RESERVED", "claude": "READY", "gemini": "READY", "manus": "READY", "notebooklm": "NOT_REQUIRED"},
+  "qualityGate": {"tests": "UNKNOWN", "review": "UNKNOWN", "fieldValidation": "UNKNOWN", "release": "UNKNOWN", "qa": "UNKNOWN", "audit": "UNKNOWN"},
+  "versions": [], "history": []
+}

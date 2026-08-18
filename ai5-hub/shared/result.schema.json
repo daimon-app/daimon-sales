@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.ai5/schemas/result.schema.json",
+  "title": "AI5 Zero Return Result v6",
+  "type": "object",
+  "required": ["task_id","ai","result","verdict","evidence","files_changed","commit","tests","qa","blockers","resource_status","approval_required","recommended_next_action"],
+  "properties": {
+    "task_id": {"type":"string","minLength":1},
+    "ai": {"enum":["manus","claude","gemini","codex"]},
+    "result": {"type":"string"},
+    "verdict": {"enum":["PASS","FAIL","BLOCKED","PARTIAL"]},
+    "evidence": {"type":"array","items":{"type":"string"}},
+    "files_changed": {"type":"array","items":{"type":"string"}},
+    "commit": {"type":"string"},
+    "tests": {"type":"array","items":{"type":"string"}},
+    "qa": {"type":"array","items":{"type":"string"}},
+    "blockers": {"type":"array","items":{"type":"string"}},
+    "resource_status": {"enum":["AVAILABLE","LIMITED","EXHAUSTED","TIMEOUT","UNKNOWN"]},
+    "approval_required": {"type":"boolean"},
+    "recommended_next_action": {"type":"string"}
+  },
+  "additionalProperties": false
+}

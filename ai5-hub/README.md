@@ -2,7 +2,7 @@
 
 AI5 HUBは、鉄兵がZeroだけへ自然文で指示し、Zeroが目的・安全条件・担当AI・完了条件を判断するローカル施工司令室です。Phase 2では、既存LINE風UIと実証済みZero-Codex Bridgeを統合し、公式Codex CLIによるPC施工と結果返却まで実働します。
 
-AI5の最新版運用正本は [DAIMON AI5 MULTI-EXECUTION OS v4](./ZERO_SPEC.md) です。Zeroを常時稼働・リソースルーティング対象外とし、ClaudeをCodexとManus双方の第二実働エンジン兼独立監査役として扱います。
+AI5の最新版運用正本は [AI5 SALES FACTORY v6](./ZERO_SPEC.md) です。本人の通常入口と全AIの結果返却先をZeroへ統一し、Claudeを第二実働エンジン兼独立監査役、Codexを高価値技術施工用RESERVEDとして扱います。
 
 Phase 3ではTask Engine、共通Result Schema、検査・再振分け、Repository Lock、4画面スマホUIを追加しました。Tailscale Serveのprivate HTTPSと本人認証は実働確認済みです。Android Pixel 10aとiPhoneではstandalone起動、本人認証、キーボード表示、Task送信、Codex施工、結果返却、再起動後復元まで実測PASSしました。モバイル回線とWindows実再起動後の自動復旧もPASSし、Phase 2.5の必須確認は完了しています。詳細は [MOBILE_SETUP.md](./MOBILE_SETUP.md) を参照してください。
 
@@ -31,6 +31,10 @@ AUTO EXECUTION統合ではRemote HEAD・ahead/behind・dirty判定、1時間常�
 | Gemini Chrome | ✅ ログイン済みWeb実送信成功 |
 | Manus Chrome | ✅ ログイン済みWeb実送信成功 |
 | Gmail通知 | ⬜ 未接続 |
+| Zero Command / Return v6 | ✅ 共通Task/Result契約・外部outbox・結果API |
+| M1〜M5 Sales Factory | ✅ Project登録・5商品dashboard・10 task DRY RUN PASS |
+| Repository Single Writer | ✅ worktree/branch/source commit固定lock |
+| v6 LIVE Sales Factory | ⏸ Claude独立監査後に起動 |
 
 専門AIの接続表示は24時間以内の実疎通記録だけを有効とし、古い記録は自動的にstale表示へ落とします。
 

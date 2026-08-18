@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
-  "updatedAt": "2026-08-18T00:00:00+09:00",
-  "projects": ["daimon-sales", "ai5-hub"]
+  "schemaVersion": 2,
+  "updatedAt": "2026-08-19T00:00:00+09:00",
+  "projects": ["daimon-sales", "ai5-hub", "sales-m1-p02", "sales-m2-daimon", "sales-m3-ashita", "sales-m4-meditation", "sales-m5-switch", "sales-sns-daimon"]
 }

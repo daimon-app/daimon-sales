@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "factoryId": "ai5-sales-factory-v6",
+  "zero": {"status":"ALWAYS_AVAILABLE","resourceStatus":"AVAILABLE","routingExempt":true},
+  "maxParallel": 5,
+  "stages": ["IDEA","VALIDATION","BUILD","QA","TECH_READY","SALES_FOUNDATION","FINAL_AUDIT","SALES_READY","APPROVAL","RELEASED"],
+  "lanes": {
+    "sales": {"primary":"manus","fallback":"claude"},
+    "techQuality": {"primary":"claude","fallback":"codex"},
+    "research": {"primary":"gemini","fallback":"manus"}
+  },
+  "approvalGates": ["payment","purchase","contract","advertising","oauth","2fa","captcha","identity_verification","sns_publish","dm_send","main_merge","production_publish","google_play_publish","sale_start","irreversible","secret_external_send"]
+}
