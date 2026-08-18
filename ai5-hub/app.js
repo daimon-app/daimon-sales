@@ -1,6 +1,6 @@
 const AGENTS=[
   {id:"codex",name:"Codex",mark:"C",role:"PC・コード・Git"},{id:"gemini",name:"Gemini",mark:"G",role:"調査・Google・別解"},
-  {id:"claude",name:"Claude",mark:"Cl",role:"レビュー・設計監査"},{id:"manus",name:"Manus",mark:"M",role:"Web実務・長時間作業"},
+  {id:"claude",name:"Claude",mark:"Cl",role:"第二万能施工・独立監査"},{id:"manus",name:"Manus",mark:"M",role:"第一Web・販売施工"},
   {id:"notebooklm",name:"NotebookLM",mark:"N",role:"資料参照・出典抽出（読取専用）"}
 ];
 const LABELS={queued:"受付",planning:"判断中",waiting_approval:"承認待ち",running:"施工中",reviewing:"検査中",completed:"完了",failed:"失敗",cancelled:"中止"};
