@@ -12,7 +12,7 @@
     "status": {"enum": ["NOT_STARTED","READY","RUNNING","WAITING","BLOCKED","FAILED","REVIEW_REQUIRED","APPROVAL_REQUIRED","PAUSED","PUBLISHED","OPERATING","COMPLETED","ARCHIVED"]},
     "blockedBy": {"enum": ["NONE","ZERO","CODEX","CLAUDE","GEMINI","MANUS","NOTEBOOKLM","TEPPEI","GITHUB","EXTERNAL","SYSTEM","CREDIT_LIMIT","UNKNOWN"]},
     "stopCode": {"enum": ["NONE","ZERO_STOPPED","CODEX_STOPPED","CLAUDE_STOPPED","MANUS_STOPPED","GEMINI_STOPPED","TEPPEI_WAITING","GITHUB_SYNC_WAIT","CREDIT_PROTECTION_STOP","ERROR_LOOP_STOP","NEXT_STEP_MISSING","ALL_AI_DONE_BUT_IDLE","NORMAL_WAIT","EXTERNAL_WAIT","SYSTEM"]},
-    "autoExecution": {"type":"object","required":["enabled"],"properties":{"enabled":{"type":"boolean"}}},
+    "autoExecution": {"type":"object","required":["enabled","mode"],"properties":{"enabled":{"type":"boolean"},"mode":{"enum":["OFF","DRY_RUN","LIVE"]}}},
     "history": {"type":"array"}
   },
   "additionalProperties": true

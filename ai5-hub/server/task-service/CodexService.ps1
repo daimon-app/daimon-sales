@@ -24,11 +24,12 @@ function Write-AI5Utf8Json {
 }
 
 function Get-AI5CodexSignature {
-    param([string]$TaskId, [string]$Instruction)
+    param([string]$TaskId, [string]$Instruction, [string]$ContextJson=$null)
     $key = [Convert]::FromBase64String((Get-Content -Raw $script:CodexSecretPath).Trim())
     $hmac = [Security.Cryptography.HMACSHA256]::new($key)
     try {
-        $payload = [Text.Encoding]::UTF8.GetBytes("$TaskId`n$Instruction")
+        $text=if($null-eq$ContextJson){"$TaskId`n$Instruction"}else{"$TaskId`n$Instruction`n$ContextJson"}
+        $payload = [Text.Encoding]::UTF8.GetBytes($text)
         return [Convert]::ToBase64String($hmac.ComputeHash($payload))
     } finally { $hmac.Dispose() }
 }
@@ -69,18 +70,22 @@ function Start-AI5CodexWorker {
 
 function Submit-AI5CodexTask {
     param($Task)
+    $context = if($Task.projectContext){$Task.projectContext}else{$null}
+    $contextJson = if($context){$context|ConvertTo-Json -Compress -Depth 10}else{''}
     $envelope = [ordered]@{
         task_id = $Task.taskId
         created_at = [DateTime]::UtcNow.ToString('o')
         source = 'ai5-hub'
-        requested_by = 'zero'
+        requested_by = $(if($context){'PROJECT_CONTROL'}else{'zero'})
         assigned_to = 'codex'
         instruction = $Task.message
         risk_level = $Task.route.risk
         approval_required = $Task.requiresApproval
         status = 'queued'
+        signature_version = 2
+        project_context = $context
     }
-    $envelope.signature = Get-AI5CodexSignature $envelope.task_id $envelope.instruction
+    $envelope.signature = Get-AI5CodexSignature $envelope.task_id $envelope.instruction $contextJson
     $path = Join-Path $script:CodexInbox ($Task.taskId + '.json')
     if (Test-Path $path) { return [ordered]@{ accepted = $false; duplicate = $true; workerStarted = (Start-AI5CodexWorker) } }
     $temp = "$path.tmp"

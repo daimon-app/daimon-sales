@@ -26,11 +26,12 @@ function Write-Utf8Json($value, [string]$path, [int]$depth = 15) {
     [IO.File]::WriteAllText($path, $json, [Text.UTF8Encoding]::new($false))
 }
 
-function Get-Signature($id, $instruction) {
+function Get-Signature($id, $instruction, [string]$contextJson=$null) {
     $key = [Convert]::FromBase64String((Get-Content -Raw $secretPath).Trim())
     $hmac = [Security.Cryptography.HMACSHA256]::new($key)
     try {
-        $payload = [Text.Encoding]::UTF8.GetBytes("$id`n$instruction")
+        $text=if($null-eq$contextJson){"$id`n$instruction"}else{"$id`n$instruction`n$contextJson"}
+        $payload = [Text.Encoding]::UTF8.GetBytes($text)
         return [Convert]::ToBase64String($hmac.ComputeHash($payload))
     } finally {
         $hmac.Dispose()
@@ -97,7 +98,8 @@ try {
 
         $currentTask = Read-Utf8Json $currentTaskPath
         Set-TaskProperty $currentTask 'attempt' ([int]$currentTask.attempt + 1)
-        $expected = Get-Signature $envelope.task_id $envelope.instruction
+        $contextJson = if($envelope.signature_version-eq2){if($envelope.project_context){$envelope.project_context|ConvertTo-Json -Compress -Depth 10}else{''}}else{$null}
+        $expected = Get-Signature $envelope.task_id $envelope.instruction $contextJson
         if ($envelope.signature -ne $expected) {
             Set-TaskProperty $currentTask 'errorType' 'authentication_failed'
             $currentTask.result = [ordered]@{

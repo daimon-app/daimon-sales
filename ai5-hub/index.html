@@ -36,6 +36,7 @@
         <div class="project-tools"><input id="projectSearch" type="search" placeholder="Project名 / Repository名"><select id="projectFilter"><option value="all">全件</option><option value="autoOn">自動実行ON</option><option value="autoOff">自動実行OFF</option><option value="TEPPEI">本人待ち</option><option value="error">異常停止</option><option value="running">施工中</option><option value="selling">販売中</option><option value="ARCHIVED">Archived</option></select></div>
         <div id="projectList" class="project-list"></div>
       </section>
+      <section id="systemView" class="projects-view" hidden><div class="projects-head"><div><small>PROJECT CONTROL</small><h2>SYSTEM</h2></div><button id="scanProjectsButton">今すぐ巡回</button></div><div id="systemStatus" class="system-status"></div></section>
 
       <form id="composer" class="composer">
         <textarea id="prompt" rows="1" placeholder="ゼロに指示を入力…" aria-label="ゼロへの指示"></textarea>
