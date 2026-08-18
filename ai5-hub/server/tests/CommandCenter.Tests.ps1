@@ -9,5 +9,6 @@ if(!$danger.requiresApproval-or$danger.primary-ne'manus'){throw 'direct target b
 try{$null=Get-AI5Route 'test' 'invalid';throw 'invalid target accepted'}catch{if($_.Exception.Message-ne'invalid_target'){throw}}
 $html=Get-Content -Raw -Encoding UTF8 (Join-Path $root 'index.html');$app=Get-Content -Raw -Encoding UTF8 (Join-Path $root 'app.js')
 foreach($required in @('AI5 COMMAND CENTER','ai5SiblingCards','knowledgeCard','targetSelect','AUTO / Zero','LIVE AI5','WRITE LOCK','chatFilters','historyFilter','AI5 ${commandMeta(id).name}')){if(($html+$app)-notmatch[regex]::Escape($required)){throw "command center missing: $required"}}
-foreach($target in @('codex','claude','gemini','manus','notebooklm')){if($html-notmatch('value="'+$target+'"')){throw "target missing: $target"}}
+foreach($target in @('codex','claude','gemini','manus','notebooklm','all')){if($html-notmatch('value="'+$target+'"')){throw "target missing: $target"}}
+$all=Get-AI5Route '全員で確認して' 'all';if($all.primary-ne'codex'-or@($all.secondary).Count-ne4){throw 'ALL specialist decomposition failed'}
 'COMMAND_CENTER_TESTS_OK'

@@ -39,18 +39,20 @@ header p { color: var(--muted); font-size: 12px; margin-top: 5px; }
 .ghost { background: transparent; border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 9px 12px; display: none; }
 .header-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }.ghost.subtle { display: block; color: var(--muted); }
 .messages { flex: 1; overflow: auto; padding: 28px max(24px, 8vw); }
-.chat-filters{display:flex;gap:6px;padding:8px max(18px,6vw) 0;overflow-x:auto;scrollbar-width:none}.chat-filters button{border:1px solid var(--line);border-radius:20px;background:transparent;color:var(--muted);padding:6px 10px;font-size:10px;white-space:nowrap}.chat-filters button.active{background:var(--panel2);color:var(--green)}
+.chat-filters{display:flex;gap:6px;padding:8px max(18px,6vw) 0;overflow-x:auto;scrollbar-width:none}.chat-filters button,.chat-filters select{border:1px solid var(--line);border-radius:20px;background:transparent;color:var(--muted);padding:6px 10px;font-size:10px;white-space:nowrap}.chat-filters select{background:var(--panel)}.chat-filters button.active{background:var(--panel2);color:var(--green)}
 .message { max-width: 720px; margin-bottom: 18px; display: flex; gap: 10px; }
 .message.user { margin-left: auto; flex-direction: row-reverse; }
 .bubble { padding: 13px 16px; border-radius: 6px 18px 18px; background: var(--panel2); border: 1px solid var(--line); line-height: 1.65; font-size: 14px; }
 .user .bubble { background: #1d6b4d; border-color: #2b8f69; border-radius: 18px 6px 18px 18px; }
 .meta { font-size: 10px; color: var(--muted); margin-top: 6px; }
+.reply-button{border:0;background:transparent;color:var(--green);font-size:10px;padding:4px 7px}
 .routing { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
 .chip { font-size: 11px; padding: 4px 8px; border-radius: 20px; background: #173329; color: var(--green); }
 .composer { padding: 16px max(24px, 8vw) 20px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 10px; }
 .composer textarea { resize: none; max-height: 140px; background: var(--panel2); border: 1px solid var(--line); border-radius: 15px; padding: 14px; color: var(--text); font: inherit; outline: none; }
 .composer button { border: 0; border-radius: 14px; background: var(--green); color: #06100d; font-weight: 800; padding: 0 20px; }
 .composer.sending button { opacity: .55; pointer-events: none; }
+.attach-button{grid-column:1;color:var(--green);font-size:11px;cursor:pointer}.attachment-status{grid-column:2;color:var(--muted);font-size:10px;text-align:right}
 .ai5-card .agent-top{gap:7px}.ai5-card .agent-top b{white-space:nowrap;font-size:14px}.ai5-card .agent-state{flex:0 0 auto;white-space:nowrap}
 .target-select{grid-column:1/-1;color:var(--muted);font-size:11px;display:flex;align-items:center;gap:7px}.target-select select{min-height:34px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);padding:5px 9px;font-weight:700}
 .composer p { grid-column: 1/-1; color: var(--muted); font-size: 10px; }

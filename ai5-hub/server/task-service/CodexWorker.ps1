@@ -17,6 +17,7 @@ $taskRoot = Join-Path $ServerRoot 'data\tasks'
 $logRoot = Join-Path $ServerRoot 'logs\tasks'
 New-Item -ItemType Directory -Force $logRoot | Out-Null
 . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $AppRoot 'server\notifications\PushNotification.ps1'))))
+. ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $AppRoot 'server\orchestrator\AutonomousLoop.ps1'))))
 Initialize-AI5PushNotifications $ServerRoot $AppRoot
 
 function Read-Utf8Json([string]$path) {
@@ -182,15 +183,32 @@ try {
         if ($result.status -eq 'success') {
             Set-TaskState $currentTask $currentTaskPath 'reviewing' 'Bridge collected Codex evidence'
             Set-TaskProperty $currentTask 'validation' ([ordered]@{passed=$true;checks=[ordered]@{result_schema=$true;tests=(@($result.tests).Count-gt 0);bridge_success=$true};checked_at=[DateTime]::UtcNow.ToString('o')})
+            $null=Initialize-AI5LoopTask $currentTask
+            Add-AI5AgentReport $currentTask 'codex' 'COMPLETE' '現物確認・施工・検査' $summary ($(if(@($result.warnings).Count){@($result.warnings)-join' / '}else{'なし'})) 'Zero統合監査'
+            foreach($specialist in @($currentTask.assignedSecondary|Where-Object{$_-and$_-ne'codex'})){
+                $found=@($currentTask.agent_results|Where-Object{$_.agent-eq$specialist}|Select-Object -First 1)
+                if($found.Count){Add-AI5AgentReport $currentTask $specialist ([string]$found[0].status) '専門領域を確認' ([string]$found[0].summary) (@($found[0].risks)-join' / ') 'Zero統合監査'}
+                elseif($summary-match("(?im)^-\s*"+[regex]::Escape($specialist)+"\s*:\s*(VERIFIED|PARTIALLY VERIFIED|PASS|SUCCESS|UNVERIFIED)")){$specialistState=if($Matches[1]-eq'UNVERIFIED'){'BLOCKED'}else{'COMPLETE'};Add-AI5AgentReport $currentTask $specialist $specialistState '専門経路を実行' $Matches[1] $(if($specialistState-eq'BLOCKED'){'UNVERIFIED'}else{'なし'}) 'Zero統合監査'}
+                else{Add-AI5AgentReport $currentTask $specialist 'BLOCKED' '専門経路へ依頼' '独立結果を回収できませんでした' 'UNVERIFIED' 'Zeroが利用可能な証拠で判定'}
+            }
             foreach($child in @($currentTask.children)){
                 if($child.assigned_agent -eq 'codex'){
                     $child.status='COMPLETED'
                     $child.updated_at=[DateTime]::UtcNow.ToString('o')
                 }
             }
-            Set-TaskState $currentTask $currentTaskPath 'completed' 'Zero verified the Codex result'
-            $null=Send-AI5PushNotification ($currentTask.taskId+'-completed') 'completed'
+            $judge=Invoke-AI5DoubleJudge $currentTask
+            if($judge.decision-eq'REWORK'){
+                Set-TaskState $currentTask $currentTaskPath 'retrying' "Zero + Codex REWORK cycle $($judge.cycle)"
+                & "$bridge\bridge.ps1" enqueue -TaskId $envelope.task_id -Instruction ($envelope.instruction+"`nREWORK: "+$judge.reason) -Workspace $workspace -Retry | Out-Null
+                Save-Task $currentTask $currentTaskPath
+                Write-WorkerLog 'autonomous_rework_queued' @{task_id=$currentTask.taskId;cycle=$judge.cycle;reason=$judge.reason}
+                $currentTask=$null;$currentTaskPath=$null;$currentEnvelopePath=$null;continue
+            }
+            Set-TaskState $currentTask $currentTaskPath $(if($judge.decision-eq'COMPLETE'){'completed'}else{'failed'}) "Zero + Codex: $($judge.decision)"
         } else {
+            $null=Initialize-AI5LoopTask $currentTask
+            Add-AI5AgentReport $currentTask 'codex' 'FAILED' '施工・検査' $summary ([string]$result.error) '安全な自動再施工またはZero再配分'
             Set-TaskProperty $currentTask 'errorType' 'task_failed'
             $fingerprintSource = if ($result.error) { [string]$result.error } else { 'task_failed' }
             $sha = [Security.Cryptography.SHA256]::Create()
@@ -209,7 +227,6 @@ try {
                 continue
             }
             Set-TaskState $currentTask $currentTaskPath 'failed' $(if($repeatCount-ge2){'Repeated Codex failure stopped'}else{'Codex execution failed'})
-            $null=Send-AI5PushNotification ($currentTask.taskId+'-failed') 'failed'
         }
 
         Save-Task $currentTask $currentTaskPath

@@ -28,6 +28,6 @@ try{
   $p.phase='PUBLISHED';$p.status='RUNNING';Save-AI5Project $p;$p=Set-AI5ProjectState $p ([pscustomobject]@{phase='PUBLISHED';status='PUBLISHED'});$published=$p.timestamps.publishedAt;$p=Set-AI5ProjectState $p ([pscustomobject]@{phase='FIX_REQUIRED';status='READY'});$p=Set-AI5ProjectState $p ([pscustomobject]@{phase='PUBLISHED';status='PUBLISHED'});Assert-PC ($p.timestamps.publishedAt-eq$published-and$p.history.Count-gt10) 'sales lifecycle/history preservation failed'
   for($i=1;$i-le100;$i++){New-AI5Project ([pscustomobject]@{projectId=('bulk-{0:d3}'-f$i);name="Bulk $i";repository=''})|Out-Null};Assert-PC ((Get-AI5Projects).Count-ge103) '100 project display source failed'
   $offlineShell=Get-Content -Raw (Join-Path $appRoot 'app.js');Assert-PC ($offlineShell-match'PCオフライン'-and$offlineShell-match'refreshProjects') 'Offline UI/regression marker failed'
-  $sw=Get-Content -Raw (Join-Path $appRoot 'service-worker.js');Assert-PC ($sw-match'fetch'-and$sw-match'ai5-hub-v41') 'PWA offline cache version failed'
+  $sw=Get-Content -Raw (Join-Path $appRoot 'service-worker.js');Assert-PC ($sw-match'fetch'-and$sw-match'ai5-hub-v42') 'PWA offline cache version failed'
   'PROJECT_CONTROL_TESTS_OK'
 }finally{if(Test-Path $temp){Remove-Item -Recurse -Force $temp}}

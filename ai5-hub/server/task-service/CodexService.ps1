@@ -43,12 +43,13 @@ function Get-AI5CodexHealth {
 
 function Get-AI5CodexInstruction {
     param($Task)
+    $attachment=if($Task.attachment_id){Get-AI5AttachmentPath ([string]$Task.attachment_id)}else{$null}
     $agents = @($Task.assignedSecondary | Where-Object { $_ -and $_ -ne 'codex' } | Select-Object -Unique)
-    if ($agents.Count -eq 0) { return [string]$Task.message }
+    if ($agents.Count -eq 0) { return (([string]$Task.message)+$(if($attachment){"`nAttached screenshot (read-only): $attachment"}else{''})) }
     $mode = if ($Task.execution_plan.mode) { [string]$Task.execution_plan.mode } else { 'sequential' }
     $specialists = $agents -join ', '
     $rules = @(
-        [string]$Task.message,
+        (([string]$Task.message)+$(if($attachment){"`nAttached screenshot (read-only): $attachment"}else{''})),
         '',
         'AI5 ORCHESTRATION CONTRACT:',
         "- Required read-only specialists: $specialists",

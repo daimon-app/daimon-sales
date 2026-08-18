@@ -28,6 +28,8 @@ try {
   if($direct.requested_target-ne'codex'-or$direct.routing_mode-ne'direct_via_zero'){throw 'direct target API contract failed'}
   $command=Invoke-RestMethod "$base/api/command-center"
   if(!$command.agents.zero-or!$command.agents.codex-or!$command.agents.notebooklm){throw 'command center health missing'}
+  $chat=Invoke-RestMethod "$base/api/chat" -Headers @{'X-AI5-Chat-Level'='NORMAL'}
+  if(!$chat.messages-or!($chat.messages|Where-Object{$_.agent-eq'zero'})){throw 'durable AI5 LINE report missing'}
   try{Invoke-RestMethod "$base/api/shell" -TimeoutSec 2;throw 'arbitrary shell endpoint exposed'}catch{if($_.Exception.Message-eq'arbitrary shell endpoint exposed'){throw}}
   'PHASE3_API_E2E_TESTS_OK'
 } finally {

@@ -81,6 +81,8 @@ $env:AI5_MOCK='true'
 - `GET /api/health`
 - `GET /api/status`
 - `GET /api/command-center`
+- `GET /api/chat`（永続AI5 LINE報告。SIMPLE/NORMAL/DETAIL）
+- `POST /api/attachments`（5MB以下のJPEG/PNG/WebP）
 - `POST /api/tasks`
 - `GET /api/tasks/:id`
 - `GET /api/tasks/:id/result`
@@ -98,6 +100,8 @@ $env:AI5_MOCK='true'
 - `POST /api/push/subscribe`
 
 状態は `queued / planning / waiting_approval / running / reviewing / completed / failed / cancelled`。会話、task、execution、resultは分離保存し、ブラウザ再読込後も復元します。
+
+FULL AUTONOMOUS LOOPは各AIの短文report、Zero目的判定、Codex技術判定をTaskへ永続化します。判定は`REWORK / CONTINUE / APPROVAL / COMPLETE / BLOCKED`。同一Taskの自動REWORKは既定3 cycleで停止し、Single WriterはCodexを維持します。個別指名、`@AI`、ALL、メッセージ返信もZero Safety Layerを迂回しません。
 
 ## 認証・安全規則
 

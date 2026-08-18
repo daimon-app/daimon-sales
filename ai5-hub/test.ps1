@@ -20,3 +20,5 @@ $code=Get-Content -Raw -Encoding UTF8 (Join-Path $global:AI5TestRoot 'phase1.tes
 & (Join-Path $global:AI5TestRoot 'CommandCenter.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'CommandCenterResponsive.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'ApprovalNotificationSchedule.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'AutonomousLoop.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'Attachments.Tests.ps1')

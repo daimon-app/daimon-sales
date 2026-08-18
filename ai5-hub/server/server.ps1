@@ -5,10 +5,11 @@ $CodeServerRoot = if ($global:AI5CodeServerRoot) { $global:AI5CodeServerRoot } e
 $ServerRoot = if ($global:AI5ServerRoot) { $global:AI5ServerRoot } else { $PSScriptRoot }
 $AppRoot = Split-Path $CodeServerRoot
 
-foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'notifications\PushNotification.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1','command-center\CommandCenter.ps1')) {
+foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1','storage\Attachments.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'notifications\PushNotification.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1','orchestrator\AutonomousLoop.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1','command-center\CommandCenter.ps1')) {
     . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $CodeServerRoot $module))))
 }
 Initialize-AI5Store $ServerRoot
+Initialize-AI5Attachments $ServerRoot
 Initialize-AI5MobileSecurity $ServerRoot
 Initialize-AI5PushNotifications $ServerRoot $AppRoot
 Initialize-AI5CodexService $ServerRoot $AppRoot
@@ -70,6 +71,7 @@ function Read-Request($stream) {
     }
     $length = 0
     if ($headers.ContainsKey('Content-Length')) { [int]::TryParse($headers['Content-Length'], [ref]$length) | Out-Null }
+    if($length-gt7MB){throw 'body_too_large'}
     $bodyBytes = New-Object byte[] $length
     $read = 0
     while ($read -lt $length) {
@@ -93,11 +95,15 @@ function Update-State($task, [string]$status, [string]$label) {
 }
 
 function Execute-Mock($task) {
+    $null=Initialize-AI5LoopTask $task
+    Add-AI5LineMessage $task 'zero' 'PLAN' '目的と完成条件を整理し、必要AIへ開始指示を出します。' 'plan'
     Update-State $task 'planning' 'Zero planning'
     Update-State $task 'running' "$($task.assignedPrimary) mock running"
     $task.result = Invoke-AI5MockAdapter $task
+    Add-AI5AgentReport $task $task.assignedPrimary 'COMPLETE' 'Mock安全施工' $task.result.summary 'なし' 'Zero監査'
     Update-State $task 'reviewing' 'Zero reviewing'
-    Update-State $task 'completed' 'Task completed'
+    $judge=Invoke-AI5DoubleJudge $task
+    Update-State $task $(if($judge.decision-eq'COMPLETE'){'completed'}else{'failed'}) "Autonomous Loop: $($judge.decision)"
     Write-AI5Log 'tasks' 'task_completed' @{ task_id = $task.taskId; status = 'completed'; adapter = 'mock' }
 }
 
@@ -109,7 +115,13 @@ function Fail-Task($task, [string]$type, [string]$summary) {
 
 function Dispatch-Task($task) {
     if ($Mock) { Execute-Mock $task; return }
-    if ($task.assignedPrimary -eq 'claude') { Set-AI5TaskStatus $task 'RUNNING' 'Claudeレビュー中';$task.attempt++;$task.result=Invoke-AI5ClaudeAdapter $task;Write-AI5Log 'tasks' 'claude_finished' @{task_id=$task.taskId;status=$task.result.status;summary=$task.result.summary;risks=($task.result.risks -join ' | ')};if($task.result.status-eq'SUCCESS'){$task.validation=[ordered]@{passed=$true;checks=@{claude_review=$true};checked_at=[DateTime]::UtcNow.ToString('o')};Set-AI5TaskStatus $task 'COMPLETED' 'Claudeレビュー完了'}else{$task|Add-Member -NotePropertyName agent_results -NotePropertyValue @($task.result) -Force;$task.assignedPrimary='codex';$task.assigned_agent='codex';$task.result.next_action='REROUTE';Set-AI5TaskStatus $task 'RETRYING' 'Claude失敗のためCodexへ再振り分け';Dispatch-Task $task};return }
+    if ($task.assignedPrimary -eq 'claude') {
+      $null=Initialize-AI5LoopTask $task;Set-AI5TaskStatus $task 'RUNNING' 'Claudeレビュー中';$task.attempt++;$task.result=Invoke-AI5ClaudeAdapter $task
+      Write-AI5Log 'tasks' 'claude_finished' @{task_id=$task.taskId;status=$task.result.status;summary=$task.result.summary;risks=($task.result.risks -join ' | ')}
+      Add-AI5AgentReport $task 'claude' $task.result.status '独立レビュー・設計監査' $task.result.summary (@($task.result.risks)-join' / ') 'Zero統合監査'
+      if($task.result.status-eq'SUCCESS'){$task.validation=[ordered]@{passed=$true;checks=@{claude_review=$true};checked_at=[DateTime]::UtcNow.ToString('o')};$task|Add-Member -NotePropertyName agent_results -NotePropertyValue @($task.result) -Force;$task.assignedSecondary=@($task.assignedSecondary+'claude'|Select-Object -Unique);$task.assignedPrimary='codex';$task.assigned_agent='codex';Add-AI5LineMessage $task 'zero' 'CONTINUE' 'Claude報告を受領。Codexへ最終技術監査を依頼します。' 'routing';Set-AI5TaskStatus $task 'RETRYING' 'Codex最終技術監査へ継続';Dispatch-Task $task}
+      else{$task|Add-Member -NotePropertyName agent_results -NotePropertyValue @($task.result) -Force;$task.assignedPrimary='codex';$task.assigned_agent='codex';$task.result.next_action='REROUTE';Add-AI5LineMessage $task 'zero' 'REWORK' 'Claude結果をCodexへ再配分します。' 'routing';Set-AI5TaskStatus $task 'RETRYING' 'Claude失敗のためCodexへ再振り分け';Dispatch-Task $task};return
+    }
     if ($task.assignedPrimary -in @('gemini','manus','notebooklm')) { $original=$task.assignedPrimary;$task.assignedPrimary='codex';$task.assigned_agent='codex';$task.assignedSecondary=@($task.assignedSecondary+$original|Select-Object -Unique);Set-AI5TaskStatus $task 'RETRYING' "$original をCodex管理の正式経路へ再振り分け" }
     if ($task.assignedPrimary -ne 'codex') { Fail-Task $task 'adapter_unavailable' "$($task.assignedPrimary) adapter is not connected"; return }
     $health = Get-AI5CodexHealth
@@ -138,18 +150,21 @@ function Get-MobileHealth {
 
 function New-Task($body, [string]$idem) {
     $target=if($body.target){[string]$body.target}else{'auto'}
+    if($target-in@('auto','zero')-and$body.message-match'(?i)^\s*@(codex|claude|gemini|manus|notebooklm|all)\b'){$target=$Matches[1].ToLowerInvariant()}
     $route = Get-AI5Route $body.message $target
     $id = if ($body.taskId) { $body.taskId } else { Get-AI5NextTaskId }
     $approval = if ($route.requiresApproval) { [ordered]@{ type = $route.approvalType; summary = '本人の最終承認が必要です'; status = 'pending'; zero_review = (Get-AI5ZeroApprovalReview $route) } } else { $null }
     $now=[DateTime]::UtcNow.ToString('o')
     $task=[pscustomobject][ordered]@{
-        task_id=$id;taskId = $id; parent_task_id=$null;title=$route.objective;conversationId = $body.conversationId; message = Protect-AI5Text $body.message; objective = $route.objective;constraints=@($body.constraints)
+        task_id=$id;taskId = $id; parent_task_id=$null;title=$route.objective;conversationId = $body.conversationId;reply_to=$body.replyTo;attachment_id=$body.attachmentId; message = Protect-AI5Text $body.message; objective = $route.objective;constraints=@($body.constraints)
         source = $(if ($body.source) { $body.source } else { 'teppei' }); priority = $(if ($body.priority) { $body.priority } else { 'normal' })
         assigned_agent=$route.primary;requested_target=$route.requestedTarget;routing_mode=$route.routingMode;status = $(if ($route.requiresApproval) { 'waiting_approval' } else { 'queued' });canonical_status=$(if ($route.requiresApproval){'WAITING_APPROVAL'}else{'RECEIVED'});approval_level=$(if($route.requiresApproval){'RED'}elseif($route.risk-eq'medium'){'YELLOW'}else{'GREEN'});attempt=0;max_attempts=3;assignedPrimary = $route.primary; assignedSecondary = $route.secondary
         requiresApproval = $route.requiresApproval; approval = $approval; field_mode=$(if($null-ne$body.fieldMode){[bool]$body.fieldMode}else{$true}); field_decision=$null; execution_plan=(Get-AI5ExecutionPlan $route); failure_fingerprints=@(); route = $route; validation=[ordered]@{};artifacts=@();result = $null
         timeline = @([ordered]@{ status = 'RECEIVED'; label = '依頼受付'; at = $now })
         children=@();idempotencyKey = $idem; created_at=$now;updated_at=$now;createdAt = $now; updatedAt = $now
     }
+    $null=Initialize-AI5LoopTask $task
+    Add-AI5LineMessage $task 'zero' 'PLAN' "目的を整理しました。$($route.primary)を中心に開始します。" 'plan' @{target=$route.requestedTarget;doneWhen=$route.doneWhen}
     $task.children=New-AI5Children $task $route
     $task.field_decision=Get-AI5FieldModeDecision $route $task.field_mode
     return $task
@@ -213,7 +228,9 @@ try {
                 continue
             }
             if ($method -eq 'GET' -and $path -eq '/api/command-center') { Send-Json $stream (Get-AI5CommandCenter);continue }
+            if ($method -eq 'GET' -and $path -eq '/api/chat') {$level=if($request.Headers['X-AI5-Chat-Level']){[string]$request.Headers['X-AI5-Chat-Level']}else{'NORMAL'};if($level-notin@('SIMPLE','NORMAL','DETAIL')){$level='NORMAL'};Send-Json $stream @{level=$level;messages=@(Get-AI5LineMessages @(Get-AI5Tasks 100) $level)};continue }
             if ($method -eq 'GET' -and $path -eq '/api/push/public-key') { $key=Get-AI5PushPublicKey;if($key){Send-Json $stream @{available=$true;publicKey=$key;background=$true}}else{Send-Json $stream @{available=$false;error='push_unavailable'} 503};continue }
+            if ($method -eq 'POST' -and $path -eq '/api/attachments') {try{Send-Json $stream (Save-AI5Attachment (Parse-Body $request)) 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
             if ($method -eq 'POST' -and $path -eq '/api/push/subscribe') { try{Send-Json $stream (Save-AI5PushSubscription (Parse-Body $request)) 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue }
             if ($method -eq 'GET' -and $path -eq '/api/projects') { Send-Json $stream (Get-AI5ProjectSummary); continue }
             if ($method -eq 'POST' -and $path -eq '/api/projects') { $body=Parse-Body $request; if(!$body.name-or!$body.projectId){Send-Json $stream @{error='name_and_project_id_required'} 400;continue}; try{Send-Json $stream (New-AI5Project $body) 202}catch{Send-Json $stream @{error=$_.Exception.Message} 409}; continue }
@@ -227,6 +244,7 @@ try {
             if ($path -match '^/api/projects/([^/]+)/sync$' -and $method -eq 'POST') { $project=Get-AI5Project $Matches[1];if(!$project){Send-Json $stream @{error='not_found'} 404}else{Send-Json $stream (Sync-AI5ProjectGit $project)};continue }
             if ($method -eq 'POST' -and $path -eq '/api/tasks') {
                 $body = Parse-Body $request
+                if($body.attachmentId-and!(Get-AI5AttachmentPath ([string]$body.attachmentId))){Send-Json $stream @{error='attachment_not_found'} 400;continue}
                 $problem = Test-AI5Instruction $body.message
                 if ($problem) { Send-Json $stream @{ error = $problem } 400; continue }
                 if ($body.taskId -and $body.taskId -notmatch '^task_[A-Za-z0-9_.-]{3,80}$') { Send-Json $stream @{ error = 'invalid_task_id' } 400; continue }

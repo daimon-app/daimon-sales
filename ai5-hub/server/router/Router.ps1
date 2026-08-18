@@ -1,6 +1,6 @@
 ﻿function Get-AI5Route {
   param([Parameter(Mandatory=$true)][string]$Message,[string]$RequestedTarget='auto')
-  $allowedTargets=@('auto','zero','codex','claude','gemini','manus','notebooklm')
+  $allowedTargets=@('auto','zero','codex','claude','gemini','manus','notebooklm','all')
   $RequestedTarget=$RequestedTarget.ToLowerInvariant()
   if($RequestedTarget-notin$allowedTargets){throw 'invalid_target'}
   $text = $Message.ToLowerInvariant()
@@ -25,7 +25,8 @@
   $approvalType=$null
   foreach($entry in $approvalPatterns.GetEnumerator()){if($text -match $entry.Value){$approvalType=$entry.Key;break}}
   $automaticPrimary=$primary
-  if($RequestedTarget-ne'auto'-and$RequestedTarget-ne'zero'){
+  if($RequestedTarget-eq'all'){$primary='codex';$secondary=@('claude','gemini','manus','notebooklm');$kind='full_audit'}
+  elseif($RequestedTarget-ne'auto'-and$RequestedTarget-ne'zero'){
     $primary=$RequestedTarget
     $secondary=@($secondary|Where-Object{$_-ne$primary})
     $kind=@{codex='code';claude='review';gemini='research';manus='web_operation';notebooklm='knowledge_lookup'}[$primary]

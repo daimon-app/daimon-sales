@@ -31,6 +31,9 @@ Updated: 2026-08-19
 | 個別指名モード | PASS (local API) | AUTO/Zero既定。Codex/Claude/Gemini/Manus/NotebookLMのtargetを受理し、`direct_via_zero`でZero Safety Layerを維持 |
 | 承認通知スケジュール | PASS (automated scope) | 10/12/15時の集約、同一slot重複防止、18時以降1分待機＋5分debounce。通常完了のOS通知なし |
 | COMMAND CENTER Claude再監査 | UNVERIFIED | Claude Code 2.1.233へread-only監査を投入したが120秒で応答回収できず。PASS扱いしない |
+| FULL AUTONOMOUS LOOP | PASS (automated scope) | AI別report、永続LINE API、Zero/Codex二重判定、REWORK、Loop Guard、承認停止、再起動queue復旧を実装・自動E2E PASS |
+| LINE返信 / @指名 / ALL | PASS (automated scope) | replyTo永続化、@target解析、ALL専門分解、Zero Safety Layer維持 |
+| Screenshot Loop | PASS (automated scope) | JPEG/PNG/WebPのみ、5MB上限、magic signature検査、Local attachment ID経由。実スマホ添付は未確認 |
 
 ## Current deployment state
 
