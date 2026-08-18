@@ -32,3 +32,12 @@ GitHubの現在実装と最新の明示的決定を技術正本とする。Noteb
 - Phase 3 Android/iPhone統合E2E
 
 未確認項目はSUCCESS扱いしない。
+
+## Live NotebookLM verification (2026-08-18)
+
+- Notebook: `AI5 HUB Knowledge Base`
+- Sources: `README.md`, `ZERO_SPEC.md`, `PHASE3.md`
+- Read-only query: AI5 HUBの承認ルールを出典付きで要約し、GitHub照合点を抽出
+- Result: PASS（3資料の出典表示を確認）
+- GitHub照合: 実APIは `/api/tasks/:id/approve`、状態はlegacy UI名とcanonical名を併存、危険判定は`Router.ps1`のapproval patterns、GmailはREADME上未接続
+- PC変更、外部公開、共有設定変更、課金: なし
