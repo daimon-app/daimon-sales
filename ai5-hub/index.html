@@ -11,7 +11,7 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="icons/ai5-icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=35">
+  <link rel="stylesheet" href="styles.css?v=38">
 </head>
 <body>
   <div class="shell">
@@ -37,6 +37,9 @@
         <div id="projectList" class="project-list"></div>
       </section>
       <section id="systemView" class="projects-view" hidden><div class="projects-head"><div><small>PROJECT CONTROL</small><h2>SYSTEM</h2></div><button id="scanProjectsButton">今すぐ巡回</button></div><div id="systemStatus" class="system-status"></div></section>
+      <section id="projectRoomView" class="project-room-view" hidden><div id="roomHeader" class="room-header"></div><div id="roomActions" class="room-actions"></div><section id="roomMessages" class="messages room-messages"></section><form id="roomComposer" class="composer"><textarea id="roomPrompt" rows="1" placeholder="このアプリへ追加指示…"></textarea><button type="submit">送信</button></form></section>
+      <section id="approvalsView" class="projects-view" hidden><div class="projects-head"><div><small>ALL PROJECTS</small><h2>承認待ち</h2></div></div><div id="approvalList" class="project-list"></div></section>
+      <section id="settingsView" class="projects-view" hidden><div class="projects-head"><div><small>AI5 HUB</small><h2>設定</h2></div></div><div class="system-status"><div><span>通知音</span><b>本人承認のみ</b></div><div><span>Security</span><b>LOCAL / TAILSCALE ONLY</b></div></div></section>
 
       <form id="composer" class="composer">
         <textarea id="prompt" rows="1" placeholder="ゼロに指示を入力…" aria-label="ゼロへの指示"></textarea>
@@ -66,13 +69,15 @@
     </aside>
   </div>
   <nav class="bottom-nav" aria-label="AI5 HUB ナビゲーション">
-    <button data-view="zero" class="active"><span>0</span>CHAT</button>
-    <button data-view="projects"><span>▦</span>PROJECTS</button>
-    <button data-view="system"><span>●</span>SYSTEM<b id="approvalBadge" hidden>0</b></button>
+    <button data-view="zero" class="active"><span>⌂</span>ホーム</button>
+    <button data-view="projects"><span>▦</span>アプリ</button>
+    <button data-view="system"><span>五</span>AI5</button>
+    <button data-view="approvals"><span>!</span>承認<b id="approvalBadge" hidden>0</b></button>
+    <button data-view="settings"><span>⚙</span>設定</button>
   </nav>
   <dialog id="projectDialog"><form method="dialog" class="project-dialog"><button class="dialog-close" value="cancel">×</button><div id="projectDetail"></div></form></dialog>
   <dialog id="projectCreateDialog"><form id="projectCreateForm" class="project-dialog"><button type="button" class="dialog-close" data-close-project>×</button><h2>Project登録</h2><label>Project Name<input name="name" required></label><label>Project ID<input name="projectId" required pattern="[a-z0-9][a-z0-9._-]{1,79}"></label><label>Repository（未確定なら空欄）<input name="repository"></label><p>AUTO EXECUTIONは安全のためOFFで登録されます。</p><button class="project-primary" type="submit">登録</button></form></dialog>
   <div id="authGate" class="auth-gate" hidden><div><span class="brand-mark">五</span><h2>AI5 HUB</h2><p>本人認証が必要です。Tailscale接続を確認してログインしてください。</p><button id="loginButton">ログイン</button><small id="authError"></small></div></div>
-  <script src="app.js?v=36"></script>
+  <script src="app.js?v=38"></script>
 </body>
 </html>

@@ -9,11 +9,18 @@
     "projectId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,79}$"},
     "name": {"type": "string", "minLength": 1},
     "phase": {"enum": ["IDEA","RESEARCH","DESIGN","READY_FOR_BUILD","BUILDING","TESTING","REVIEW","FIELD_VALIDATION","RELEASE_READY","WAITING_FOR_APPROVAL","PUBLISHED","OPERATING","FIX_REQUIRED","ARCHIVED"]},
-    "status": {"enum": ["NOT_STARTED","READY","RUNNING","WAITING","BLOCKED","FAILED","REVIEW_REQUIRED","APPROVAL_REQUIRED","PAUSED","PUBLISHED","OPERATING","COMPLETED","ARCHIVED"]},
+    "status": {"enum": ["NOT_STARTED","READY","RUNNING","WAITING","BLOCKED","FAILED","REVIEW","REVIEW_REQUIRED","APPROVAL_REQUIRED","PAUSED","HOLD","PUBLISHED","OPERATING","COMPLETED","ARCHIVED"]},
     "blockedBy": {"enum": ["NONE","ZERO","CODEX","CLAUDE","GEMINI","MANUS","NOTEBOOKLM","TEPPEI","GITHUB","EXTERNAL","SYSTEM","CREDIT_LIMIT","UNKNOWN"]},
-    "stopCode": {"enum": ["NONE","ZERO_STOPPED","CODEX_STOPPED","CLAUDE_STOPPED","MANUS_STOPPED","GEMINI_STOPPED","TEPPEI_WAITING","GITHUB_SYNC_WAIT","CREDIT_PROTECTION_STOP","ERROR_LOOP_STOP","NEXT_STEP_MISSING","ALL_AI_DONE_BUT_IDLE","NORMAL_WAIT","EXTERNAL_WAIT","SYSTEM"]},
+    "stopCode": {"enum": ["NONE","ZERO_STOPPED","CODEX_STOPPED","CLAUDE_STOPPED","MANUS_STOPPED","GEMINI_STOPPED","TEPPEI_WAITING","GITHUB_SYNC_WAIT","CREDIT_PROTECTION_STOP","ERROR_LOOP_STOP","NEXT_STEP_MISSING","ALL_AI_DONE_BUT_IDLE","NORMAL_WAIT","EXTERNAL_WAIT","EMERGENCY_STOP","SYSTEM"]},
     "autoExecution": {"type":"object","required":["enabled","mode"],"properties":{"enabled":{"type":"boolean"},"mode":{"enum":["OFF","DRY_RUN","LIVE"]}}},
-    "history": {"type":"array"}
+    "history": {"type":"array"},
+    "writer": {"type":"string","description":"Current single-writer agent (e.g. CODEX, CLAUDE). Added for PROJECT ROOMS; defaults to CODEX for backward compatibility."},
+    "reviewer": {"type":"string","description":"Current reviewer agent (e.g. CLAUDE). Added for PROJECT ROOMS; defaults to CLAUDE."},
+    "priorityInterrupt": {"type":"boolean","description":"Set by a PRIORITY_INTERRUPT room instruction; consumed by the scheduler on next dispatch."},
+    "progress": {"type":"number","minimum":0,"maximum":100},
+    "timing": {"type":"object","description":"Per-project accumulated running/paused seconds, persistent across restart (file-backed, no in-memory cache).","properties":{"status":{"enum":["STOPPED","RUNNING","PAUSED"]},"accumulatedRunningSeconds":{"type":"number"},"accumulatedPausedSeconds":{"type":"number"},"runStartedAt":{"type":"string"},"pausedAt":{"type":"string"},"lastPauseAt":{"type":"string"},"lastResumeAt":{"type":"string"},"preStatus":{"type":"string"}}},
+    "room": {"type":"object","description":"Project room instruction log, isolated per projectId.","properties":{"instructions":{"type":"array"}}},
+    "manusAudit": {"type":"object","properties":{"status":{"type":"string"},"requestedAt":{"type":"string"},"completedAt":{"type":"string"},"summary":{"type":"string"}}}
   },
   "additionalProperties": true
 }
