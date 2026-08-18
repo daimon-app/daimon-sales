@@ -41,6 +41,16 @@ function Get-AI5CodexHealth {
     return [ordered]@{ available = $available; connection = $connection; mode = 'live' }
 }
 
+function Get-AI5StoredCodexResult {
+    param([string]$TaskId)
+    if ($TaskId -notmatch '^AI5-[A-Za-z0-9_.-]+$') { return $null }
+    try {
+        $raw = & "$script:CodexBridgeRoot\bridge.ps1" show -TaskId $TaskId 2>$null
+        if (!$raw) { return $null }
+        return (($raw -join "`n") | ConvertFrom-Json)
+    } catch { return $null }
+}
+
 function Get-AI5CodexInstruction {
     param($Task)
     $attachment=if($Task.attachment_id){Get-AI5AttachmentPath ([string]$Task.attachment_id)}else{$null}

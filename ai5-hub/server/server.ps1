@@ -135,6 +135,21 @@ function Dispatch-Task($task) {
     }
 }
 
+function Restore-AI5TaskFromStoredCodexResult($task) {
+    $stored = Get-AI5StoredCodexResult ([string]$task.taskId)
+    if (!$stored -or $stored.status -ne 'success') { return $false }
+    $summary = if ($stored.result) { [string]$stored.result } else { 'Codex task completed' }
+    $task | Add-Member bridge ([ordered]@{taskId=$stored.task_id;status=$stored.status;sessionId=$stored.codex_session_id;attemptCount=$stored.attempt_count;startedAt=$stored.started_at;finishedAt=$stored.finished_at}) -Force
+    $task.result = [ordered]@{task_id=$task.taskId;agent='codex';status='success';summary=$summary;details=@($stored.details);filesChanged=@($stored.files_changed);tests=@($stored.tests);warnings=@($stored.warnings);commitId=$stored.commit_id;failureReason=$null;retryable=$false;userActionRequired=$false;findings=@($stored.details);changes=@($stored.files_changed);artifacts=@($stored.files_changed);risks=@($stored.warnings);next_action='VALIDATE';needs_human=$false;human_reason=$null}
+    $task.validation=[ordered]@{passed=$true;checks=[ordered]@{result_schema=$true;tests=(@($stored.tests).Count-gt 0);bridge_success=$true;restart_reconciliation=$true};checked_at=[DateTime]::UtcNow.ToString('o')}
+    $null=Initialize-AI5LoopTask $task
+    if(!@($task.agent_reports|Where-Object{$_.agent-eq'codex'-and$_.state-eq'COMPLETE'}).Count){Add-AI5AgentReport $task 'codex' 'COMPLETE' '保存済みBridge結果を再照合' $summary 'なし' 'Zero統合監査'}
+    $judge=Invoke-AI5DoubleJudge $task
+    Set-AI5TaskStatus $task $(if($judge.decision-eq'COMPLETE'){'COMPLETED'}else{'FAILED'}) "再起動復元: Zero + Codex $($judge.decision)"
+    Write-AI5Log 'tasks' 'stored_codex_result_restored' @{task_id=$task.taskId;decision=$judge.decision}
+    return $true
+}
+
 function Get-MobileHealth {
     $bridge = Get-AI5CodexHealth
     $worker = 'idle'
@@ -170,7 +185,7 @@ function New-Task($body, [string]$idem) {
     return $task
 }
 
-if(!$Mock){foreach($recoverable in @(Get-AI5Tasks 100|Where-Object{$_.assignedPrimary-eq'codex'-and(($_.status-eq'queued'-and$_.attempt-eq0)-or($_.status-eq'failed'-and$_.result.retryable-and!$_.result.userActionRequired-and$_.attempt-lt$_.max_attempts-and([DateTime]::UtcNow-[DateTime]::Parse($_.updatedAt)).TotalHours-lt24))}|Select-Object -First 1)){try{if($recoverable.status-eq'failed'){Set-AI5TaskStatus $recoverable 'RETRYING' 'PC再起動後に安全な未完Taskを1件復旧'};Dispatch-Task $recoverable}catch{Write-AI5Log 'errors' 'startup_task_recovery_failed' @{task_id=$recoverable.taskId;error=$_.Exception.Message}}}}
+if(!$Mock){foreach($recoverable in @(Get-AI5Tasks 100|Where-Object{$_.assignedPrimary-eq'codex'-and(($_.status-in@('running','retrying'))-or($_.status-eq'queued'-and$_.attempt-eq0)-or($_.status-eq'failed'-and$_.result.retryable-and!$_.result.userActionRequired-and$_.attempt-lt$_.max_attempts-and([DateTime]::UtcNow-[DateTime]::Parse($_.updatedAt)).TotalHours-lt24))}|Select-Object -First 1)){try{if(Restore-AI5TaskFromStoredCodexResult $recoverable){continue};if($recoverable.status-eq'failed'){Set-AI5TaskStatus $recoverable 'RETRYING' 'PC再起動後に安全な未完Taskを1件復旧'};Dispatch-Task $recoverable}catch{Write-AI5Log 'errors' 'startup_task_recovery_failed' @{task_id=$recoverable.taskId;error=$_.Exception.Message}}}}
 $NextApprovalScheduleAt=[DateTimeOffset]::MinValue
 try {
     while ($true) {
