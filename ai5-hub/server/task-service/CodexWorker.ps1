@@ -16,7 +16,7 @@ $workerLock = Join-Path $ServerRoot 'runtime\codex-worker.lock'
 $taskRoot = Join-Path $ServerRoot 'data\tasks'
 $logRoot = Join-Path $ServerRoot 'logs\tasks'
 New-Item -ItemType Directory -Force $logRoot | Out-Null
-. ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $ServerRoot 'notifications\PushNotification.ps1'))))
+. ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $AppRoot 'server\notifications\PushNotification.ps1'))))
 Initialize-AI5PushNotifications $ServerRoot $AppRoot
 
 function Read-Utf8Json([string]$path) {

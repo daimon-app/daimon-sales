@@ -7,7 +7,7 @@ function Initialize-AI5CodexService {
     $script:CodexRuntime = Join-Path $ServerRoot 'runtime'
     $script:CodexSecretPath = Join-Path $script:CodexRuntime 'bridge.secret'
     $script:CodexWorkerLock = Join-Path $script:CodexRuntime 'codex-worker.lock'
-    $script:CodexWorkerScript = Join-Path $ServerRoot 'task-service\CodexWorker.ps1'
+    $script:CodexWorkerScript = Join-Path $AppRoot 'server\task-service\CodexWorker.ps1'
     @($script:CodexInbox, $script:CodexRuntime) | ForEach-Object { New-Item -ItemType Directory -Force $_ | Out-Null }
     if (!(Test-Path $script:CodexSecretPath)) {
         $bytes = New-Object byte[] 32

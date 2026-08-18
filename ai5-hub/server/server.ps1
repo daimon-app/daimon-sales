@@ -1,11 +1,12 @@
 ﻿param([int]$Port = 43125, [string]$HostName = '127.0.0.1')
 $ErrorActionPreference = 'Stop'
 if ($HostName -notin @('127.0.0.1','::1','localhost')) { throw 'AI5 HUB refuses non-loopback bind addresses' }
+$CodeServerRoot = if ($global:AI5CodeServerRoot) { $global:AI5CodeServerRoot } else { $PSScriptRoot }
 $ServerRoot = if ($global:AI5ServerRoot) { $global:AI5ServerRoot } else { $PSScriptRoot }
-$AppRoot = Split-Path $ServerRoot
+$AppRoot = Split-Path $CodeServerRoot
 
 foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'notifications\PushNotification.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1')) {
-    . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $ServerRoot $module))))
+    . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $CodeServerRoot $module))))
 }
 Initialize-AI5Store $ServerRoot
 Initialize-AI5MobileSecurity $ServerRoot
