@@ -65,7 +65,7 @@ DAIMONは人を管理するアプリではなく、自分の意図・行動・�
 
 - ブランド名: `DAIMON`
 - 可能な限り同一または近いSNSハンドルを使う。
-- 候補例: `@daimon_app`, `@daimonapp`
+- 第一候補: `@daimon_app`。`@daimonapp`は2026-08-18時点でTikTok・Xの既存利用を確認したため不採用。取得可否は本人認証時に各サービス内で確定する。
 - ロゴ、アイコン、ブランドカラー、プロフィール説明、販売LP、CTAを全媒体で統一する。
 - プロフィール説明は短文版（約80字）、標準版（約150字）、詳細版（約300字）を用意する。
 
@@ -142,7 +142,7 @@ DAIMONは人を管理するアプリではなく、自分の意図・行動・�
 最低制作物:
 - CM-A: 6〜8秒 / スクロール停止
 - CM-B: 15秒 / 商品理解
-- CM-C: 30秒 / 理解・信頼
+- CM-C: 21秒 / 購入判断（短尺媒体適合を優先）
 - CM-D: 15秒 / 切り替えスイッチ予告
 - CM-E: 20〜30秒 / ブランド思想
 
@@ -267,7 +267,7 @@ Play Console登録・課金・契約・公開確定は本人承認が必要な�
 - 販売条件: 490円・買い切り・広告なし・Android初版
 - LP: `marketing/lp/`、localhostプレビューはルート `preview-marketing.cmd`
 - CM-A/B/C: `marketing/cm/exports/cm-a-teaser-1080x1920.mp4`、`cm-b-product-flow-1080x1920.mp4`、`cm-c-purchase-1080x1920.mp4`
-- Android販売ソース: 公開Repoでgitignoreされた `private-sales-workspace/`。private Repository承認後に移管する。
+- Android販売ソース: private Repository `daimon-app/daimon-morning-sales`。公開marketing Repoへ本体・鍵・build成果物を置かない。
 - CM生成: `marketing/cm/README.md`
 - 自動検査: `marketing/test-marketing.ps1`
 - 未確定: 正式事業者情報、問い合わせ先、対象国、Console価格設定、Data safety最終回答、公開日

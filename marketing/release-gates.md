@@ -4,10 +4,11 @@
 
 ## 商品・Android（アプリ本体工程）
 
-- [x] Morning専用の隔離Android projectとunsigned AAB
-- [x] provisional applicationId / versionCode / minSdk / targetSdk / 権限 / SDK一覧
-- [ ] 署名済みAABと実機QA
-- [ ] 販売本体と公開Repositoryの配布境界
+- [x] Morning専用のprivate Android Repositoryとsigned AAB/APK
+- [x] approved applicationId / versionCode / minSdk / targetSdk / 権限 / SDK一覧
+- [x] upload-key署名、artifact-level権限/DEX/秘密/lint監査
+- [ ] signed APKの実機QA
+- [x] 販売本体と公開RepositoryのGit配布境界
 - [x] 初回説明、アプリ情報、保存情報説明・削除へのアプリ内導線
 - [ ] 正式法務・問い合わせ先のアプリ内反映
 
@@ -22,8 +23,8 @@
 
 ## 販売素材・E2E
 
-- [x] 販売版と同一UIのスクリーンショット5枚（実機最終比較は未実施）
-- [x] CM-B（実フロー）とMorning専用CM-C（購入判断）の実動画
+- [ ] signed AABと同一buildの実機スクリーンショット（現行5枚はstaging UI証跡）
+- [ ] CM-B/Cをsigned APKの実機操作映像へ差し替え（現行MP4はstaging合成版、CM-C 21秒SSOTはFIXED）
 - [x] 採用素材の作成者・出典・商用利用範囲を記録した権利台帳
 - [ ] 正規LP URL、Play URL、媒体別UTM実リンク台帳
 - [x] SNS→LP→Play→購入→install→初回起動→朝開始→問い合わせのstaging境界表（外部URL/購入/実機は承認待ち）

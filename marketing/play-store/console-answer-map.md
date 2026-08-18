@@ -1,11 +1,12 @@
 # Play Console answer map — draft from audited AAB
 
-Do not submit until the final signed API 36 AAB is re-audited.
+Do not submit until the signed API 36 AAB has completed physical-device QA and Console analysis.
 
 - Ads: No
 - App access: All functionality is available without login or membership
-- Data collection/share: No data is transmitted by the app; no third-party SDKs
-- On-device values: optional name, audio preference, onboarding flag. User can delete all from Settings
+- Data collection/share: no developer collection or sharing is implemented; no third-party SDKs. The app declares no INTERNET permission and has no app network path
+- On-device values: optional name and audio preference. User can delete both in the app
+- TTS boundary: text is passed to Android TextToSpeech; processing behavior depends on the engine selected on the device. Do not claim control over every installed engine
 - Permissions: none
 - Network: none
 - Target audience proposal: general audience; owner must select final age groups in Console

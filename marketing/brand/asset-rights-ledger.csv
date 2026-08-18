@@ -3,8 +3,8 @@ DAIMON logo,marketing/play-store/icon/icon-512.png,DAIMON,Play/SNS/LP,Repository
 Legacy CM-A background,marketing/cm/assets/morning01.jpg,unconfirmed,not-for-release,missing,deprecated-blocked
 Legacy PWA backgrounds,assets/morning01-12,unconfirmed,not-in-Morning-sale-build,missing,excluded-from-sale-build
 Feature graphic,marketing/play-store/feature-graphic/feature-graphic.png,DAIMON/FFmpeg local build,Play Store,local build record,verified-internal
-Morning sale UI,private-sales-workspace/app/src/main/assets/index.html,DAIMON/code-native CSS,Android/Play screenshots/CM/LP,local source and build record,verified-internal
-Play screenshots,marketing/play-store/screenshots/*.png,DAIMON/local Edge render of sale UI,Play/LP/CM,build record,verified-internal
+Morning native sale UI,daimon-app/daimon-morning-sales/app/src/main/java/app/daimon/morning/MainActivity.java,DAIMON/code-native native Android UI,Android app and future device captures,private source and signed build record,verified-internal
+Staging UI renders,marketing/play-store/screenshots/*.png,DAIMON/retired WebView staging UI,internal QA only; prohibited for Play/LP/CM release,Claude pixel/source comparison 2026-08-18,staging-blocked
 CM sales cards,marketing/cm/assets/card-*.png,DAIMON/local Edge render from sales-card.html,SNS/LP/Play,source HTML and build record,verified-internal
 CM-A/B/C,marketing/cm/exports/cm-*-1080x1920.mp4,DAIMON/local FFmpeg build,SNS/LP,build-cm-sales.ps1,verified-internal
 System fonts,OS-provided sans-serif/Georgia/serif,device operating system,UI and rendered assets,not redistributed as font files,verified-system

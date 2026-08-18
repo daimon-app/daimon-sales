@@ -4,10 +4,10 @@
 - [x] 512px販売用アイコン案（`icon/icon-512.png`）
 - [x] 1024×500フィーチャーグラフィックSVG案
 - [x] 1024×500 PNG最終出力（`feature-graphic/feature-graphic.png`）
-- [x] 販売版と同じUIのphoneスクリーンショット5枚（実機最終比較は承認後）
-- [x] Morning専用のunsigned release AABとdebug APK（隔離領域）
-- [x] provisional applicationId `app.daimon.morning`、versionCode 1、target/compile API 36
-- [ ] owner管理のupload keystoreでproduction署名
+- [ ] signed native販売版の実機スクリーンショット4枚以上（現行5枚は旧WebView staging UIのため公開禁止）
+- [x] Morning専用のupload-key signed release AAB/APK（private Repositoryのローカルbuild）
+- [x] approved applicationId `app.daimon.morning`、versionCode 1、target/compile API 36
+- [x] owner管理用upload keystoreでrelease AAB/APK署名（offline backupとPlay App Signing登録は未完）
 - [ ] データセーフティ、IARC、サポート連絡先
 - [ ] 価格・対象国（本人判断）
 - [ ] Play Console登録/本人確認/登録料（本人承認）

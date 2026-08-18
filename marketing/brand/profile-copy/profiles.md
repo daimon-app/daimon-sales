@@ -11,4 +11,4 @@ DAIMON MORNING Editionは、人を管理するためのアプリではありま�
 
 公開前CTA: `近日公開。最新情報はこのアカウントで。`
 
-ハンドル候補（未取得）: `@daimon_app` / `@daimonapp` / `@daimon_jp` / `@daimon_return`
+ハンドル候補（未取得）: 第一候補 `@daimon_app`、代替 `@daimon_jp` / `@daimon_return`。`@daimonapp`は2026-08-18の公開Web実査でTikTok・Xの既存利用を確認したため不採用。公開画面にプロフィールが無い候補も取得可能とは断定せず、本人認証時に各サービス内で最終確認する。

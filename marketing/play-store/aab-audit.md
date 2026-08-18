@@ -1,19 +1,21 @@
 # Morning sale AAB audit
 
-Audited artifact: ignored private workspace `app-release.aab` built 2026-08-18.
+Audited artifact: private Repository `daimon-app/daimon-morning-sales` HEAD `15a38def3b8b62465c3dfad8a8fe1960aa8299c9`, locally signed 2026-08-18.
 
 - Product boundary: Morning only; no WORK/NIGHT mode identifiers or assets
-- Provisional applicationId: `app.daimon.morning` (owner approval required before first upload)
+- Approved applicationId: `app.daimon.morning`
 - versionName / versionCode: `1.0.0` / `1`
-- minSdk / targetSdk / compileSdk: `26` / `36` / `36`
-- Release AAB: generated, unsigned, 13,524 bytes, SHA-256 `8156695EDF191069D2DF824A4FCA3AB0AEF69C388E49BAD74D61746CE8FD6BE6`
-- Debug APK: generated and debug-signed, 17,969 bytes, SHA-256 `7F3F894137129E791E07DCA6532CE2BE38378F9686F56A4D5D7F835B5AD899F5`
+- minSdk / targetSdk / compileSdk: `23` / `36` / `36`
+- Release AAB: upload-key signed, 15,146 bytes, SHA-256 `A0DE96F91F19A3E336C6BD7E2D556D69912397BBE30F408E777E888E906343CA`; `jarsigner` verification passed
+- Release APK: upload-key signed, 17,891 bytes, SHA-256 `058DC9754502653B1FEF457653921296623127CEA831B217A059E1FEDBC5D612`; v1/v2 verification passed
 - Android permissions: none
 - Network: none; no INTERNET permission; WebView navigation is blocked
-- WebView: yes, bundled offline HTML only
-- SDKs: Android framework WebView and TextToSpeech only; no third-party libraries
+- WebView: no
+- SDKs: Android framework and TextToSpeech only; Gradle runtime dependency report is empty
 - Analytics / crash reporting / ads / billing SDK: none
-- Local storage: optional name, audio preference, onboarding-complete flag; all removable in Settings
-- Native TTS: on-device Android TextToSpeech, optional, stops when app backgrounds
+- Local storage: optional name and audio preference in SharedPreferences; removable in app
+- Native TTS: Android TextToSpeech, optional. The app has no network permission, but processing behavior depends on the TTS engine selected on the device.
 
-Release blockers: final applicationId approval, owner upload keystore/signing, physical-device QA, legal/support values, Console declarations and submission.
+Artifact inspection: permissions 0, no INTERNET, only `app.daimon.morning.MainActivity` and generated lambdas in DEX, no WORK/NIGHT/WebView/third-party packages, release lint passed, tracked-secret scan passed.
+
+Release blockers: physical-device QA, secure offline backup of `secrets/` plus separate password-manager custody, legal/support values, Play App Signing/Console declarations/testing/submission.
