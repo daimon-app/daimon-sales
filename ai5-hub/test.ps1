@@ -5,3 +5,5 @@ $code=Get-Content -Raw -Encoding UTF8 (Join-Path $global:AI5TestRoot 'phase1.tes
 & (Join-Path $global:AI5TestRoot 'MobileSecurity.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'TaskEngine.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'PwaInstallability.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'ZeroApproval.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'NotebookLMAdapter.Tests.ps1')
