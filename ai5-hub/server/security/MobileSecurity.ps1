@@ -1,4 +1,4 @@
-function Initialize-AI5MobileSecurity {
+﻿function Initialize-AI5MobileSecurity {
     param([string]$ServerRoot)
     $script:SessionRoot = Join-Path $ServerRoot 'runtime\sessions'
     $script:ApprovalRoot = Join-Path $ServerRoot 'runtime\approvals'
@@ -21,6 +21,7 @@ function Get-AI5Hash {
     try { return ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($Value)))).Replace('-', '').ToLowerInvariant() }
     finally { $sha.Dispose() }
 }
+function ConvertTo-AI5UtcDateTime {param($Value);if($Value-is[DateTime]){return $Value.ToUniversalTime()};return [DateTime]::Parse([string]$Value,[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::AdjustToUniversal -bor [Globalization.DateTimeStyles]::AssumeUniversal)}
 
 function Get-AI5CookieValue {
     param($Request, [string]$Name)
@@ -64,7 +65,7 @@ function Get-AI5Session {
     $path = Join-Path $script:SessionRoot ((Get-AI5Hash $id) + '.json')
     if (!(Test-Path $path)) { return $null }
     $record = Get-Content -Raw -Encoding UTF8 $path | ConvertFrom-Json
-    if ([DateTime]::Parse($record.expiresAt).ToUniversalTime() -le [DateTime]::UtcNow) { Remove-Item -LiteralPath $path -Force; return $null }
+    if ((ConvertTo-AI5UtcDateTime $record.expiresAt) -le [DateTime]::UtcNow) { Remove-Item -LiteralPath $path -Force; return $null }
     $identity = Get-AI5TailscaleIdentity $Request
     if (!$identity -or $identity.login -ne $record.login) { return $null }
     return $record
@@ -90,7 +91,7 @@ function Use-AI5ApprovalToken {
     $path = Join-Path $script:ApprovalRoot ($TaskId + '.json')
     if (!(Test-Path $path) -or !$Token) { return $false }
     $record = Get-Content -Raw -Encoding UTF8 $path | ConvertFrom-Json
-    if ($record.used -or [DateTime]::Parse($record.expiresAt).ToUniversalTime() -le [DateTime]::UtcNow -or $record.tokenHash -ne (Get-AI5Hash $Token)) { return $false }
+    if ($record.used -or (ConvertTo-AI5UtcDateTime $record.expiresAt) -le [DateTime]::UtcNow -or $record.tokenHash -ne (Get-AI5Hash $Token)) { return $false }
     $record.used = $true
     $record | Add-Member -NotePropertyName usedAt -NotePropertyValue ([DateTime]::UtcNow.ToString('o')) -Force
     $record | ConvertTo-Json | Set-Content -LiteralPath $path -Encoding UTF8

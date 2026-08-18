@@ -6,8 +6,9 @@ New-Item -ItemType Directory -Force $logRoot | Out-Null
 $log = Join-Path $logRoot ((Get-Date).ToString('yyyy-MM-dd') + '.log')
 function Write-MobileLog($message) { Add-Content -LiteralPath $log -Encoding UTF8 -Value "$(Get-Date -Format o) $message" }
 
-$listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
-if (!$listener) {
+$alreadyRunning = $false
+try { $alreadyRunning = [bool](Invoke-RestMethod "http://127.0.0.1:$Port/api/health" -TimeoutSec 2).ok } catch {}
+if (!$alreadyRunning) {
     $powerShell = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
     $startScript = Join-Path $root 'start.ps1'
     Start-Process -FilePath $powerShell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$startScript`" -Port $Port" -WindowStyle Hidden

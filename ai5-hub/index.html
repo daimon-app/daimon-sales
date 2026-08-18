@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AI5 HUB">
   <title>AI5 HUB</title>
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="icons/ai5-icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icons/ai5-icon.svg">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css?v=35">
 </head>
 <body>
   <div class="shell">
@@ -26,7 +26,7 @@
     <main class="chat">
       <header>
         <div><h1>ゼロ</h1><p><span id="connectionDot" class="online-dot checking"></span><span id="connectionText">Local API確認中</span></p></div>
-        <div class="header-actions"><button id="logoutButton" class="ghost subtle">ログアウト</button><button id="flowButton" class="ghost">施工フロー</button></div>
+        <div class="header-actions"><button id="diagnoseButton" class="ghost subtle">アプリ診断</button><button id="installButton" class="ghost subtle" hidden>インストール</button><button id="notifyButton" class="ghost subtle">通知</button><button id="logoutButton" class="ghost subtle">ログアウト</button><button id="flowButton" class="ghost">施工フロー</button></div>
       </header>
 
       <section id="messages" class="messages" aria-live="polite"></section>
@@ -52,9 +52,19 @@
       </ol>
       <h3>承認待ち</h3>
       <div id="approvalArea" class="approval-empty">現在、本人確認が必要な操作はありません。</div>
+      <section id="taskLists" class="task-lists">
+        <h3>実行中</h3><div id="activeTasks" class="task-list"></div>
+        <h3>履歴</h3><div id="historyTasks" class="task-list"></div>
+      </section>
     </aside>
   </div>
+  <nav class="bottom-nav" aria-label="AI5 HUB ナビゲーション">
+    <button data-view="zero" class="active"><span>0</span>Zero</button>
+    <button data-view="work"><span>●</span>作業</button>
+    <button data-view="approval"><span>!</span>承認<b id="approvalBadge" hidden>0</b></button>
+    <button data-view="history"><span>≡</span>履歴</button>
+  </nav>
   <div id="authGate" class="auth-gate" hidden><div><span class="brand-mark">五</span><h2>AI5 HUB</h2><p>本人認証が必要です。Tailscale接続を確認してログインしてください。</p><button id="loginButton">ログイン</button><small id="authError"></small></div></div>
-  <script src="app.js"></script>
+  <script src="app.js?v=35"></script>
 </body>
 </html>

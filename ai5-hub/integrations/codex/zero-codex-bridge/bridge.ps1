@@ -44,6 +44,7 @@ function Execute([string]$Text) {
   foreach($directory in $config.allowed_write_directories){$arguments+=@('--add-dir',[IO.Path]::GetFullPath($directory))}
   $prompt="Perform only the requested safe local task. Never modify unrelated files, credentials, system settings, remotes, or main. Verify completion. Return schema JSON with evidence. Use failed when impossible.`nTASK:`n$Text"
   $input=Join-Path $Runtime 'prompt.txt';[IO.File]::WriteAllText($input,$prompt,[Text.UTF8Encoding]::new($false));$arguments+='-'
+  $pathValue=$env:PATH;Remove-Item Env:PATH -ErrorAction SilentlyContinue;$env:Path=$pathValue
   $process=Start-Process -FilePath $exe -ArgumentList $arguments -NoNewWindow -PassThru -RedirectStandardInput $input -RedirectStandardOutput $events -RedirectStandardError $errors
   $timeout=[Math]::Max(1,[int]$config.timeout_seconds)*1000
   if(!$process.WaitForExit($timeout)){$process.Kill();$process.WaitForExit();return [ordered]@{status='failed';result='';error='Codex execution timed out';details=@();files_changed=@();tests=@();warnings=@();commit_id='';retryable=$true;human_action_required=$false;session=$null;code=124}}

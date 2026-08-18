@@ -8,7 +8,7 @@ Tailscale Serveを使用します。AI5 HUBはpublic internetへ公開せず、�
 
 ## 現在必要な本人操作
 
-このPCはWindows Installerの再起動待ち状態です。既存作業を守るためCodexは自動再起動していません。
+2026-08-18にWindows実再起動を行い、Startup経由のLocal API、Tailscale Serve、Codex Bridge、Task永続化の自動復旧を確認済みです。
 
 1. 進行中作業を保存してWindowsを再起動する。
 2. Codexへ「Phase 2.5を再開」と伝える。

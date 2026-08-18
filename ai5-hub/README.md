@@ -2,7 +2,7 @@
 
 AI5 HUBは、鉄兵がZeroだけへ自然文で指示し、Zeroが目的・安全条件・担当AI・完了条件を判断するローカル施工司令室です。Phase 2では、既存LINE風UIと実証済みZero-Codex Bridgeを統合し、公式Codex CLIによるPC施工と結果返却まで実働します。
 
-Phase 2.5のスマホ実働化コードは施工済みです。PWA、Tailscale Serve向け本人認証、8時間セッション、one-time承認token、offline表示、自動起動スクリプトを追加しました。現在のPCはWindows Installerの再起動待ち状態のため、Tailscale本体の導入・OAuth・実機試験のみ保留です。詳細は [MOBILE_SETUP.md](./MOBILE_SETUP.md) を参照してください。
+Phase 3ではTask Engine、共通Result Schema、検査・再振分け、Repository Lock、4画面スマホUIを追加しました。Tailscale Serveのprivate HTTPSと本人認証は実働確認済みです。Android Pixel 10aとiPhoneではstandalone起動、本人認証、キーボード表示、Task送信、Codex施工、結果返却、再起動後復元まで実測PASSしました。モバイル回線とWindows実再起動後の自動復旧もPASSし、Phase 2.5の必須確認は完了しています。詳細は [MOBILE_SETUP.md](./MOBILE_SETUP.md) を参照してください。
 
 ## 実装状況
 
@@ -14,16 +14,19 @@ Phase 2.5のスマホ実働化コードは施工済みです。PWA、Tailscale S
 | 承認UI | ✅ 承認・中止 |
 | Zero-Codex Bridge | ✅ Phase 1資産を統合 |
 | Codex Remote | ✅ 公式 `codex exec --json` 実接続 |
-| PWA / スマホUI | ✅ 実装・4幅検査済み |
-| Tailscale private HTTPS | 🚧 PC再起動・本人OAuth待ち |
+| Android PWA / スマホUI | ✅ Pixel 10a実機M19 PASS |
+| iPhone PWA / Safari | ✅ 実機M20 PASS |
+| モバイル回線 | ✅ Tailscale経由Task完了 PASS |
+| Windows再起動復旧 | ✅ Startup自動起動・Task復元 PASS |
+| Tailscale private HTTPS | ✅ Serve実働・tailnet限定 |
 | Mobile session / logout | ✅ 実装・擬似identity検査済み |
 | One-time承認token | ✅ 期限・再利用拒否 |
-| Claude Code CLI | ⬜ 未接続 |
-| Gemini Chrome | ⬜ 未接続 |
-| Manus Chrome | ⬜ 未接続 |
+| Claude Code CLI | ✅ 読み取り専用レビュー実Task成功 |
+| Gemini Chrome | ✅ ログイン済みWeb実送信成功 |
+| Manus Chrome | ✅ ログイン済みWeb実送信成功 |
 | Gmail通知 | ⬜ 未接続 |
 
-未接続AIを接続済みとは表示しません。
+専門AIの接続表示は24時間以内の実疎通記録だけを有効とし、古い記録は自動的にstale表示へ落とします。
 
 ## 構成
 
@@ -118,7 +121,7 @@ Phase 2受け入れ実績（2026-08-17）：
 
 ブラウザE2EではCodex接続表示、状態遷移、技術詳細、360/390/412/430pxの横あふれなしも確認済みです。
 
-Phase 2.5検査では、既存Codex実施工、匿名401、擬似Tailscale identity login、Secure session、logout、通信断後の結果保持、Bridge停止、PC offline UX、duplicate、CSRF、HMAC改ざん、dangerous task停止、one-time承認、4種類のスマホ幅を確認済みです。private HTTPS実機、Android/iPhoneホーム画面追加はTailscale導入後に実施します。
+Phase 2.5/3検査では、既存Codex実施工、匿名401、Tailscale identity login、Secure session、logout、通信断後の結果保持、Bridge停止、PC offline UX、duplicate、CSRF、HMAC改ざん、dangerous task停止、one-time承認、4種類のスマホ幅、Task Engine、Claude/Gemini/Manus実疎通を確認済みです。2026-08-18にAndroid Pixel 10aのWebAPK 1件、iPhoneホーム画面追加、両端末のstandalone、本人認証、composer、キーボード、Task、Codex施工、結果返却、再起動後復元を実測PASSしました。モバイル回線でのTask完了とWindows実再起動後のLocal API・Serve・Task復元もPASSしました。
 
 ## 環境変数
 
@@ -128,11 +131,8 @@ Phase 2.5検査では、既存Codex実施工、匿名401、擬似Tailscale ident
 | `AI5_BRIDGE_DISABLED` | `false` | `true` で停止故障試験 |
 | `CODEX_EXECUTABLE` | 自動検出 | 公式Codex CLIの明示パス |
 
-## 今後のPhase
+## Phase 2.5最終判定
 
-1. Claude Code CLIの読み取りレビュー接続
-2. Gemini Chromeの検索・質問接続
-3. Manus Chromeの安全なブラウザ操作接続
-4. Gmail完了・承認通知
+`SUCCESS`（2026-08-18実測）。Phase 3へ進む前提となるAndroid、iPhone、モバイル回線、PC再起動復旧を確認済みです。
 
 詳細思想は [ZERO_SPEC.md](./ZERO_SPEC.md)、Bridge継承元は [PROVENANCE.md](./integrations/codex/zero-codex-bridge/PROVENANCE.md) を参照してください。

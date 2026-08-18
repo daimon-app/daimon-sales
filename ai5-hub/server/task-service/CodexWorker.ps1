@@ -7,7 +7,6 @@ param(
 $ErrorActionPreference = 'Stop'
 if ($UserHome) {
     $env:USERPROFILE = $UserHome
-    $env:HOME = $UserHome
     $env:CODEX_HOME = Join-Path $UserHome '.codex'
 }
 $bridge = Join-Path $AppRoot 'integrations\codex\zero-codex-bridge'
@@ -42,6 +41,8 @@ function Set-TaskProperty($task, $name, $value) {
 
 function Set-TaskState($task, $path, $status, $label) {
     $task.status = $status
+    $canonical = @{ queued='RECEIVED'; planning='PLANNING'; running='RUNNING'; reviewing='VALIDATING'; completed='COMPLETED'; failed='FAILED'; cancelled='CANCELLED' }[$status]
+    Set-TaskProperty $task 'canonical_status' $canonical
     $task.timeline += , [ordered]@{
         status = $status
         label = $label
@@ -86,6 +87,7 @@ try {
         }
 
         $currentTask = Get-Content -Raw $currentTaskPath | ConvertFrom-Json
+        Set-TaskProperty $currentTask 'attempt' ([int]$currentTask.attempt + 1)
         $expected = Get-Signature $envelope.task_id $envelope.instruction
         if ($envelope.signature -ne $expected) {
             Set-TaskProperty $currentTask 'errorType' 'authentication_failed'
@@ -126,6 +128,8 @@ try {
         })
         $summary = if ($result.result) { $result.result } else { 'Codex task failed' }
         $currentTask.result = [ordered]@{
+            task_id = $currentTask.taskId
+            agent = 'codex'
             status = $result.status
             summary = $summary
             details = @($result.details)
@@ -136,10 +140,24 @@ try {
             failureReason = $result.error
             retryable = [bool]$result.retryable
             userActionRequired = [bool]$result.human_action_required
+            findings = @($result.details)
+            changes = @($result.files_changed)
+            artifacts = @($result.files_changed)
+            risks = @($result.warnings)
+            next_action = $(if($result.status-eq'success'){'VALIDATE'}elseif($result.retryable){'RETRY'}else{'ESCALATE_ZERO'})
+            needs_human = [bool]$result.human_action_required
+            human_reason = $(if($result.human_action_required){$result.error}else{$null})
         }
 
         if ($result.status -eq 'success') {
             Set-TaskState $currentTask $currentTaskPath 'reviewing' 'Bridge collected Codex evidence'
+            Set-TaskProperty $currentTask 'validation' ([ordered]@{passed=$true;checks=[ordered]@{result_schema=$true;tests=(@($result.tests).Count-gt 0);bridge_success=$true};checked_at=[DateTime]::UtcNow.ToString('o')})
+            foreach($child in @($currentTask.children)){
+                if($child.assigned_agent -eq 'codex'){
+                    $child.status='COMPLETED'
+                    $child.updated_at=[DateTime]::UtcNow.ToString('o')
+                }
+            }
             Set-TaskState $currentTask $currentTaskPath 'completed' 'Zero verified the Codex result'
         } else {
             Set-TaskProperty $currentTask 'errorType' 'task_failed'

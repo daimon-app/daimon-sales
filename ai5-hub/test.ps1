@@ -3,3 +3,5 @@ $code=Get-Content -Raw -Encoding UTF8 (Join-Path $global:AI5TestRoot 'phase1.tes
 & ([ScriptBlock]::Create($code))
 & (Join-Path $global:AI5TestRoot 'Phase2.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'MobileSecurity.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'TaskEngine.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'PwaInstallability.Tests.ps1')
