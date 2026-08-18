@@ -10,14 +10,14 @@
 | Threads | 宣伝連投を避ける | 思想、開発、使い方 |
 | X | Premiumなし | ブランド思想の固定ポスト |
 | Facebook | 無料Page | カバー、Reel、LP |
-| Pinterest | Business、検索語を自然に記載 | 朝・仕事・夜の縦長Pin |
+| Pinterest | Business、検索語を自然に記載 | 朝・自己実現・習慣の縦長Pin |
 | LinkedIn | Company Page要件を満たす場合のみ | 仕事・生産性文脈 |
 | Reddit | subreddit規約を投稿前確認 | 宣伝より有益な解説 |
 
 ## 固定ポスト
 人はズレる。止まる。忘れる。それでも、また戻ればいい。
 
-DAIMONは、朝・仕事・夜に、自分の意図と今やる一つへ戻るためのアプリです。
+DAIMON MORNING Editionは、朝、自分の意図と今日の方向へ戻るAndroidアプリです。490円・買い切り・広告なし。
 
 続かなくてもいい。戻ればいい。Google Playで近日公開。
 

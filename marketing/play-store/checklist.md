@@ -1,7 +1,7 @@
 # Google Play準備
 
 - [x] 商品名・短い説明・長い説明案
-- [x] 既存512pxアイコン
+- [x] 512px販売用アイコン案（`icon/icon-512.png`）
 - [x] 1024×500フィーチャーグラフィックSVG案
 - [ ] PNG最終出力、端末スクリーンショット4〜8枚
 - [ ] 署名済みAAB、applicationId、versionCode、target API

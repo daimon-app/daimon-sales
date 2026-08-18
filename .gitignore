@@ -1,1 +1,3 @@
 releases/*.zip
+.tools/
+marketing/cm/build/work/

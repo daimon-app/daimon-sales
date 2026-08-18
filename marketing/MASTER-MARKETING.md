@@ -266,3 +266,14 @@ Play Console登録・課金・契約・公開確定は本人承認が必要な�
 
 優先順位:
 `ユーザーの最新明示指示 > MASTER.md / MASTER-MARKETING.md 最新記載 > 現行mainコード > 過去会話・旧ZIP・旧仕様`
+
+## 16. MORNING Edition Phase 1（2026-08-18）
+
+- 正式商品名: `DAIMON MORNING Edition`
+- 販売条件: 490円・買い切り・広告なし・Android初版
+- LP: `marketing/lp/`、localhostプレビューはルート `preview-marketing.cmd`
+- CM-A: `marketing/cm/exports/cm-a-morning-1080x1920.mp4`
+- CM生成: `marketing/cm/README.md`
+- 自動検査: `marketing/test-marketing.ps1`
+- 未確定: 正式事業者情報、問い合わせ先、対象国、Console価格設定、Data safety最終回答、公開日
+- 公開・課金・アカウント作成・審査提出は本人承認まで実行しない。
