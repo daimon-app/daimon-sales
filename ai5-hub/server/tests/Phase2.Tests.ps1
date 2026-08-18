@@ -11,6 +11,9 @@ $contextTwo = Get-AI5CodexSignature 'task_phase2_signature' 'read only' '{"proje
 if ($one -ne $two) { throw 'HMAC signature is not deterministic' }
 if ($one -eq $tampered) { throw 'HMAC signature did not reject changed content' }
 if ($contextOne -eq $contextTwo -or $contextOne -eq $one) { throw 'HMAC v2 project context is not protected' }
+$routedTask = [pscustomobject]@{message='過去資料を照合';assignedSecondary=@('notebooklm','claude');execution_plan=[pscustomobject]@{mode='parallel_safe'}}
+$routedInstruction = Get-AI5CodexInstruction $routedTask
+if ($routedInstruction -notmatch 'NotebookLM: read-only' -or $routedInstruction -notmatch 'Claude Code CLI' -or $routedInstruction -notmatch 'Do not fabricate') { throw 'specialist orchestration contract missing' }
 $parseErrors = $null
 [Management.Automation.Language.Parser]::ParseFile((Join-Path $server 'server.ps1'), [ref]$null, [ref]$parseErrors) | Out-Null
 if ($parseErrors) { throw ($parseErrors.Message -join '; ') }

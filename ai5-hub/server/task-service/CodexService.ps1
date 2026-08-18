@@ -41,6 +41,29 @@ function Get-AI5CodexHealth {
     return [ordered]@{ available = $available; connection = $connection; mode = 'live' }
 }
 
+function Get-AI5CodexInstruction {
+    param($Task)
+    $agents = @($Task.assignedSecondary | Where-Object { $_ -and $_ -ne 'codex' } | Select-Object -Unique)
+    if ($agents.Count -eq 0) { return [string]$Task.message }
+    $mode = if ($Task.execution_plan.mode) { [string]$Task.execution_plan.mode } else { 'sequential' }
+    $specialists = $agents -join ', '
+    $rules = @(
+        [string]$Task.message,
+        '',
+        'AI5 ORCHESTRATION CONTRACT:',
+        "- Required read-only specialists: $specialists",
+        "- Execution mode: $mode. Run independent read-only checks concurrently when supported.",
+        '- Claude: use the connected official Claude Code CLI in read-only mode.',
+        '- Gemini and Manus: use only the connected logged-in Chrome route; never extract cookies, tokens, or credentials.',
+        '- NotebookLM: read-only source lookup only, require citations, then verify current technical truth in GitHub.',
+        '- Do not fabricate a specialist result. If a route is unavailable, record it as UNVERIFIED and continue with safe available evidence.',
+        '- Codex is the single writer. No specialist may edit repository files.',
+        '- Do not publish, purchase, contract, authenticate, or send data externally without an existing task-bound human approval.',
+        '- Return each specialist result and Zero-integrated conclusion in the result schema evidence.'
+    )
+    return $rules -join "`n"
+}
+
 function Start-AI5CodexWorker {
     $health = Get-AI5CodexHealth
     if (!$health.available) { return $false }
@@ -70,6 +93,7 @@ function Start-AI5CodexWorker {
 
 function Submit-AI5CodexTask {
     param($Task)
+    $instruction = Get-AI5CodexInstruction $Task
     $context = if($Task.projectContext){$Task.projectContext}else{$null}
     $contextJson = if($context){$context|ConvertTo-Json -Compress -Depth 10}else{''}
     $envelope = [ordered]@{
@@ -78,7 +102,7 @@ function Submit-AI5CodexTask {
         source = 'ai5-hub'
         requested_by = $(if($context){'PROJECT_CONTROL'}else{'zero'})
         assigned_to = 'codex'
-        instruction = $Task.message
+        instruction = $instruction
         risk_level = $Task.route.risk
         approval_required = $Task.requiresApproval
         status = 'queued'

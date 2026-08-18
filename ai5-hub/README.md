@@ -30,7 +30,8 @@ AUTO EXECUTION統合ではRemote HEAD・ahead/behind・dirty判定、1時間常�
 | Claude Code CLI | ✅ 読み取り専用レビュー実Task成功 |
 | Gemini Chrome | ✅ ログイン済みWeb実送信成功 |
 | Manus Chrome | ✅ ログイン済みWeb実送信成功 |
-| Gmail通知 | ⬜ 未接続 |
+| Web Push通知 | 🟨 実装・自動テストPASS、実端末購読/閉状態着信は未確認 |
+| Gmail fallback | ⬜ 未接続（Web Push失敗時のみ将来候補） |
 
 専門AIの接続表示は24時間以内の実疎通記録だけを有効とし、古い記録は自動的にstale表示へ落とします。
 
@@ -92,6 +93,8 @@ $env:AI5_MOCK='true'
 - `POST /api/projects/:id/sync`
 - `GET /api/projects/:id/execution-check`
 - `POST /api/projects/scan`
+- `GET /api/push/public-key`
+- `POST /api/push/subscribe`
 
 状態は `queued / planning / waiting_approval / running / reviewing / completed / failed / cancelled`。会話、task、execution、resultは分離保存し、ブラウザ再読込後も復元します。
 
@@ -106,8 +109,9 @@ $env:AI5_MOCK='true'
 - Local APIからBridgeへの投入は、実行時生成する256-bit HMAC shared secretで署名します。
 - secretは `server/runtime/bridge.secret` にのみ置き、Git・UI・ログへ出しません。
 - task ID、Idempotency-Key、Bridge queue、worker lockの各層で二重実行を防ぎます。
-- Codex書込先はBridge専用workspaceに限定し、追加許可先は設定で明示します。
-- 実行タイムアウトは既定600秒、自動retryは既定0回です。無限待機・無限再送しません。
+- 通常TaskのCodex書込先はBridge専用workspace、Project TaskはHMAC署名済みContextから検証した `Documents/GitHub` 配下の一致worktree/branchだけです。
+- 実行タイムアウトは既定600秒、自動retryはTask上限3回か同一failure fingerprintで停止します。無限待機・無限再送しません。
+- Web Push payloadは「承認待ち/完了/重大失敗」とHUB確認案内だけで、Task目的・結果・認証情報を外部Pushサービスへ送りません。
 - Secretらしき入力とログはマスクし、APIキーやCookieを保存しません。
 - 公開、課金、送金、購入、大量削除、認証変更、第三者送信、破壊的Git操作は承認境界で停止します。
 - `git push --force`、`git reset --hard`、無断main変更、無断公開・課金は実行しません。

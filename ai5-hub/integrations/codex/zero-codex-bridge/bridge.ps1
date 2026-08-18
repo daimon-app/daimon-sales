@@ -4,7 +4,8 @@ param(
   [string]$Command,
   [string]$TaskId,
   [string]$Instruction,
-  [string]$Workspace
+  [string]$Workspace,
+  [switch]$Retry
 )
 $ErrorActionPreference='Stop'
 $PSDefaultParameterValues['Get-Content:Encoding']='UTF8'
@@ -32,7 +33,7 @@ function Resolve-CodexExecutable {
 function Enqueue {
   if(!$TaskId -or !$Instruction){throw 'TaskId and Instruction required'}
   $path=PathOf $TaskId
-  if(Test-Path $path){$old=Get-Content -Raw $path|ConvertFrom-Json;Log 'duplicate_rejected' @{task_id=$TaskId;status=$old.status};return [ordered]@{accepted=$false;duplicate=$true;task=$old}}
+  if(Test-Path $path){$old=Get-Content -Raw $path|ConvertFrom-Json;if($Retry-and$old.status-eq'failed'){$old.instruction=$Instruction;$old.workspace=$Workspace;$old.status='queued';$old.started_at=$null;$old.finished_at=$null;$old.result=$null;$old.error=$null;$old.retryable=$null;$old.human_action_required=$null;WriteJ $old $path;Log 'task_requeued' @{task_id=$TaskId;attempt_count=$old.attempt_count};return [ordered]@{accepted=$true;duplicate=$false;retry=$true;task=$old}};Log 'duplicate_rejected' @{task_id=$TaskId;status=$old.status};return [ordered]@{accepted=$false;duplicate=$true;task=$old}}
   $task=[ordered]@{task_id=$TaskId;created_at=Now;instruction=$Instruction;workspace=$Workspace;status='queued';started_at=$null;finished_at=$null;result=$null;error=$null;details=@();files_changed=@();tests=@();warnings=@();commit_id='';codex_session_id=$null;retryable=$null;human_action_required=$null;attempt_count=0}
   WriteJ $task $path;Log 'task_received' @{task_id=$TaskId;instruction=$Instruction};[ordered]@{accepted=$true;duplicate=$false;task=$task}
 }

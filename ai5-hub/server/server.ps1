@@ -4,11 +4,12 @@ if ($HostName -notin @('127.0.0.1','::1','localhost')) { throw 'AI5 HUB refuses 
 $ServerRoot = if ($global:AI5ServerRoot) { $global:AI5ServerRoot } else { $PSScriptRoot }
 $AppRoot = Split-Path $ServerRoot
 
-foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1')) {
+foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'notifications\PushNotification.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1')) {
     . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $ServerRoot $module))))
 }
 Initialize-AI5Store $ServerRoot
 Initialize-AI5MobileSecurity $ServerRoot
+Initialize-AI5PushNotifications $ServerRoot $AppRoot
 Initialize-AI5CodexService $ServerRoot $AppRoot
 Initialize-AI5SpecialistRegistry $ServerRoot
 Initialize-AI5ProjectControl $ServerRoot $AppRoot
@@ -107,7 +108,7 @@ function Fail-Task($task, [string]$type, [string]$summary) {
 function Dispatch-Task($task) {
     if ($Mock) { Execute-Mock $task; return }
     if ($task.assignedPrimary -eq 'claude') { Set-AI5TaskStatus $task 'RUNNING' 'Claudeレビュー中';$task.attempt++;$task.result=Invoke-AI5ClaudeAdapter $task;Write-AI5Log 'tasks' 'claude_finished' @{task_id=$task.taskId;status=$task.result.status;summary=$task.result.summary;risks=($task.result.risks -join ' | ')};if($task.result.status-eq'SUCCESS'){$task.validation=[ordered]@{passed=$true;checks=@{claude_review=$true};checked_at=[DateTime]::UtcNow.ToString('o')};Set-AI5TaskStatus $task 'COMPLETED' 'Claudeレビュー完了'}else{$task|Add-Member -NotePropertyName agent_results -NotePropertyValue @($task.result) -Force;$task.assignedPrimary='codex';$task.assigned_agent='codex';$task.result.next_action='REROUTE';Set-AI5TaskStatus $task 'RETRYING' 'Claude失敗のためCodexへ再振り分け';Dispatch-Task $task};return }
-    if ($task.assignedPrimary -in @('gemini','manus')) { $original=$task.assignedPrimary;$task.assignedPrimary='codex';$task.assigned_agent='codex';$task.assignedSecondary=@($task.assignedSecondary+$original|Select-Object -Unique);Set-AI5TaskStatus $task 'RETRYING' "$original 経路が利用不能のためCodexへ再振り分け" }
+    if ($task.assignedPrimary -in @('gemini','manus','notebooklm')) { $original=$task.assignedPrimary;$task.assignedPrimary='codex';$task.assigned_agent='codex';$task.assignedSecondary=@($task.assignedSecondary+$original|Select-Object -Unique);Set-AI5TaskStatus $task 'RETRYING' "$original をCodex管理の正式経路へ再振り分け" }
     if ($task.assignedPrimary -ne 'codex') { Fail-Task $task 'adapter_unavailable' "$($task.assignedPrimary) adapter is not connected"; return }
     $health = Get-AI5CodexHealth
     if (!$health.available) { Fail-Task $task 'bridge_unavailable' 'Zero-Codex Bridge is unavailable'; return }
@@ -208,6 +209,8 @@ try {
                 Send-Json $stream @{ mode = $(if ($Mock) { 'mock' } else { 'live' }); bridge = $bridgeHealth; agents = @{ zero = @{ state = 'ready'; connection = 'local' }; codex = @{ state = $codexState; connection = $codexConnection }; gemini = @{ state = $(if ($Mock -or $geminiHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $geminiHealth.connection });quota=$geminiHealth.quota }; claude = @{ state = $(if ($Mock -or $claudeHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $claudeHealth.connection });quota=$claudeHealth.quota }; manus = @{ state = $(if ($Mock -or $manusHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $manusHealth.connection });quota=$manusHealth.quota }; notebooklm = @{ state = $(if ($Mock -or $notebookHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $notebookHealth.connection });quota=$notebookHealth.quota;mode='read_only' } }; tasks = @(Get-AI5Tasks) }
                 continue
             }
+            if ($method -eq 'GET' -and $path -eq '/api/push/public-key') { $key=Get-AI5PushPublicKey;if($key){Send-Json $stream @{available=$true;publicKey=$key;background=$true}}else{Send-Json $stream @{available=$false;error='push_unavailable'} 503};continue }
+            if ($method -eq 'POST' -and $path -eq '/api/push/subscribe') { try{Send-Json $stream (Save-AI5PushSubscription (Parse-Body $request)) 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue }
             if ($method -eq 'GET' -and $path -eq '/api/projects') { Send-Json $stream (Get-AI5ProjectSummary); continue }
             if ($method -eq 'POST' -and $path -eq '/api/projects') { $body=Parse-Body $request; if(!$body.name-or!$body.projectId){Send-Json $stream @{error='name_and_project_id_required'} 400;continue}; try{Send-Json $stream (New-AI5Project $body) 202}catch{Send-Json $stream @{error=$_.Exception.Message} 409}; continue }
             if ($method -eq 'GET' -and $path -eq '/api/projects/repositories') { Send-Json $stream @{repositories=@(Get-AI5RepositoryCandidates)};continue }
@@ -232,6 +235,7 @@ try {
                 Write-AI5Log 'tasks' 'task_created' @{ task_id = $task.taskId; primary = $task.assignedPrimary; approval = $task.requiresApproval }
                 if ($task.requiresApproval) { $task | Add-Member -NotePropertyName approvalToken -NotePropertyValue (New-AI5ApprovalToken $task.taskId) -Force }
                 Send-Json $stream $task 202
+                if ($task.requiresApproval) { $null=Send-AI5PushNotification ($task.taskId+'-approval') 'approval' }
                 if (!$task.requiresApproval) { Dispatch-Task $task }
                 continue
             }

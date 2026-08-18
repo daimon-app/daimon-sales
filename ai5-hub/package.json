@@ -1,0 +1,6 @@
+{
+  "name": "ai5-hub-local",
+  "private": true,
+  "version": "3.0.0",
+  "dependencies": { "web-push": "^3.6.7" }
+}

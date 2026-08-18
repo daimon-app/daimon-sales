@@ -16,6 +16,8 @@ $workerLock = Join-Path $ServerRoot 'runtime\codex-worker.lock'
 $taskRoot = Join-Path $ServerRoot 'data\tasks'
 $logRoot = Join-Path $ServerRoot 'logs\tasks'
 New-Item -ItemType Directory -Force $logRoot | Out-Null
+. ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $ServerRoot 'notifications\PushNotification.ps1'))))
+Initialize-AI5PushNotifications $ServerRoot $AppRoot
 
 function Read-Utf8Json([string]$path) {
     return [IO.File]::ReadAllText($path, [Text.UTF8Encoding]::new($false)) | ConvertFrom-Json
@@ -187,9 +189,27 @@ try {
                 }
             }
             Set-TaskState $currentTask $currentTaskPath 'completed' 'Zero verified the Codex result'
+            $null=Send-AI5PushNotification ($currentTask.taskId+'-completed') 'completed'
         } else {
             Set-TaskProperty $currentTask 'errorType' 'task_failed'
-            Set-TaskState $currentTask $currentTaskPath 'failed' 'Codex execution failed'
+            $fingerprintSource = if ($result.error) { [string]$result.error } else { 'task_failed' }
+            $sha = [Security.Cryptography.SHA256]::Create()
+            try { $fingerprint = ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($fingerprintSource)))).Replace('-', '').ToLowerInvariant() } finally { $sha.Dispose() }
+            $seen = @($currentTask.failure_fingerprints)
+            Set-TaskProperty $currentTask 'failure_fingerprints' @($seen + $fingerprint)
+            $repeatCount = @($seen | Where-Object { $_ -eq $fingerprint }).Count
+            $canRetry = [bool]$result.retryable -and ![bool]$result.human_action_required -and [int]$currentTask.attempt -lt [int]$currentTask.max_attempts -and $repeatCount -lt 2
+            if ($canRetry) {
+                Set-TaskState $currentTask $currentTaskPath 'retrying' 'Codex failure classified; safe retry queued'
+                & "$bridge\bridge.ps1" enqueue -TaskId $envelope.task_id -Instruction $envelope.instruction -Workspace $workspace -Retry | Out-Null
+                Write-WorkerLog 'codex_retry_queued' @{ task_id = $currentTask.taskId; attempt = $currentTask.attempt; fingerprint = $fingerprint }
+                $currentTask = $null
+                $currentTaskPath = $null
+                $currentEnvelopePath = $null
+                continue
+            }
+            Set-TaskState $currentTask $currentTaskPath 'failed' $(if($repeatCount-ge2){'Repeated Codex failure stopped'}else{'Codex execution failed'})
+            $null=Send-AI5PushNotification ($currentTask.taskId+'-failed') 'failed'
         }
 
         Save-Task $currentTask $currentTaskPath

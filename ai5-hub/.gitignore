@@ -6,4 +6,5 @@ server/data/
 server/logs/**/*.jsonl
 server/logs/**/*.log
 server/runtime/
+node_modules/
 
