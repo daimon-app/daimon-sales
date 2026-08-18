@@ -8,7 +8,7 @@ GitHubの現在実装と最新の明示的決定を技術正本とする。Noteb
 - 公式APIはGemini Notebook Enterprise Previewで、Cloud設定と専用ライセンスが必要なため追加料金0円のPhase 3では採用しない。
 - 既存Googleログイン済みChromeから接続できることを確認した。Cookie、token、保存認証情報は取得しない。
 - Adapterはread-only固定、出典必須、GitHub照合必須とする。
-- NotebookLM内にAI5 HUBノートブックは未作成。作成と資料追加はGoogle側への書込みのため、本人承認後に行う。
+- 本人承認後、NotebookLMに `AI5 HUB Knowledge Base` を作成し、README / ZERO_SPEC / PHASE3の3資料だけを登録した。
 
 公式資料:
 
