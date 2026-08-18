@@ -1,6 +1,6 @@
 # SNS初期設定パック
 
-共通表示名は `DAIMON`。プロフィール文は `../brand/profile-copy/profiles.md`。公開前リンクはLP、公開後もLPを主リンクに保ちGoogle PlayをLP内主CTAにする。
+共通表示名は `DAIMON`。プロフィール文は `../brand/profile-copy/profiles.md`。公開前リンクはLP、公開後もLPを主リンクに保ちGoogle PlayをLP内主CTAにする。初月の実運用はTikTok・Instagram・YouTube Shortsを主軸、X/Threadsを思想補足に限定し、他媒体は購入導線が安定してから判断する。
 
 | 媒体 | 初期設定 | 固定コンテンツ |
 |---|---|---|
@@ -19,7 +19,9 @@
 
 DAIMON MORNING Editionは、朝、自分の意図と今日の方向へ戻るAndroidアプリです。490円・買い切り・広告なし。
 
-続かなくてもいい。戻ればいい。Google Playで近日公開。
+続かなくてもいい。戻ればいい。発売日は公式LPで案内。
+
+公開前リンク例: `{LP_URL}?utm_source={platform}&utm_medium=organic_social&utm_campaign=prelaunch&utm_content=fixed`
 
 ## Instagram固定3本
 1. `人は、ズレる。`

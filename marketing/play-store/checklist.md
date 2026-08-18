@@ -3,7 +3,8 @@
 - [x] 商品名・短い説明・長い説明案
 - [x] 512px販売用アイコン案（`icon/icon-512.png`）
 - [x] 1024×500フィーチャーグラフィックSVG案
-- [ ] PNG最終出力、端末スクリーンショット4〜8枚
+- [x] 1024×500 PNG最終出力（`feature-graphic/feature-graphic.png`）
+- [ ] 提出AABと一致する端末スクリーンショット4〜8枚
 - [ ] 署名済みAAB、applicationId、versionCode、target API
 - [ ] データセーフティ、IARC、サポート連絡先
 - [ ] 価格・対象国（本人判断）

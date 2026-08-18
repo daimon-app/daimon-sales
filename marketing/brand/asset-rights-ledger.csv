@@ -1,0 +1,5 @@
+asset,path,creator_or_source,commercial_scope,evidence,status
+DAIMON logo,marketing/play-store/icon/icon-512.png,DAIMON,Play/SNS/LP,Repository history,verified-internal
+CM-A background,marketing/cm/assets/morning01.jpg,unconfirmed,unconfirmed,missing,block-release
+Morning app backgrounds,assets/morning01-12,unconfirmed,unconfirmed,missing,block-release
+Feature graphic,marketing/play-store/feature-graphic/feature-graphic.png,DAIMON/FFmpeg local build,Play Store,local build record,verified-internal

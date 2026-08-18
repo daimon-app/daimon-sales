@@ -5,8 +5,8 @@
 > ユーザーの最新明示指示が最優先。
 
 - Repository: `daimon-app/daimon-sales`
-- Branch: `main`
-- Status: 販売基盤施工中
+- Branch: `feat/marketing-foundation`
+- Status: Manus初回独立監査後の是正中（公開判定NO-GO）
 - 基本方針: 無料優先・有料広告0円スタート
 
 ## 1. 販売対象
@@ -277,3 +277,11 @@ Play Console登録・課金・契約・公開確定は本人承認が必要な�
 - 自動検査: `marketing/test-marketing.ps1`
 - 未確定: 正式事業者情報、問い合わせ先、対象国、Console価格設定、Data safety最終回答、公開日
 - 公開・課金・アカウント作成・審査提出は本人承認まで実行しない。
+
+## 17. Manus独立監査（2026-08-18）
+
+- 初回判定: NO-GO（P0=5 / P1=10 / P2=5 / P3=3）
+- 詳細: `marketing/audit/manus-initial-audit.md`
+- 公開ゲート: `marketing/release-gates.md`
+- LPの公開状態とPlay URL: `marketing/lp/release-config.js` の1箇所で切り替える。
+- CM-Aはティザー。次に動画化する候補は実画面主体のCM-BとMorning専用CM-C。

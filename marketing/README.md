@@ -2,6 +2,8 @@
 
 正本は `MASTER-MARKETING.md`、実行ルールは `SALES-EXECUTION.md`。本READMEは起動と検査の入口だけを提供する。
 
+Manus初回独立監査はNO-GO。公開・販売は `release-gates.md` の全項目が実証されるまで行わない。LPの公開状態とGoogle Play URLは `lp/release-config.js` だけで切り替える。
+
 ## LPプレビュー
 
 Repositoryルートの `preview-marketing.cmd` をダブルクリックする。`http://127.0.0.1:4173/` を既定ブラウザで開き、ウィンドウを閉じるかCtrl+Cで停止する。Loopback限定で外部公開しない。
@@ -13,6 +15,10 @@ Repositoryルートの `preview-marketing.cmd` をダブルクリックする。
 ## 自動検査
 
 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File marketing/test-marketing.ps1`
+
+正規LP URL確定後のUTM実リンク生成:
+
+`powershell.exe -NoProfile -File marketing/analytics/generate-links.ps1 -BaseUrl https://確定LP.example`
 
 ## 公開前残作業
 
