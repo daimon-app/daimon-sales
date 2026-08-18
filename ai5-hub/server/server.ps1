@@ -5,7 +5,7 @@ $CodeServerRoot = if ($global:AI5CodeServerRoot) { $global:AI5CodeServerRoot } e
 $ServerRoot = if ($global:AI5ServerRoot) { $global:AI5ServerRoot } else { $PSScriptRoot }
 $AppRoot = Split-Path $CodeServerRoot
 
-foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'notifications\PushNotification.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1')) {
+foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'notifications\PushNotification.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1','command-center\CommandCenter.ps1')) {
     . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $CodeServerRoot $module))))
 }
 Initialize-AI5Store $ServerRoot
@@ -16,6 +16,7 @@ Initialize-AI5SpecialistRegistry $ServerRoot
 Initialize-AI5ProjectControl $ServerRoot $AppRoot
 Invoke-AI5ProjectRecovery
 $Mock = if ($env:AI5_MOCK) { $env:AI5_MOCK -ne 'false' } else { $false }
+$script:MockMode=$Mock
 $Csrf = [guid]::NewGuid().ToString('N')
 $listenAddress = if($HostName-eq'localhost'){[Net.IPAddress]::Loopback}else{[Net.IPAddress]::Parse($HostName)}
 $listener = [Net.Sockets.TcpListener]::new($listenAddress, $Port)
@@ -130,23 +131,21 @@ function Get-MobileHealth {
         $pidText = (Get-Content -Raw $lockPath -ErrorAction SilentlyContinue).Trim()
         if ($pidText -match '^\d+$' -and (Get-Process -Id ([int]$pidText) -ErrorAction SilentlyContinue)) { $worker = 'running' }
     }
-    $tailscalePath = Join-Path $env:ProgramFiles 'Tailscale\tailscale.exe'
     $tailscaleState = 'not_installed'
-    if (Test-Path $tailscalePath) {
-        try { $tailStatus = & $tailscalePath status --json 2>$null | ConvertFrom-Json; $tailscaleState = if ($tailStatus.BackendState -eq 'Running') { 'connected' } else { 'authentication_required' } } catch { $tailscaleState = 'error' }
-    }
+    try{$tailService=Get-Service -Name 'Tailscale' -ErrorAction Stop;$tailscaleState=if($tailService.Status-eq'Running'){'service_running_unverified'}else{'service_stopped'}}catch{}
     return [ordered]@{ server = 'online'; localApi = 'online'; bridge = $(if ($bridge.available) { 'ready' } else { 'unavailable' }); codex = $(if ($bridge.available) { 'available' } else { 'unavailable' }); worker = $worker; remote = $tailscaleState }
 }
 
 function New-Task($body, [string]$idem) {
-    $route = Get-AI5Route $body.message
+    $target=if($body.target){[string]$body.target}else{'auto'}
+    $route = Get-AI5Route $body.message $target
     $id = if ($body.taskId) { $body.taskId } else { Get-AI5NextTaskId }
     $approval = if ($route.requiresApproval) { [ordered]@{ type = $route.approvalType; summary = '本人の最終承認が必要です'; status = 'pending'; zero_review = (Get-AI5ZeroApprovalReview $route) } } else { $null }
     $now=[DateTime]::UtcNow.ToString('o')
     $task=[pscustomobject][ordered]@{
         task_id=$id;taskId = $id; parent_task_id=$null;title=$route.objective;conversationId = $body.conversationId; message = Protect-AI5Text $body.message; objective = $route.objective;constraints=@($body.constraints)
         source = $(if ($body.source) { $body.source } else { 'teppei' }); priority = $(if ($body.priority) { $body.priority } else { 'normal' })
-        assigned_agent=$route.primary;status = $(if ($route.requiresApproval) { 'waiting_approval' } else { 'queued' });canonical_status=$(if ($route.requiresApproval){'WAITING_APPROVAL'}else{'RECEIVED'});approval_level=$(if($route.requiresApproval){'RED'}elseif($route.risk-eq'medium'){'YELLOW'}else{'GREEN'});attempt=0;max_attempts=3;assignedPrimary = $route.primary; assignedSecondary = $route.secondary
+        assigned_agent=$route.primary;requested_target=$route.requestedTarget;routing_mode=$route.routingMode;status = $(if ($route.requiresApproval) { 'waiting_approval' } else { 'queued' });canonical_status=$(if ($route.requiresApproval){'WAITING_APPROVAL'}else{'RECEIVED'});approval_level=$(if($route.requiresApproval){'RED'}elseif($route.risk-eq'medium'){'YELLOW'}else{'GREEN'});attempt=0;max_attempts=3;assignedPrimary = $route.primary; assignedSecondary = $route.secondary
         requiresApproval = $route.requiresApproval; approval = $approval; field_mode=$(if($null-ne$body.fieldMode){[bool]$body.fieldMode}else{$true}); field_decision=$null; execution_plan=(Get-AI5ExecutionPlan $route); failure_fingerprints=@(); route = $route; validation=[ordered]@{};artifacts=@();result = $null
         timeline = @([ordered]@{ status = 'RECEIVED'; label = '依頼受付'; at = $now })
         children=@();idempotencyKey = $idem; created_at=$now;updated_at=$now;createdAt = $now; updatedAt = $now
@@ -156,12 +155,14 @@ function New-Task($body, [string]$idem) {
     return $task
 }
 
+$NextApprovalScheduleAt=[DateTimeOffset]::MinValue
 try {
     while ($true) {
         if(!$listener.Pending()){
             $scheduler=Get-AI5SchedulerStatus
             $due=!$scheduler.nextScan-or([DateTimeOffset]::Parse($scheduler.nextScan)-le[DateTimeOffset]::Now)
             if($due){try{Invoke-AI5ProjectScan -Fetch $true|Out-Null}catch{Write-AI5Log 'errors' 'project_scheduler_failed' @{error=$_.Exception.Message}}}
+            if([DateTimeOffset]::Now-ge$NextApprovalScheduleAt){try{$null=Invoke-AI5ApprovalNotificationSchedule -Tasks @(Get-AI5Tasks 100)}catch{Write-AI5Log 'errors' 'approval_notification_schedule_failed' @{error=$_.Exception.Message}};$NextApprovalScheduleAt=[DateTimeOffset]::Now.AddSeconds(30)}
             Start-Sleep -Milliseconds 200
             continue
         }
@@ -210,6 +211,7 @@ try {
                 Send-Json $stream @{ mode = $(if ($Mock) { 'mock' } else { 'live' }); bridge = $bridgeHealth; agents = @{ zero = @{ state = 'ready'; connection = 'local' }; codex = @{ state = $codexState; connection = $codexConnection }; gemini = @{ state = $(if ($Mock -or $geminiHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $geminiHealth.connection });quota=$geminiHealth.quota }; claude = @{ state = $(if ($Mock -or $claudeHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $claudeHealth.connection });quota=$claudeHealth.quota }; manus = @{ state = $(if ($Mock -or $manusHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $manusHealth.connection });quota=$manusHealth.quota }; notebooklm = @{ state = $(if ($Mock -or $notebookHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $notebookHealth.connection });quota=$notebookHealth.quota;mode='read_only' } }; tasks = @(Get-AI5Tasks) }
                 continue
             }
+            if ($method -eq 'GET' -and $path -eq '/api/command-center') { Send-Json $stream (Get-AI5CommandCenter);continue }
             if ($method -eq 'GET' -and $path -eq '/api/push/public-key') { $key=Get-AI5PushPublicKey;if($key){Send-Json $stream @{available=$true;publicKey=$key;background=$true}}else{Send-Json $stream @{available=$false;error='push_unavailable'} 503};continue }
             if ($method -eq 'POST' -and $path -eq '/api/push/subscribe') { try{Send-Json $stream (Save-AI5PushSubscription (Parse-Body $request)) 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue }
             if ($method -eq 'GET' -and $path -eq '/api/projects') { Send-Json $stream (Get-AI5ProjectSummary); continue }
@@ -236,7 +238,6 @@ try {
                 Write-AI5Log 'tasks' 'task_created' @{ task_id = $task.taskId; primary = $task.assignedPrimary; approval = $task.requiresApproval }
                 if ($task.requiresApproval) { $task | Add-Member -NotePropertyName approvalToken -NotePropertyValue (New-AI5ApprovalToken $task.taskId) -Force }
                 Send-Json $stream $task 202
-                if ($task.requiresApproval) { $null=Send-AI5PushNotification ($task.taskId+'-approval') 'approval' }
                 if (!$task.requiresApproval) { Dispatch-Task $task }
                 continue
             }

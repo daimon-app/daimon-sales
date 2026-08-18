@@ -27,6 +27,10 @@ Updated: 2026-08-19
 | Task復元 | PASS (Phase 2.5 evidence) | Android/iPhone/Windows再起動実測 |
 | Git正本復元 | PASS | Project task `task_PC-ai5-hub-20260818143714` が署名済みworktree/branchを検証し `PHASE3_PROJECT_CODEX_OK feat/ai5-hub-phase3` |
 | NotebookLM→GitHub照合 | PASS | Task `AI5-20260818-0019` が過去の仕事・夜未実装情報を現行GitHub各12枚実装と照合し旧情報と判定 |
+| AI5 COMMAND CENTER UI | PASS (automated scope) | 5兄弟＋NotebookLM別枠、LIVE AI5、AI間flow、Project/WRITE LOCK、実health、4項目mobile navを実装。実機は未確認 |
+| 個別指名モード | PASS (local API) | AUTO/Zero既定。Codex/Claude/Gemini/Manus/NotebookLMのtargetを受理し、`direct_via_zero`でZero Safety Layerを維持 |
+| 承認通知スケジュール | PASS (automated scope) | 10/12/15時の集約、同一slot重複防止、18時以降1分待機＋5分debounce。通常完了のOS通知なし |
+| COMMAND CENTER Claude再監査 | UNVERIFIED | Claude Code 2.1.233へread-only監査を投入したが120秒で応答回収できず。PASS扱いしない |
 
 ## Current deployment state
 
@@ -45,4 +49,4 @@ Updated: 2026-08-19
 
 Phase 3: `PARTIAL`
 
-Phase 3 SUCCESSには、Web Push実端末着信、実配信後のAndroid/iPhone/再起動E2Eが必要。
+AI5 COMMAND CENTER施工も、実機E2E前のため`PARTIAL`。SUCCESSには新UI配信後のAndroid/iPhone、各個別AI、並列状態表示、承認通知実着信、再起動E2Eが必要。

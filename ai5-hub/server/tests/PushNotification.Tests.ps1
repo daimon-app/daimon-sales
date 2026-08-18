@@ -10,7 +10,7 @@ try{
   $saved=Save-AI5PushSubscription ([pscustomobject]@{endpoint='https://push.invalid/subscription';expirationTime=$null;keys=[pscustomobject]@{p256dh='test-public';auth='test-auth'}})
   if(!$saved.subscribed-or@(Get-ChildItem (Join-Path $server 'runtime\push\subscriptions') -Filter '*.json').Count-ne1){throw'push subscription persistence failed'}
   Set-Content -LiteralPath (Join-Path $server 'runtime\push\sent\duplicate-test.sent') -Encoding ASCII -Value 'sent'
-  $duplicate=Send-AI5PushNotification 'duplicate-test' 'completed'
+  $duplicate=Send-AI5PushNotification 'duplicate-test' 'approval'
   if($duplicate.reason-ne'duplicate'){throw'push duplicate suppression failed'}
   'PUSH_NOTIFICATION_TESTS_OK'
 }finally{if(Test-Path $server){Remove-Item -LiteralPath $server -Recurse -Force}}

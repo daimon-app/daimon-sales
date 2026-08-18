@@ -80,6 +80,7 @@ $env:AI5_MOCK='true'
 
 - `GET /api/health`
 - `GET /api/status`
+- `GET /api/command-center`
 - `POST /api/tasks`
 - `GET /api/tasks/:id`
 - `GET /api/tasks/:id/result`
@@ -112,6 +113,7 @@ $env:AI5_MOCK='true'
 - 通常TaskのCodex書込先はBridge専用workspace、Project TaskはHMAC署名済みContextから検証した `Documents/GitHub` 配下の一致worktree/branchだけです。
 - 実行タイムアウトは既定600秒、自動retryはTask上限3回か同一failure fingerprintで停止します。無限待機・無限再送しません。
 - Web Push payloadは「承認待ち/完了/重大失敗」とHUB確認案内だけで、Task目的・結果・認証情報を外部Pushサービスへ送りません。
+- Web Pushの音付き対象は本人承認待ちだけです。10:00/12:00/15:00は未処理承認を1回に集約し、18:00以降は新規承認を短時間debounceします。通常完了はHUB内表示・badgeのみです。端末の実際の通知音はOS設定に依存します。
 - Secretらしき入力とログはマスクし、APIキーやCookieを保存しません。
 - 公開、課金、送金、購入、大量削除、認証変更、第三者送信、破壊的Git操作は承認境界で停止します。
 - `git push --force`、`git reset --hard`、無断main変更、無断公開・課金は実行しません。

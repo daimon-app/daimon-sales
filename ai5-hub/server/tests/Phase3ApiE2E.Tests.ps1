@@ -24,6 +24,10 @@ try {
   $safe=Invoke-RestMethod "$base/api/tasks" -Method Post -Headers @{'X-AI5-CSRF'=$csrf;'Idempotency-Key'=[guid]::NewGuid().ToString('N')} -ContentType 'application/json' -Body (@{message='過去の資料と現在の実装に矛盾がないか確認して';source='phase3-e2e'}|ConvertTo-Json)
   if(!$safe.field_mode-or$safe.field_decision.action-ne'AUTO_CONTINUE'){throw 'Field Mode auto continue failed'}
   if($safe.execution_plan.single_writer-ne'codex'){throw 'Single Writer plan missing'}
+  $direct=Invoke-RestMethod "$base/api/tasks" -Method Post -Headers @{'X-AI5-CSRF'=$csrf;'Idempotency-Key'=[guid]::NewGuid().ToString('N')} -ContentType 'application/json' -Body (@{message='現在のGit statusを確認して';target='codex';source='phase3-e2e'}|ConvertTo-Json)
+  if($direct.requested_target-ne'codex'-or$direct.routing_mode-ne'direct_via_zero'){throw 'direct target API contract failed'}
+  $command=Invoke-RestMethod "$base/api/command-center"
+  if(!$command.agents.zero-or!$command.agents.codex-or!$command.agents.notebooklm){throw 'command center health missing'}
   try{Invoke-RestMethod "$base/api/shell" -TimeoutSec 2;throw 'arbitrary shell endpoint exposed'}catch{if($_.Exception.Message-eq'arbitrary shell endpoint exposed'){throw}}
   'PHASE3_API_E2E_TESTS_OK'
 } finally {

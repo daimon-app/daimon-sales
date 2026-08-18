@@ -1,5 +1,8 @@
 ﻿function Get-AI5Route {
-  param([Parameter(Mandatory=$true)][string]$Message)
+  param([Parameter(Mandatory=$true)][string]$Message,[string]$RequestedTarget='auto')
+  $allowedTargets=@('auto','zero','codex','claude','gemini','manus','notebooklm')
+  $RequestedTarget=$RequestedTarget.ToLowerInvariant()
+  if($RequestedTarget-notin$allowedTargets){throw 'invalid_target'}
   $text = $Message.ToLowerInvariant()
   $primary = 'codex'; $secondary = @(); $kind = 'pc_task'; $intent='task'; $usesKnowledge=$false
   if ($text -match '^(こんにちは|ありがとう|了解|おはよう|こんばんは)[。!！ ]*$') {$intent='conversation'}
@@ -21,11 +24,19 @@
   }
   $approvalType=$null
   foreach($entry in $approvalPatterns.GetEnumerator()){if($text -match $entry.Value){$approvalType=$entry.Key;break}}
+  $automaticPrimary=$primary
+  if($RequestedTarget-ne'auto'-and$RequestedTarget-ne'zero'){
+    $primary=$RequestedTarget
+    $secondary=@($secondary|Where-Object{$_-ne$primary})
+    $kind=@{codex='code';claude='review';gemini='research';manus='web_operation';notebooklm='knowledge_lookup'}[$primary]
+    if($primary-eq'notebooklm'){$usesKnowledge=$true}
+  }
   [ordered]@{
     objective=$Message; intent=$intent; workType=$kind; primary=$primary; secondary=@($secondary|Select-Object -Unique|Where-Object{$_ -ne $primary});
     externalOperation=($kind -eq 'web_operation'); gitChange=($text -match 'git|github|コード|実装|修正');
     risk=if($approvalType){'high'}elseif($text -match '変更|修正|作成'){'medium'}else{'low'};
     requiresApproval=[bool]$approvalType; approvalType=$approvalType;
+    requestedTarget=$RequestedTarget; routingMode=$(if($RequestedTarget-in@('auto','zero')){'auto'}else{'direct_via_zero'}); automaticPrimary=$automaticPrimary;
     executionMode=if(@($secondary).Count-gt 1){'parallel_safe'}else{'sequential'};
     doneWhen=if($usesKnowledge){'出典付き資料回答・GitHub正本照合・Zeroの結論'}elseif($kind -eq 'research'){'情報取得・比較・Zeroの結論'}elseif($kind -eq 'review'){'監査結果と指摘の整理'}else{'作業結果と検査結果の確認'}
   }

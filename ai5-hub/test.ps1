@@ -17,3 +17,6 @@ $code=Get-Content -Raw -Encoding UTF8 (Join-Path $global:AI5TestRoot 'phase1.tes
 & (Join-Path $global:AI5TestRoot 'Utf8Bridge.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'BridgeRetry.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'PushNotification.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'CommandCenter.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'CommandCenterResponsive.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'ApprovalNotificationSchedule.Tests.ps1')
