@@ -177,6 +177,9 @@ try {
             Set-TaskState $currentTask $currentTaskPath 'failed' 'Codex execution failed'
         }
 
+        if($currentTask.repository_path){$postStatus=@(& git -C $currentTask.repository_path status --porcelain=v2 --untracked-files=all 2>$null);Set-TaskProperty $currentTask 'post_write_snapshot' ([ordered]@{branch=(& git -C $currentTask.repository_path branch --show-current 2>$null);head=(& git -C $currentTask.repository_path rev-parse HEAD 2>$null);dirty=($postStatus.Count-gt0);status=$postStatus;captured_at=[DateTime]::UtcNow.ToString('o')})}
+        if($currentTask.repository_lock-and$currentTask.repository_lock.path-and$currentTask.repository_lock.record.task_id-eq$currentTask.taskId){Remove-Item -LiteralPath $currentTask.repository_lock.path -Force -ErrorAction SilentlyContinue;Set-TaskProperty $currentTask 'repository_lock' $null}
+
         Save-Task $currentTask $currentTaskPath
         Write-WorkerLog 'codex_finished' @{
             task_id = $currentTask.taskId

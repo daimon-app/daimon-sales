@@ -51,6 +51,8 @@ Branch: `feat/ai5-sales-factory-v6`
 - 追加独立コード監査: `FAIL`。false PASS、lock lifecycle、Result spoof、送信前mask、typed approval、正本復元・証拠保存をPhase 2 blockerとして修正ループへ投入。
 - 修正ループ2: Codex直接PASS除去、施工AI≠監査AI、担当AI一致、受入条件別outcome、明示PASS tests/QA、検証可能evidence形式、typed capability、GET/初回response token発行除去、dirty lock拒否、外部送信前mask、Source snapshot、runtime evidence exportを実装。全15 test PASS。
 - 残存Phase 2 gate: 外部Claude/Gemini接続復旧、M1〜M5のremote GitHub正本復元、AI別署名Return、lock crash recovery、専用evidence branchへのsanitized commit。
+- 修正ループ3: remote branch/commit/doc本文/file inventory/snapshot hash、one-time AI Return token、実在evidence resolver、受入条件identity照合、Codex worker lock解放、非完了stale lockのRECOVERY_REQUIRED化を実装。全16 test PASS。
+- 現在の外部接続: Claude最小疎通timeout、Chrome Browser runtimeはtrusted path error。Manus/Gemini Bridgeを実測できないためPhase 2 LIVEは引き続きNO-GO。
 
 ## LIVE gate
 

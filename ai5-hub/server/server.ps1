@@ -8,6 +8,7 @@ foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'approva
     . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $ServerRoot $module))))
 }
 Initialize-AI5Store $ServerRoot
+Recover-AI5RepositoryLocks (Join-Path $ServerRoot 'runtime')|Out-Null
 Initialize-AI5MobileSecurity $ServerRoot
 Initialize-AI5CodexService $ServerRoot $AppRoot
 Initialize-AI5SpecialistRegistry $ServerRoot
@@ -252,7 +253,7 @@ try {
                 continue
             }
             if ($method -eq 'GET' -and $path -eq '/api/tasks') { Send-Json $stream @{ tasks=@(Get-AI5Tasks 100) }; continue }
-            if ($path -match '^/api/agents/(manus|gemini)/outbox$' -and $method -eq 'GET') { Send-Json $stream @{ agent=$Matches[1]; tasks=@(Get-AI5ExternalOutbox $Matches[1]) }; continue }
+            if ($path -match '^/api/agents/(manus|gemini)/outbox$' -and $method -eq 'GET') { $agent=$Matches[1];$items=@(Get-AI5ExternalOutbox $agent|ForEach-Object{[ordered]@{task_id=$_.task_id;project_id=$_.project_id;product_id=$_.product_id;assigned_ai=$_.assigned_ai;created_at=$_.created_at}});Send-Json $stream @{agent=$agent;tasks=$items;result_tokens='internal_bridge_only'};continue }
             if ($path -match '^/api/tasks/([^/]+)$' -and $method -eq 'GET') { $task = Get-AI5Task $Matches[1]; if ($task -and !$Mock -and $task.assignedPrimary -eq 'codex' -and $task.status -in @('queued', 'running')) { Start-AI5CodexWorker | Out-Null };if($task-and$task.assignedPrimary-eq'codex'-and$task.status-in@('reviewing','failed')){$task=Finalize-AI5CodexResult $task}; if ($task) { Send-Json $stream $task } else { Send-Json $stream @{ error = 'not_found' } 404 }; continue }
             if ($path -match '^/api/tasks/([^/]+)/result$' -and $method -eq 'GET') { $task = Get-AI5Task $Matches[1]; if (!$task) { Send-Json $stream @{ error = 'not_found' } 404 } elseif ($task.result) { Send-Json $stream @{ taskId = $task.taskId; status = $task.status; result = $task.result; bridge = $task.bridge } } else { Send-Json $stream @{ taskId = $task.taskId; status = $task.status; result = $null } 202 }; continue }
             if ($path -match '^/api/tasks/([^/]+)/result$' -and $method -eq 'POST') { $task=Get-AI5Task $Matches[1];if(!$task){Send-Json $stream @{error='not_found'} 404;continue};if($task.status-notin@('running','reviewing','blocked')){Send-Json $stream @{error='invalid_state'} 409;continue};try{$task=Receive-AI5ExternalResult $task (Parse-Body $request);Write-AI5Log 'tasks' 'zero_return_collected' @{task_id=$task.taskId;ai=$task.result.ai;verdict=$task.result.verdict};Send-Json $stream $task 202}catch{Write-AI5Log 'security' 'result_rejected' @{task_id=$task.taskId;error=$_.Exception.Message};Send-Json $stream @{error=$_.Exception.Message} 400};continue }

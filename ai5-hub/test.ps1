@@ -16,3 +16,4 @@ $code=Get-Content -Raw -Encoding UTF8 (Join-Path $global:AI5TestRoot 'phase1.tes
 & (Join-Path $global:AI5TestRoot 'CapabilityPolicy.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'SourceOfTruth.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'EvidenceStore.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'ExternalReturnToken.Tests.ps1')
