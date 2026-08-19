@@ -6,6 +6,6 @@
     "task_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{1,119}$"}, "project_id": {"type": "string"}, "product_id": {"type": "string"}, "parent_task_id": {"type": "string"},
     "created_by": {"const": "zero"}, "assigned_ai": {"enum": ["codex", "claude", "gemini", "manus", "notebooklm"]}, "support_ai": {"type": "array"}, "writer": {"type": "string"},
     "objective": {"type": "string", "minLength": 1}, "instructions": {"type": "string"}, "acceptance_criteria": {"type": "array"}, "source_repository": {"type": "string"}, "source_branch": {"type": "string"}, "source_commit": {"type": "string"},
-    "status": {"enum": ["QUEUED", "CLAIMED", "RUNNING", "REVIEW", "COMPLETED", "FAILED", "BLOCKED", "RETRY", "APPROVAL_REQUIRED", "CANCELLED", "ARCHIVED"]}, "retry_count": {"type": "integer", "minimum": 0}, "max_retry": {"type": "integer", "minimum": 0, "maximum": 10}, "approval_required": {"type": "boolean"}
+    "status": {"enum": ["QUEUED", "CLAIMED", "RUNNING", "REVIEW", "COMPLETED", "FAILED", "BLOCKED", "RETRY", "APPROVAL_REQUIRED", "CANCELLED", "ARCHIVED"]}, "retry_count": {"type": "integer", "minimum": 0}, "max_retry": {"type": "integer", "minimum": 0, "maximum": 10}, "loop_state": {"type": "object"}, "approval_required": {"type": "boolean"}
   }
 }

@@ -3,8 +3,11 @@ function New-LoopTask($tests){[pscustomobject]@{taskId='loop-test';route=[pscust
 $ok=New-LoopTask -tests @('unit PASS');$decision=Invoke-AI5DoubleJudge $ok;if($decision.decision-ne'COMPLETE'-or$ok.agent_reports.Count-lt1-or$ok.line_messages.Count-lt2){throw 'double PASS completion failed'}
 $rework=New-LoopTask -tests @();$first=Invoke-AI5DoubleJudge $rework;if($first.decision-ne'REWORK'-or$rework.loop_state.cycle-ne1){throw 'automatic REWORK failed'}
 $rework.loop_state.cycle=3;$blocked=Invoke-AI5DoubleJudge $rework;if($blocked.decision-ne'BLOCKED'){throw 'loop guard failed'}
-$approval=New-LoopTask -tests @('PASS');$approval.requiresApproval=$true;$wait=Invoke-AI5DoubleJudge $approval;if($wait.decision-ne'APPROVAL'){throw 'approval stop failed'}
+$approval=New-LoopTask -tests @('PASS');$approval.requiresApproval=$true;$wait=Invoke-AI5DoubleJudge $approval;if($wait.decision-ne'WAITING_APPROVAL'){throw 'approval stop failed'}
 $readOnly=[pscustomobject]@{taskId='pc-check';route=[pscustomobject]@{workType='pc_task';gitChange=$false};requiresApproval=$false;attempt=1;max_attempts=3;result=[pscustomobject]@{status='success';summary='QUEUE_MOBILE_OK';tests=@();needs_human=$false;risks=@()}};$readOnlyDecision=Invoke-AI5DoubleJudge $readOnly;if($readOnlyDecision.decision-ne'COMPLETE'){throw 'no-change PC result should not require code test evidence'}
 $limited=New-LoopTask -tests @();$limited|Add-Member attempt 3;$limited|Add-Member max_attempts 3;$limitDecision=Invoke-AI5DoubleJudge $limited;if($limitDecision.decision-ne'BLOCKED'){throw 'max attempts guard failed'}
 if(@(Get-AI5LineMessages @($ok) 'NORMAL').Count-lt2){throw 'durable line reports missing'}
+if(!($ok.line_messages|Where-Object{$_.state-eq'COMPLETE_CANDIDATE'})-or'changedFiles'-notin$ok.agent_reports[0].Keys){throw 'result contract or candidate stage missing'}
+$redispatch=New-LoopTask -tests @('FAIL unknown complex cause');$redispatch.result.status='failed';$redispatch.result|Add-Member failureReason 'unknown complex cause';$redispatch|Add-Member assignedPrimary 'codex';$reroute=Invoke-AI5DoubleJudge $redispatch;if($reroute.decision-ne'REDISPATCH'-or$reroute.redispatchTarget-ne'claude'){throw 'automatic redispatch failed'}
+$repeat=New-LoopTask -tests @('FAIL same');$repeat.result.status='failed';$repeat.result|Add-Member failureReason 'same failure';1..3|ForEach-Object{$last=Invoke-AI5DoubleJudge $repeat};if($last.decision-ne'BLOCKED'-or$repeat.loop_state.sameFailureCount-lt3){throw 'same failure guard failed'}
 'AUTONOMOUS_LOOP_TESTS_OK'

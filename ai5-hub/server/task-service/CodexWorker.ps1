@@ -70,7 +70,7 @@ function Set-TaskProperty($task, $name, $value) {
 
 function Set-TaskState($task, $path, $status, $label) {
     $task.status = $status
-    $canonical = @{ queued='RECEIVED'; planning='PLANNING'; running='RUNNING'; reviewing='VALIDATING'; completed='COMPLETED'; failed='FAILED'; cancelled='CANCELLED' }[$status]
+    $canonical = @{ queued='RECEIVED'; planning='PLANNING'; running='RUNNING'; reviewing='VALIDATING'; retrying='RETRYING'; waiting_approval='WAITING_APPROVAL'; completed='COMPLETED'; failed='FAILED'; cancelled='CANCELLED' }[$status]
     Set-TaskProperty $task 'canonical_status' $canonical
     $task.timeline += , [ordered]@{
         status = $status
@@ -213,7 +213,12 @@ try {
                 Write-WorkerLog 'autonomous_rework_queued' @{task_id=$currentTask.taskId;cycle=$judge.cycle;reason=$judge.reason}
                 $currentTask=$null;$currentTaskPath=$null;$currentEnvelopePath=$null;continue
             }
-            Set-TaskState $currentTask $currentTaskPath $(if($judge.decision-eq'COMPLETE'){'completed'}else{'failed'}) "Zero + Codex: $($judge.decision)"
+            if($judge.decision-eq'REDISPATCH'){
+                Set-TaskProperty $currentTask 'assignedPrimary' $judge.redispatchTarget;Set-TaskProperty $currentTask 'assigned_agent' $judge.redispatchTarget
+                Add-AI5LineMessage $currentTask 'zero' 'REDISPATCH' "$($judge.redispatchTarget)へ自動再配分します。" 'routing' @{target=$judge.redispatchTarget}
+                Set-TaskState $currentTask $currentTaskPath 'retrying' "Zero REDISPATCH → $($judge.redispatchTarget)";Remove-Item -LiteralPath $file.FullName -Force;$currentTask=$null;$currentTaskPath=$null;$currentEnvelopePath=$null;continue
+            }
+            Set-TaskState $currentTask $currentTaskPath $(if($judge.decision-eq'COMPLETE'){'completed'}elseif($judge.decision-eq'WAITING_APPROVAL'){'waiting_approval'}else{'failed'}) "Zero + Codex: $($judge.decision)"
         } else {
             $null=Initialize-AI5LoopTask $currentTask
             Add-AI5AgentReport $currentTask 'codex' 'FAILED' '施工・検査' $summary ([string]$result.error) '安全な自動再施工またはZero再配分'

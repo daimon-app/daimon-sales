@@ -31,7 +31,7 @@ Updated: 2026-08-19
 | 個別指名モード | PASS (local API) | AUTO/Zero既定。Codex/Claude/Gemini/Manus/NotebookLMのtargetを受理し、`direct_via_zero`でZero Safety Layerを維持 |
 | 承認通知スケジュール | PASS (automated scope) | 10/12/15時の集約、同一slot重複防止、18時以降1分待機＋5分debounce。通常完了のOS通知なし |
 | COMMAND CENTER Claude再監査 | UNVERIFIED | Claude Code 2.1.233へread-only監査を投入したが120秒で応答回収できず。PASS扱いしない |
-| FULL AUTONOMOUS LOOP | PASS (automated scope) | AI別report、永続LINE API、Zero/Codex二重判定、REWORK、Loop Guard、承認停止、再起動queue復旧を実装・自動E2E PASS |
+| FULL AUTONOMOUS LINE LOOP | PASS (automated + private remote scope) | 共通Result Contract、COMPLETE_CANDIDATE、Zero/Codex二重監査、REWORK、REDISPATCH、Loop Guard、承認停止を実装。実Local API Task `AI5-20260819-0001`をprivate pushしTimelineを重複なし復元。Task `line-contract-1787139478`で全12 Result fieldとLoop Stateをprivate HEAD `9f14d035`から再取得 |
 | LINE返信 / @指名 / ALL | PASS (automated scope) | replyTo永続化、@target解析、ALL専門分解、Zero Safety Layer維持 |
 | Screenshot Loop | PASS (automated scope) | JPEG/PNG/WebPのみ、5MB上限、magic signature検査、Local attachment ID経由。実スマホ添付は未確認 |
 | Long Message Ingestion | PASS (Android + iPhone + automated) | 実原因はLocal APIの4,000文字制限。両実機で6,376文字・SHA-256・Task 1件・Codex結果 `LONG_MESSAGE_MOBILE_OK` を実測。9,000文字API E2E、重複排除、欠損・改変・上限・ID traversal拒否もPASS |
