@@ -19,6 +19,10 @@ Updated: 2026-08-19
 - Project Control: PASS
 - LINE Timeline: PASS
 - Local persistence / reload: PASS
+- Private remote: `daimon-app/ai5-github-result-bus`
+- Remote push / fresh clone / restore: PASS
+- Restore SHA-256: PASS
+- Information leak scan: PASS (0 findings)
 - E2E: PASS
 - Existing + new tests: 25/25 test files PASS
 - Spec: `docs/AI5_GITHUB_RESULT_LOOP.md`
@@ -29,10 +33,12 @@ Updated: 2026-08-19
 
 ## Remote verification
 
-現在の`daimon-app/daimon-sales` remoteはPublicである。Task本文、Result、EvidenceをPublic remoteへ保存しない安全規則により、remote syncは既定OFFのまま維持する。private確認済みremoteが指定されるまで、Remote GitHub Persistenceは`BLOCKED`であり、PASS扱いしない。
+公開`daimon-app/daimon-sales`はTask/Result保存先に使用しない。専用private `daimon-app/ai5-github-result-bus`を作成し、同期ごとのprivate visibility検証とsecret scanを必須化した。Mock E2Eをpushし、別cloneからTask/Result/Decisionを復元して内容とHashを検証した。
 
 ## Overall
 
 Core / local persistent Result Loop: SUCCESS.
 
-Private GitHub remote transport: BLOCKED pending a private repository decision. Realtime HUBとローカル永続Loopはこの制約下でも継続する。
+Private GitHub remote transport: SUCCESS.
+
+Overall: SUCCESS.

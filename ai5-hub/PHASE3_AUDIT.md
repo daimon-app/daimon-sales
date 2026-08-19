@@ -38,7 +38,7 @@ Updated: 2026-08-19
 | HUB自己施工中Queue | PASS (Android + automated) | AndroidでTask `AI5-20260819-0012` が `SINGLE_WRITER_BUSY`、位置1、attempt 0で保存。Writer解放後Zero再評価、Codex実行、`QUEUE_MOBILE_OK`、変更0、Zero/Codex PASS、結果復元まで実測 |
 | Stable Runtime / controlled switch | PASS | Working Copyと固定Releaseを分離。v48を隔離smoke後に443へ制御切替し、unit/security/E2E/PWA Gate、ホームアイコン起動、Windows再起動後の固定Release復旧を実測。旧起動設定はrollback用に保存 |
 | GitHub Result Loop Core | PASS (automated/local persistent scope) | Task/Result Bus、AI別Queue、Collector、Zero Inbox、Decision、Redispatch、Fallback、TTL lock、Retry、Approval、LINE/Project連携を実装。全25 test files PASS |
-| GitHub Result Loop Remote | BLOCKED (security gate) | 現在のremoteはPublic。実Task/Resultの漏えい防止のためremote syncは既定OFF。private remote確認後のみ有効化可能 |
+| GitHub Result Loop Remote | PASS | 専用private `daimon-app/ai5-github-result-bus`へ分離。Mock Task/Result/Decision/receipt/loop stateをpushし、別cloneから再取得・復元・SHA-256一致・秘密情報0件を実測。公開DAIMON remoteへのBus保存なし |
 
 ## Current deployment state
 

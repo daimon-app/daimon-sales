@@ -18,6 +18,8 @@ Initialize-AI5SpecialistRegistry $ServerRoot
 Initialize-AI5ProjectControl $ServerRoot $AppRoot
 Initialize-AI5StableRuntime $ServerRoot $AppRoot
 Initialize-AI5GitHubResultLoop $ServerRoot
+$remoteBusRoot=if($env:AI5_GITHUB_BUS_REPO_ROOT){$env:AI5_GITHUB_BUS_REPO_ROOT}else{''}
+try{Connect-AI5PrivateGitHubBusRemote $remoteBusRoot|Out-Null}catch{Write-AI5Log 'errors' 'github_bus_remote_connect_failed' @{error=$_.Exception.Message}}
 Invoke-AI5ProjectRecovery
 $Mock = if ($env:AI5_MOCK) { $env:AI5_MOCK -ne 'false' } else { $false }
 $script:MockMode=$Mock
@@ -219,7 +221,7 @@ try {
             $due=!$scheduler.nextScan-or([DateTimeOffset]::Parse($scheduler.nextScan)-le[DateTimeOffset]::Now)
             if($due){try{Invoke-AI5ProjectScan -Fetch $true|Out-Null}catch{Write-AI5Log 'errors' 'project_scheduler_failed' @{error=$_.Exception.Message}}}
             try{Invoke-AI5QueuedTaskDispatch}catch{Write-AI5Log 'errors' 'queued_task_dispatch_failed' @{error=$_.Exception.Message}}
-            try{Invoke-AI5GitHubResultCollector|Out-Null}catch{Write-AI5Log 'errors' 'github_result_collector_failed' @{error=$_.Exception.Message}}
+            try{$collected=Invoke-AI5GitHubResultCollector;if($collected.processed-gt0){Invoke-AI5GitHubBusAutoSync|Out-Null}}catch{Write-AI5Log 'errors' 'github_result_collector_failed' @{error=$_.Exception.Message}}
             if([DateTimeOffset]::Now-ge$NextApprovalScheduleAt){try{$null=Invoke-AI5ApprovalNotificationSchedule -Tasks @(Get-AI5Tasks 100)}catch{Write-AI5Log 'errors' 'approval_notification_schedule_failed' @{error=$_.Exception.Message}};$NextApprovalScheduleAt=[DateTimeOffset]::Now.AddSeconds(30)}
             Start-Sleep -Milliseconds 200
             continue
@@ -275,10 +277,10 @@ try {
             if ($method -eq 'GET' -and $path -eq '/api/github-bus/status') {Send-Json $stream (Get-AI5GitHubBusStatus);continue}
             if ($method -eq 'GET' -and $path -eq '/api/github-bus/inbox') {Send-Json $stream @{items=@(Get-AI5ZeroInbox)};continue}
             if ($path-match'^/api/github-bus/queues/(codex|claude|gemini|manus|notebooklm)$'-and$method-eq'GET'){Send-Json $stream @{tasks=@(Get-AI5GitHubBusTasks $Matches[1])};continue}
-            if ($method -eq 'POST' -and $path -eq '/api/github-bus/tasks') {try{Send-Json $stream (New-AI5GitHubBusTask (Parse-Body $request)) 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
+            if ($method -eq 'POST' -and $path -eq '/api/github-bus/tasks') {try{$created=New-AI5GitHubBusTask (Parse-Body $request);Invoke-AI5GitHubBusAutoSync 'AI5 Task Bus sync'|Out-Null;Send-Json $stream $created 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
             if ($path-match'^/api/github-bus/tasks/([^/]+)/claim$'-and$method-eq'POST'){try{$body=Parse-Body $request;Send-Json $stream (Claim-AI5GitHubBusTask $Matches[1] ([string]$body.ai))}catch{Send-Json $stream @{error=$_.Exception.Message} 409};continue}
             if ($path-match'^/api/github-bus/tasks/([^/]+)/heartbeat$'-and$method-eq'POST'){try{$body=Parse-Body $request;Send-Json $stream (Update-AI5GitHubBusHeartbeat $Matches[1] ([string]$body.ai))}catch{Send-Json $stream @{error=$_.Exception.Message} 409};continue}
-            if ($method -eq 'POST' -and $path -eq '/api/github-bus/results') {try{$saved=New-AI5GitHubBusResult (Parse-Body $request);$collection=Invoke-AI5GitHubResultCollector;Send-Json $stream @{saved=$saved;collector=$collection} 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
+            if ($method -eq 'POST' -and $path -eq '/api/github-bus/results') {try{$saved=New-AI5GitHubBusResult (Parse-Body $request);$collection=Invoke-AI5GitHubResultCollector;Invoke-AI5GitHubBusAutoSync 'AI5 Result Bus sync'|Out-Null;Send-Json $stream @{saved=$saved;collector=$collection} 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
             if ($method -eq 'GET' -and $path -eq '/api/push/public-key') { $key=Get-AI5PushPublicKey;if($key){Send-Json $stream @{available=$true;publicKey=$key;background=$true}}else{Send-Json $stream @{available=$false;error='push_unavailable'} 503};continue }
             if ($method -eq 'POST' -and $path -eq '/api/attachments') {try{Send-Json $stream (Save-AI5Attachment (Parse-Body $request)) 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
             if($method-eq'POST'-and$path-eq'/api/message-drafts'){try{Send-Json $stream (New-AI5LongMessageDraft (Parse-Body $request)) 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
