@@ -35,6 +35,12 @@ try {
   if(!$command.agents.zero-or!$command.agents.codex-or!$command.agents.notebooklm){throw 'command center health missing'}
   $chat=Invoke-RestMethod "$base/api/chat" -Headers @{'X-AI5-Chat-Level'='NORMAL'}
   if(!$chat.messages-or!($chat.messages|Where-Object{$_.agent-eq'zero'})){throw 'durable AI5 LINE report missing'}
+  $busId='e2e-'+[guid]::NewGuid().ToString('N');$busTask=Invoke-RestMethod "$base/api/github-bus/tasks" -Method Post -Headers @{'X-AI5-CSRF'=$csrf} -ContentType 'application/json' -Body (@{task_id=$busId;project_id='p02';assigned_ai='manus';writer='manus';objective='LP QA';instructions='read only';acceptance_criteria=@('PASS');max_retry=3}|ConvertTo-Json)
+  if($busTask.status-ne'QUEUED'){throw 'GitHub Task Bus API failed'};$claim=Invoke-RestMethod "$base/api/github-bus/tasks/$busId/claim" -Method Post -Headers @{'X-AI5-CSRF'=$csrf} -ContentType 'application/json' -Body (@{ai='manus'}|ConvertTo-Json);if($claim.owner-ne'manus'){throw 'GitHub Task claim API failed'}
+  $busResult=Invoke-RestMethod "$base/api/github-bus/results" -Method Post -Headers @{'X-AI5-CSRF'=$csrf} -ContentType 'application/json' -Body (@{task_id=$busId;ai='manus';result='PASS';summary='LP PASS';evidence=@('qa');tests=@('PASS')}|ConvertTo-Json);if($busResult.saved.duplicate-or$busResult.collector.processed-ne1){throw 'GitHub Result Collector API failed'}
+  $inbox=Invoke-RestMethod "$base/api/github-bus/inbox";if(!($inbox.items|Where-Object{$_.task_id-eq$busId-and$_.decision-eq'PASS'})){throw 'Zero Inbox API failed'};$busStatus=Invoke-RestMethod "$base/api/github-bus/status";if($busStatus.remoteEnabled-or$busStatus.mode-ne'GITHUB_DEGRADED'){throw 'public-safe degraded mode failed'}
+  $busChat=Invoke-RestMethod "$base/api/chat" -Headers @{'X-AI5-Chat-Level'='NORMAL'};if(!($busChat.messages|Where-Object{$_.taskId-eq$busId-and$_.kind-eq'github_result'})){throw 'GitHub Result LINE timeline failed'}
+  $project=Invoke-RestMethod "$base/api/projects/ai5-hub";if($null-eq$project.githubResultLoop){throw 'Project Control GitHub Result integration failed'}
   try{Invoke-RestMethod "$base/api/shell" -TimeoutSec 2;throw 'arbitrary shell endpoint exposed'}catch{if($_.Exception.Message-eq'arbitrary shell endpoint exposed'){throw}}
   'PHASE3_API_E2E_TESTS_OK'
 } finally {

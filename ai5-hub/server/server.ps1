@@ -5,7 +5,7 @@ $CodeServerRoot = if ($global:AI5CodeServerRoot) { $global:AI5CodeServerRoot } e
 $ServerRoot = if ($global:AI5ServerRoot) { $global:AI5ServerRoot } else { $PSScriptRoot }
 $AppRoot = Split-Path $CodeServerRoot
 
-foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1','storage\Attachments.ps1','storage\LongMessageIngestion.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'notifications\PushNotification.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1','orchestrator\AutonomousLoop.ps1','orchestrator\TaskQueue.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1','command-center\CommandCenter.ps1','deployment\StableRuntime.ps1')) {
+foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1','storage\Attachments.ps1','storage\LongMessageIngestion.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'notifications\PushNotification.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1','orchestrator\AutonomousLoop.ps1','orchestrator\TaskQueue.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1','command-center\CommandCenter.ps1','deployment\StableRuntime.ps1','github-bus\GitHubResultLoop.ps1')) {
     . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $CodeServerRoot $module))))
 }
 Initialize-AI5Store $ServerRoot
@@ -17,6 +17,7 @@ Initialize-AI5CodexService $ServerRoot $AppRoot
 Initialize-AI5SpecialistRegistry $ServerRoot
 Initialize-AI5ProjectControl $ServerRoot $AppRoot
 Initialize-AI5StableRuntime $ServerRoot $AppRoot
+Initialize-AI5GitHubResultLoop $ServerRoot
 Invoke-AI5ProjectRecovery
 $Mock = if ($env:AI5_MOCK) { $env:AI5_MOCK -ne 'false' } else { $false }
 $script:MockMode=$Mock
@@ -218,6 +219,7 @@ try {
             $due=!$scheduler.nextScan-or([DateTimeOffset]::Parse($scheduler.nextScan)-le[DateTimeOffset]::Now)
             if($due){try{Invoke-AI5ProjectScan -Fetch $true|Out-Null}catch{Write-AI5Log 'errors' 'project_scheduler_failed' @{error=$_.Exception.Message}}}
             try{Invoke-AI5QueuedTaskDispatch}catch{Write-AI5Log 'errors' 'queued_task_dispatch_failed' @{error=$_.Exception.Message}}
+            try{Invoke-AI5GitHubResultCollector|Out-Null}catch{Write-AI5Log 'errors' 'github_result_collector_failed' @{error=$_.Exception.Message}}
             if([DateTimeOffset]::Now-ge$NextApprovalScheduleAt){try{$null=Invoke-AI5ApprovalNotificationSchedule -Tasks @(Get-AI5Tasks 100)}catch{Write-AI5Log 'errors' 'approval_notification_schedule_failed' @{error=$_.Exception.Message}};$NextApprovalScheduleAt=[DateTimeOffset]::Now.AddSeconds(30)}
             Start-Sleep -Milliseconds 200
             continue
@@ -269,7 +271,14 @@ try {
                 continue
             }
             if ($method -eq 'GET' -and $path -eq '/api/command-center') { Send-Json $stream (Get-AI5CommandCenter);continue }
-            if ($method -eq 'GET' -and $path -eq '/api/chat') {$level=if($request.Headers['X-AI5-Chat-Level']){[string]$request.Headers['X-AI5-Chat-Level']}else{'NORMAL'};if($level-notin@('SIMPLE','NORMAL','DETAIL')){$level='NORMAL'};Send-Json $stream @{level=$level;messages=@(Get-AI5LineMessages @(Get-AI5Tasks 100) $level)};continue }
+            if ($method -eq 'GET' -and $path -eq '/api/chat') {$level=if($request.Headers['X-AI5-Chat-Level']){[string]$request.Headers['X-AI5-Chat-Level']}else{'NORMAL'};if($level-notin@('SIMPLE','NORMAL','DETAIL')){$level='NORMAL'};Send-Json $stream @{level=$level;messages=@((Get-AI5LineMessages @(Get-AI5Tasks 100) $level)+@(Get-AI5GitHubBusLineMessages)|Sort-Object at)};continue }
+            if ($method -eq 'GET' -and $path -eq '/api/github-bus/status') {Send-Json $stream (Get-AI5GitHubBusStatus);continue}
+            if ($method -eq 'GET' -and $path -eq '/api/github-bus/inbox') {Send-Json $stream @{items=@(Get-AI5ZeroInbox)};continue}
+            if ($path-match'^/api/github-bus/queues/(codex|claude|gemini|manus|notebooklm)$'-and$method-eq'GET'){Send-Json $stream @{tasks=@(Get-AI5GitHubBusTasks $Matches[1])};continue}
+            if ($method -eq 'POST' -and $path -eq '/api/github-bus/tasks') {try{Send-Json $stream (New-AI5GitHubBusTask (Parse-Body $request)) 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
+            if ($path-match'^/api/github-bus/tasks/([^/]+)/claim$'-and$method-eq'POST'){try{$body=Parse-Body $request;Send-Json $stream (Claim-AI5GitHubBusTask $Matches[1] ([string]$body.ai))}catch{Send-Json $stream @{error=$_.Exception.Message} 409};continue}
+            if ($path-match'^/api/github-bus/tasks/([^/]+)/heartbeat$'-and$method-eq'POST'){try{$body=Parse-Body $request;Send-Json $stream (Update-AI5GitHubBusHeartbeat $Matches[1] ([string]$body.ai))}catch{Send-Json $stream @{error=$_.Exception.Message} 409};continue}
+            if ($method -eq 'POST' -and $path -eq '/api/github-bus/results') {try{$saved=New-AI5GitHubBusResult (Parse-Body $request);$collection=Invoke-AI5GitHubResultCollector;Send-Json $stream @{saved=$saved;collector=$collection} 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
             if ($method -eq 'GET' -and $path -eq '/api/push/public-key') { $key=Get-AI5PushPublicKey;if($key){Send-Json $stream @{available=$true;publicKey=$key;background=$true}}else{Send-Json $stream @{available=$false;error='push_unavailable'} 503};continue }
             if ($method -eq 'POST' -and $path -eq '/api/attachments') {try{Send-Json $stream (Save-AI5Attachment (Parse-Body $request)) 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
             if($method-eq'POST'-and$path-eq'/api/message-drafts'){try{Send-Json $stream (New-AI5LongMessageDraft (Parse-Body $request)) 201}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue}
@@ -280,12 +289,12 @@ try {
             if ($method -eq 'GET' -and $path -eq '/api/projects') { Send-Json $stream (Get-AI5ProjectSummary); continue }
             if ($method -eq 'POST' -and $path -eq '/api/projects') { $body=Parse-Body $request; if(!$body.name-or!$body.projectId){Send-Json $stream @{error='name_and_project_id_required'} 400;continue}; try{Send-Json $stream (New-AI5Project $body) 202}catch{Send-Json $stream @{error=$_.Exception.Message} 409}; continue }
             if ($method -eq 'GET' -and $path -eq '/api/projects/repositories') { Send-Json $stream @{repositories=@(Get-AI5RepositoryCandidates)};continue }
-            if ($path -match '^/api/projects/(?!(system|repositories)$)([^/]+)$' -and $method -eq 'GET') { try{$project=Get-AI5Project $Matches[2]}catch{$project=$null};if($project){Send-Json $stream $project}else{Send-Json $stream @{error='not_found'} 404};continue }
+            if ($path -match '^/api/projects/(?!(system|repositories)$)([^/]+)$' -and $method -eq 'GET') { try{$project=Get-AI5Project $Matches[2]}catch{$project=$null};if($project){$project|Add-Member githubResultLoop (Get-AI5GitHubBusProjectStatus $project.projectId) -Force;Send-Json $stream $project}else{Send-Json $stream @{error='not_found'} 404};continue }
             if ($path -match '^/api/projects/([^/]+)/state$' -and $method -eq 'POST') { $project=Get-AI5Project $Matches[1];if(!$project){Send-Json $stream @{error='not_found'} 404;continue};Send-Json $stream (Set-AI5ProjectState $project (Parse-Body $request) 'TEPPEI');continue }
             if ($path -match '^/api/projects/([^/]+)/auto-execution$' -and $method -eq 'POST') { $project=Get-AI5Project $Matches[1];if(!$project){Send-Json $stream @{error='not_found'} 404;continue};$body=Parse-Body $request;$mode=if($body.mode){[string]$body.mode}elseif([bool]$body.enabled){'DRY_RUN'}else{'OFF'};try{Send-Json $stream (Set-AI5ProjectAuto $project $mode)}catch{Send-Json $stream @{error=$_.Exception.Message} 400};continue }
             if ($path -match '^/api/projects/([^/]+)/execution-check$' -and $method -eq 'GET') { $project=Get-AI5Project $Matches[1];if(!$project){Send-Json $stream @{error='not_found'} 404}else{Send-Json $stream (Test-AI5ProjectExecution $project)};continue }
             if ($method -eq 'POST' -and $path -eq '/api/projects/scan') { $body=Parse-Body $request;Send-Json $stream (Invoke-AI5ProjectScan -Fetch ($body.fetch-ne$false) -DryRun ([bool]$body.dryRun));continue }
-            if ($method -eq 'GET' -and $path -eq '/api/projects/system') { $projects=@(Get-AI5Projects);$locks=@(Get-AI5ActiveLocks);$bridge=Get-AI5CodexHealth;Send-Json $stream @{scheduler=Get-AI5SchedulerStatus;bridge=$bridge;locks=$locks;queue=@(Get-ChildItem (Join-Path $ServerRoot 'data\codex-inbox') -Filter '*.json' -ErrorAction SilentlyContinue).Count;autoLive=@($projects|Where-Object{$_.autoExecution.mode-eq'LIVE'}).Count;dryRun=@($projects|Where-Object{$_.autoExecution.mode-eq'DRY_RUN'}).Count;creditStops=@($projects|Where-Object{$_.stopCode-eq'CREDIT_PROTECTION_STOP'}).Count;approvalStops=@($projects|Where-Object{$_.status-eq'APPROVAL_REQUIRED'}).Count};continue }
+            if ($method -eq 'GET' -and $path -eq '/api/projects/system') { $projects=@(Get-AI5Projects);$locks=@(Get-AI5ActiveLocks);$bridge=Get-AI5CodexHealth;Send-Json $stream @{scheduler=Get-AI5SchedulerStatus;bridge=$bridge;locks=$locks;queue=@(Get-ChildItem (Join-Path $ServerRoot 'data\codex-inbox') -Filter '*.json' -ErrorAction SilentlyContinue).Count;autoLive=@($projects|Where-Object{$_.autoExecution.mode-eq'LIVE'}).Count;dryRun=@($projects|Where-Object{$_.autoExecution.mode-eq'DRY_RUN'}).Count;creditStops=@($projects|Where-Object{$_.stopCode-eq'CREDIT_PROTECTION_STOP'}).Count;approvalStops=@($projects|Where-Object{$_.status-eq'APPROVAL_REQUIRED'}).Count;githubBus=(Get-AI5GitHubBusStatus)};continue }
             if ($path -match '^/api/projects/([^/]+)/sync$' -and $method -eq 'POST') { $project=Get-AI5Project $Matches[1];if(!$project){Send-Json $stream @{error='not_found'} 404}else{Send-Json $stream (Sync-AI5ProjectGit $project)};continue }
             if ($method -eq 'POST' -and $path -eq '/api/tasks') {
                 $body = Parse-Body $request

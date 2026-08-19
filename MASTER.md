@@ -146,3 +146,10 @@ DAIMONの中核思想は「継続」より**戻ること**。
 - 仕事画像は `work01`〜`work12`、夜画像は `night01`〜`night12` をインライン画像辞書の受け口とし、個別素材確定までは合成一覧画像や仮画像を入れない。
 - 夜は同じEngineの時間係数だけを遅くし、低刺激のテンポにする。
 - 言語選択UI、TTS、全文自由編集は実装しない。
+
+## 11. AI5 GitHub Result Loop（2026-08-19）
+
+- GitHub Result LoopをAI5の常設Fallbackとする。
+- ZeroがTask Busを発行し、各AIのResultをCollectorがZero Inboxへ集約する。
+- Result receiptで二重処理を防止し、PASSは次工程、FAILは上限内再施工、BLOCKEDはFallback、APPROVAL_REQUIREDは本人停止とする。
+- 実Task/Resultのremote保存はprivate Repository確認済みの場合だけ許可する。

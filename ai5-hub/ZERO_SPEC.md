@@ -208,3 +208,7 @@ Blockers:
 総合判定:
 Next Action:
 ```
+
+## 15. GitHub Result Loop
+
+Realtime HUBの障害時は`GITHUB_DEGRADED`へ移行し、ZeroがTask Busへ発行、各AIがResult Busへ返却、CollectorがZero Inboxへ一度だけ投入する。ZeroはPASSなら次工程、FAILなら上限内retry、BLOCKEDなら適性AIへFallback、APPROVAL_REQUIREDなら本人へ停止する。remoteはprivate確認済みの場合だけ有効化し、承認ゲートを迂回しない。

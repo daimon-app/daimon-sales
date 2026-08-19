@@ -37,6 +37,8 @@ Updated: 2026-08-19
 | Long Message Ingestion | PASS (Android + iPhone + automated) | 実原因はLocal APIの4,000文字制限。両実機で6,376文字・SHA-256・Task 1件・Codex結果 `LONG_MESSAGE_MOBILE_OK` を実測。9,000文字API E2E、重複排除、欠損・改変・上限・ID traversal拒否もPASS |
 | HUB自己施工中Queue | PASS (Android + automated) | AndroidでTask `AI5-20260819-0012` が `SINGLE_WRITER_BUSY`、位置1、attempt 0で保存。Writer解放後Zero再評価、Codex実行、`QUEUE_MOBILE_OK`、変更0、Zero/Codex PASS、結果復元まで実測 |
 | Stable Runtime / controlled switch | PASS | Working Copyと固定Releaseを分離。v48を隔離smoke後に443へ制御切替し、unit/security/E2E/PWA Gate、ホームアイコン起動、Windows再起動後の固定Release復旧を実測。旧起動設定はrollback用に保存 |
+| GitHub Result Loop Core | PASS (automated/local persistent scope) | Task/Result Bus、AI別Queue、Collector、Zero Inbox、Decision、Redispatch、Fallback、TTL lock、Retry、Approval、LINE/Project連携を実装。全25 test files PASS |
+| GitHub Result Loop Remote | BLOCKED (security gate) | 現在のremoteはPublic。実Task/Resultの漏えい防止のためremote syncは既定OFF。private remote確認後のみ有効化可能 |
 
 ## Current deployment state
 

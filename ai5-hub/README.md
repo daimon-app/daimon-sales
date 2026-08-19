@@ -133,6 +133,10 @@ FULL AUTONOMOUS LOOPは各AIの短文report、Zero目的判定、Codex技術判�
 - 全chunk検証後にだけTaskを1件生成し、原文はTask正本に保持します。
 - 同一ProjectのWRITE競合は拒否せずQUEUEDとし、Writer解放後にZeroが再評価します。READ ONLYと別Projectは書込Lockの対象外です。
 
+## GitHub Result Loop
+
+Chrome/Browser経路を単一障害点にしないため、Task Bus、AI別Queue、Result Bus、Result Collector、Zero Inbox、PASS/FAIL/BLOCKED/APPROVAL判定、自動Redispatchを実装しています。`GITHUB_DEGRADED`でもコード/Git施工とprivate GitHub経由の結果回収を継続できます。Public remoteへの実Task pushは拒否します。詳細は [AI5_GITHUB_RESULT_LOOP.md](./docs/AI5_GITHUB_RESULT_LOOP.md) を参照してください。
+
 ## テスト
 
 ```powershell
