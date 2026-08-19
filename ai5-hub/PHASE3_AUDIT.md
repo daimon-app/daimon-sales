@@ -22,7 +22,7 @@ Updated: 2026-08-19
 | Auto Recovery | PASS | Task `AI5-20260818-0016`: retryable faultをattempt 1→2→3、自動再投入後、同一fingerprintを検出し安全停止 |
 | Android Phase 3 E2E | PASS (long input + self-update Queue scope) | Pixel 10a・モバイル回線で6,376文字Task、施工中Queue、Writer解放後の自動再開、`QUEUE_MOBILE_OK`、結果復元を実測 |
 | iPhone Phase 3 E2E | PASS (long input scope) | iPhone・HTTPS 8443で6,376文字Taskを送信。Task `AI5-20260819-0013`、Hash完全一致、attempt 1、`LONG_MESSAGE_MOBILE_OK`、完了表示を実測 |
-| PC再起動後Phase 3復旧 | PARTIAL | Phase 2.5のWindows再起動は実測済み。Phase 3ではLocal API再起動後、Bridge成功済みTask `AI5-20260818-0006` を重複施工せず復元し、Zero/Codex二重判定でCOMPLETEまで実測。Phase 3を載せたWindows全体再起動は未実測 |
+| PC再起動後Phase 3復旧 | PASS | v48固定Releaseへ443を制御切替後、Windows実再起動。StartupからPowerShell 7で43125のみ自動復旧し、Stable v48、HTTPS 200、Bridge READY、Task 0012/0013 completedを実測 |
 | Security | PASS (automated scope) | CSRF, HMAC, one-time token, loopback bind, `/api/shell` 404 |
 | Task復元 | PASS (Phase 2.5 evidence) | Android/iPhone/Windows再起動実測 |
 | Git正本復元 | PASS | Project task `task_PC-ai5-hub-20260818143714` が署名済みworktree/branchを検証し `PHASE3_PROJECT_CODEX_OK feat/ai5-hub-phase3` |
@@ -36,11 +36,11 @@ Updated: 2026-08-19
 | Screenshot Loop | PASS (automated scope) | JPEG/PNG/WebPのみ、5MB上限、magic signature検査、Local attachment ID経由。実スマホ添付は未確認 |
 | Long Message Ingestion | PASS (Android + iPhone + automated) | 実原因はLocal APIの4,000文字制限。両実機で6,376文字・SHA-256・Task 1件・Codex結果 `LONG_MESSAGE_MOBILE_OK` を実測。9,000文字API E2E、重複排除、欠損・改変・上限・ID traversal拒否もPASS |
 | HUB自己施工中Queue | PASS (Android + automated) | AndroidでTask `AI5-20260819-0012` が `SINGLE_WRITER_BUSY`、位置1、attempt 0で保存。Writer解放後Zero再評価、Codex実行、`QUEUE_MOBILE_OK`、変更0、Zero/Codex PASS、結果復元まで実測 |
-| Stable Runtime / controlled switch | PASS (automated scope) | Stable/Working Copy分離を状態管理し、unit/security/E2E/PWA全PASS時のみ候補切替。Mock失敗時Stable維持。Windows実更新切替は未確認 |
+| Stable Runtime / controlled switch | PASS | Working Copyと固定Releaseを分離。v48を隔離smoke後に443へ制御切替し、unit/security/E2E/PWA Gate、ホームアイコン起動、Windows再起動後の固定Release復旧を実測。旧起動設定はrollback用に保存 |
 
 ## Current deployment state
 
-正規URL（HTTPS 443）のworktreeでは別のCodex施工が`feat/project-control`を編集中。未コミット変更を保護するため正規配信は切り替えていない。Phase 3は`C:\Users\teppe\Documents\GitHub\daimon-sales-phase3`へ隔離し、Tailscale ServeのHTTPS 8443で実機検証可能。既存443は維持している。
+正規URL（HTTPS 443）は、Git working treeを直接配信せず、固定Release `C:\Users\teppe\AppData\Local\AI5HUB\releases\v48-b82cb1e` を配信する。Task等の永続Stateは `C:\Users\teppe\Documents\GitHub\daimon-sales-phase3\ai5-hub\server` に分離。既存DAIMONと別Codexの未コミット変更には触れていない。
 
 ## Live defect repair
 
