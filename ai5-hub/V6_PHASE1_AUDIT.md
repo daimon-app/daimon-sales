@@ -48,6 +48,9 @@ Branch: `feat/ai5-sales-factory-v6`
 - 正確な残り利用枠: 公式CLIから取得不可。
 - 読み取り専用監査を2回試行したが、1回目は120秒timeout、2回目は`ConnectionRefused`で結果未回収。
 - 自己監査だけでPhase 2を開始しないため、独立監査は`TIMEOUT / NOT PASSED`として扱う。
+- 追加独立コード監査: `FAIL`。false PASS、lock lifecycle、Result spoof、送信前mask、typed approval、正本復元・証拠保存をPhase 2 blockerとして修正ループへ投入。
+- 修正ループ2: Codex直接PASS除去、施工AI≠監査AI、担当AI一致、受入条件別outcome、明示PASS tests/QA、検証可能evidence形式、typed capability、GET/初回response token発行除去、dirty lock拒否、外部送信前mask、Source snapshot、runtime evidence exportを実装。全15 test PASS。
+- 残存Phase 2 gate: 外部Claude/Gemini接続復旧、M1〜M5のremote GitHub正本復元、AI別署名Return、lock crash recovery、専用evidence branchへのsanitized commit。
 
 ## LIVE gate
 

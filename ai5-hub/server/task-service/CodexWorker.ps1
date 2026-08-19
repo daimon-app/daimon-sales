@@ -131,9 +131,20 @@ try {
         $summary = if ($result.result) { $result.result } else { 'Codex task failed' }
         $currentTask.result = [ordered]@{
             task_id = $currentTask.taskId
+            ai = 'codex'
             agent = 'codex'
+            result = $summary
+            verdict = $(if($result.status-eq'success'){'PASS'}else{'FAIL'})
             status = $result.status
             summary = $summary
+            evidence = @($result.details)
+            files_changed = @($result.files_changed)
+            commit = [string]$result.commit_id
+            qa = @($result.tests)
+            blockers = @($result.warnings)
+            resource_status = 'AVAILABLE'
+            approval_required = [bool]$result.human_action_required
+            recommended_next_action = $(if($result.status-eq'success'){'INDEPENDENT_AUDIT'}elseif($result.retryable){'RETRY'}else{'ESCALATE_ZERO'})
             details = @($result.details)
             filesChanged = @($result.files_changed)
             tests = @($result.tests)
@@ -153,14 +164,14 @@ try {
 
         if ($result.status -eq 'success') {
             Set-TaskState $currentTask $currentTaskPath 'reviewing' 'Bridge collected Codex evidence'
-            Set-TaskProperty $currentTask 'validation' ([ordered]@{passed=$true;checks=[ordered]@{result_schema=$true;tests=(@($result.tests).Count-gt 0);bridge_success=$true};checked_at=[DateTime]::UtcNow.ToString('o')})
+            Set-TaskProperty $currentTask 'validation' ([ordered]@{passed=$false;checks=[ordered]@{result_schema=$true;tests=(@($result.tests).Count-gt 0);bridge_success=$true;independent_audit=$false};checked_at=[DateTime]::UtcNow.ToString('o')})
             foreach($child in @($currentTask.children)){
                 if($child.assigned_agent -eq 'codex'){
                     $child.status='COMPLETED'
                     $child.updated_at=[DateTime]::UtcNow.ToString('o')
                 }
             }
-            Set-TaskState $currentTask $currentTaskPath 'completed' 'Zero verified the Codex result'
+            Set-TaskState $currentTask $currentTaskPath 'reviewing' 'Independent Claude audit required'
         } else {
             Set-TaskProperty $currentTask 'errorType' 'task_failed'
             Set-TaskState $currentTask $currentTaskPath 'failed' 'Codex execution failed'

@@ -13,3 +13,6 @@ $code=Get-Content -Raw -Encoding UTF8 (Join-Path $global:AI5TestRoot 'phase1.tes
 & (Join-Path $global:AI5TestRoot 'SalesFactoryV6.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'RepositoryWriterLock.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'ZeroReturn.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'CapabilityPolicy.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'SourceOfTruth.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'EvidenceStore.Tests.ps1')

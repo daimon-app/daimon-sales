@@ -4,7 +4,7 @@ if ($HostName -notin @('127.0.0.1','::1','localhost')) { throw 'AI5 HUB refuses 
 $ServerRoot = if ($global:AI5ServerRoot) { $global:AI5ServerRoot } else { $PSScriptRoot }
 $AppRoot = Split-Path $ServerRoot
 
-foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'repository-lock\RepositoryLock.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\ExternalTaskAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1', 'orchestrator\SalesFactory.ps1')) {
+foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'approval\CapabilityPolicy.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1', 'source-of-truth\SourceOfTruth.ps1', 'evidence\EvidenceStore.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'repository-lock\RepositoryLock.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\ExternalTaskAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1', 'orchestrator\SalesFactory.ps1')) {
     . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $ServerRoot $module))))
 }
 Initialize-AI5Store $ServerRoot
@@ -13,6 +13,7 @@ Initialize-AI5CodexService $ServerRoot $AppRoot
 Initialize-AI5SpecialistRegistry $ServerRoot
 Initialize-AI5ExternalTaskAdapter $ServerRoot
 Initialize-AI5ProjectControl $ServerRoot $AppRoot
+$script:AI5EvidenceAppRoot=(Join-Path $ServerRoot 'data')
 Invoke-AI5ProjectRecovery
 $Mock = if ($env:AI5_MOCK) { $env:AI5_MOCK -ne 'false' } else { $false }
 $Csrf = [guid]::NewGuid().ToString('N')
@@ -105,20 +106,29 @@ function Fail-Task($task, [string]$type, [string]$summary) {
     Update-State $task 'failed' $summary
 }
 
+function Finalize-AI5CodexResult($task) {
+    if(!$task-or$task.assignedPrimary-ne'codex'){return $task}
+    if($task.status-eq'reviewing'-and$task.result){$audit=Invoke-AI5ClaudeAdapter $task;$task.agent_results+=,$audit;$task.independent_audit=[ordered]@{status=$(if($audit.verdict-eq'PASS'){'PASS'}else{'FAIL'});ai='claude';evidence=@($audit.evidence);summary=$audit.summary};$task.validation=Test-AI5Completion $task;Exit-AI5TaskWriterLock $task;if($task.validation.passed){Set-AI5TaskStatus $task 'COMPLETED' 'Codex施工をClaude独立監査・Zero統合判定'}else{Set-AI5TaskStatus $task 'BLOCKED' 'Codex独立監査または受入証拠不足'}}elseif($task.status-eq'failed'){Exit-AI5TaskWriterLock $task};$task
+}
+
 function Dispatch-Task($task) {
+    $policy=Test-AI5CapabilityPolicy $task
+    if($policy.decision-eq'DENY'){Fail-Task $task 'invalid_operation' $policy.reason;return}
+    if($policy.approvalRequired-and(!$task.approval-or$task.approval.status-ne'approved')){$task.requiresApproval=$true;Set-AI5TaskStatus $task 'WAITING_APPROVAL' $policy.reason;return}
+    if($task.repository_path){try{$task.source_of_truth=Get-AI5SourceOfTruthSnapshot -RepositoryPath $task.repository_path -ExpectedBranch $task.branch -ExpectedHead $task.source_commit;Save-AI5Task $task;if($task.source_of_truth.branch_matches-eq$false-or$task.source_of_truth.head_matches-eq$false){throw'source_of_truth_mismatch'}}catch{$task.result=New-AI5Result $task.task_id $task.assigned_ai 'FAILED' $_.Exception.Message;$task.result.verdict='BLOCKED';$task.result.blockers=@('source_of_truth_failed');Set-AI5TaskStatus $task 'BLOCKED' 'GitHub正本復元失敗';return}}
     if ($Mock) { Execute-Mock $task; return }
-    try{Enter-AI5TaskWriterLock $task (Join-Path $ServerRoot 'runtime')|Out-Null}catch{Fail-Task $task 'writer_lock_failed' $_.Exception.Message;return}
-    if ($task.assignedPrimary -eq 'claude') { Set-AI5TaskStatus $task 'RUNNING' 'Claude施工・監査中';$task.attempt++;$task.retry_count=[Math]::Max(0,$task.attempt-1);$task.result=Invoke-AI5ClaudeAdapter $task;$task.agent_results+=,$task.result;Write-AI5Log 'tasks' 'claude_finished' @{task_id=$task.taskId;status=$task.result.status;summary=$task.result.summary;risks=$task.result.risks};if($task.result.status-eq'SUCCESS'){$task.result.ai='claude';$task.result.verdict='PASS';$task.result.resource_status='AVAILABLE';$task.result.evidence=@('Claude Code CLI result');$task.result.qa=@('read-only review completed');$task.independent_audit=[ordered]@{status='PASS';ai='zero';evidence=@('Zero collected Claude result')};$task.validation=Test-AI5Completion $task;if($task.validation.passed){Set-AI5TaskStatus $task 'COMPLETED' 'ZeroがClaude結果を検証'}else{Set-AI5TaskStatus $task 'VALIDATING' '独立証拠待ち'}}else{$action=Get-AI5FailureAction $task 'complex_bug';if($action-eq'ESCALATED'){Set-AI5TaskStatus $task 'ESCALATED' 'retry上限到達'}else{$task.assignedPrimary='codex';$task.assigned_ai='codex';$task.assigned_agent='codex';$task.writer='codex';Set-AI5TaskStatus $task 'RETRYING' 'Claude失敗のためCodexへFallback';Dispatch-Task $task}};return }
+    try{Enter-AI5TaskWriterLock $task (Join-Path $ServerRoot 'runtime')|Out-Null}catch{$task.result=New-AI5Result $task.task_id $task.assigned_ai 'FAILED' $_.Exception.Message;$task.result.verdict='BLOCKED';$task.result.blockers=@('writer_lock_failed');Set-AI5TaskStatus $task 'BLOCKED' 'Writer lock安全条件未達';return}
+    if ($task.assignedPrimary -eq 'claude') { Set-AI5TaskStatus $task 'RUNNING' 'Claude施工・監査中';$task.attempt++;$task.retry_count=[Math]::Max(0,$task.attempt-1);$task.result=Invoke-AI5ClaudeAdapter $task;$task.agent_results+=,$task.result;Write-AI5Log 'tasks' 'claude_finished' @{task_id=$task.taskId;status=$task.result.status;summary=$task.result.summary;risks=$task.result.risks};Exit-AI5TaskWriterLock $task;if($task.result.status-eq'SUCCESS'){$task.independent_audit=[ordered]@{status='PENDING';ai='gemini';evidence=@()};Set-AI5TaskStatus $task 'BLOCKED' 'Claude施工物のGemini独立監査待ち'}else{$action=Get-AI5FailureAction $task 'complex_bug';if($action-eq'ESCALATED'){Set-AI5TaskStatus $task 'ESCALATED' 'retry上限到達'}else{$task.assignedPrimary='codex';$task.assigned_ai='codex';$task.assigned_agent='codex';$task.writer=$(if($task.repository_path){'codex'}else{'NONE'});Set-AI5TaskStatus $task 'RETRYING' 'Claude失敗のためCodexへFallback';Dispatch-Task $task}};return }
     if ($task.assignedPrimary -in @('gemini','manus')) { $task.attempt++;$task.retry_count=[Math]::Max(0,$task.attempt-1);Submit-AI5ExternalTask $task $task.assignedPrimary|Out-Null;Set-AI5TaskStatus $task 'RUNNING' "$($task.assignedPrimary)へ発行・Zero Return待ち";return }
     if ($task.assignedPrimary -ne 'codex') { Fail-Task $task 'adapter_unavailable' "$($task.assignedPrimary) adapter is not connected"; return }
     $health = Get-AI5CodexHealth
-    if (!$health.available) { Fail-Task $task 'bridge_unavailable' 'Zero-Codex Bridge is unavailable'; return }
+    if (!$health.available) { Exit-AI5TaskWriterLock $task;Fail-Task $task 'bridge_unavailable' 'Zero-Codex Bridge is unavailable'; return }
     try {
         $submitted = Submit-AI5CodexTask $task
-        if (!$submitted.workerStarted) { Fail-Task $task 'bridge_unavailable' 'Codex worker could not start' }
+        if (!$submitted.workerStarted) { Exit-AI5TaskWriterLock $task;Fail-Task $task 'bridge_unavailable' 'Codex worker could not start' }
     } catch {
         Write-AI5Log 'errors' 'bridge_submit_failed' @{ task_id = $task.taskId; error = $_.Exception.Message }
-        Fail-Task $task 'bridge_unavailable' 'Zero-Codex Bridge submission failed'
+        Exit-AI5TaskWriterLock $task;Fail-Task $task 'bridge_unavailable' 'Zero-Codex Bridge submission failed'
     }
 }
 
@@ -144,8 +154,8 @@ function New-Task($body, [string]$idem) {
     $approval = if ($route.requiresApproval) { [ordered]@{ type = $route.approvalType; summary = '本人の最終承認が必要です'; status = 'pending'; zero_review = (Get-AI5ZeroApprovalReview $route) } } else { $null }
     $now=[DateTime]::UtcNow.ToString('o')
     $task=[pscustomobject][ordered]@{
-        task_id=$id;taskId=$id;project_id=$(if($body.projectId){[string]$body.projectId}else{'unassigned'});product_id=$(if($body.productId){[string]$body.productId}else{'unassigned'});parent_task=$(if($body.parentTask){[string]$body.parentTask}else{$null});parent_task_id=$(if($body.parentTask){[string]$body.parentTask}else{$null});title=Protect-AI5Text $route.objective;conversationId=$body.conversationId;message=Protect-AI5Text $body.message;objective=Protect-AI5Text $route.objective;constraints=@($body.constraints)
-        source = $(if ($body.source) { $body.source } else { 'teppei' }); priority = $(if ($body.priority) { $body.priority } else { 'normal' })
+        task_id=$id;taskId=$id;project_id=$(if($body.projectId){[string]$body.projectId}else{'unassigned'});product_id=$(if($body.productId){[string]$body.productId}else{'unassigned'});parent_task=$(if($body.parentTask){[string]$body.parentTask}else{$null});parent_task_id=$(if($body.parentTask){[string]$body.parentTask}else{$null});title=Protect-AI5Text $route.objective;conversationId=Protect-AI5Text([string]$body.conversationId);message=Protect-AI5Text $body.message;objective=Protect-AI5Text $route.objective;constraints=@(Protect-AI5Object $body.constraints)
+        source = $(if ($body.source) { Protect-AI5Text([string]$body.source) } else { 'teppei' }); priority = $(if ($body.priority) { $body.priority } else { 'normal' })
         assigned_agent=$route.primary;status = $(if ($route.requiresApproval) { 'waiting_approval' } else { 'queued' });canonical_status=$(if ($route.requiresApproval){'WAITING_APPROVAL'}else{'RECEIVED'});approval_level=$(if($route.requiresApproval){'RED'}elseif($route.risk-eq'medium'){'YELLOW'}else{'GREEN'});attempt=0;max_attempts=3;assignedPrimary = $route.primary; assignedSecondary = $route.secondary
         requiresApproval = $route.requiresApproval; approval = $approval; field_mode=$(if($null-ne$body.fieldMode){[bool]$body.fieldMode}else{$true}); route = $route; validation=[ordered]@{};artifacts=@();result = $null
         timeline = @([ordered]@{ status = 'RECEIVED'; label = '依頼受付'; at = $now })
@@ -224,6 +234,8 @@ try {
             if ($path -match '^/api/projects/([^/]+)/sync$' -and $method -eq 'POST') { $project=Get-AI5Project $Matches[1];if(!$project){Send-Json $stream @{error='not_found'} 404}else{Send-Json $stream (Sync-AI5ProjectGit $project)};continue }
             if ($method -eq 'POST' -and $path -eq '/api/tasks') {
                 $body = Parse-Body $request
+                $capabilityPolicy=Test-AI5CapabilityPolicy $body
+                if($capabilityPolicy.decision-eq'DENY'){Send-Json $stream @{error=$capabilityPolicy.reason} 400;continue}
                 $problem = Test-AI5Instruction $body.message
                 if ($problem) { Send-Json $stream @{ error = $problem } 400; continue }
                 if ($body.taskId -and $body.taskId -notmatch '^task_[A-Za-z0-9_.-]{3,80}$') { Send-Json $stream @{ error = 'invalid_task_id' } 400; continue }
@@ -231,19 +243,20 @@ try {
                 $idem = $request.Headers['Idempotency-Key']
                 if ($idem) { $existing=Find-AI5TaskByIdempotencyKey $idem;if($existing){$incomingHash=Get-AI5PayloadHash([string]$body.message);if($existing.payload_hash-and$existing.payload_hash-ne$incomingHash){Send-Json $stream @{error='idempotency_key_payload_conflict'} 409;continue};Send-Json $stream $existing;continue} }
                 $task = New-Task $body $idem
+                if($capabilityPolicy.approvalRequired){$task.operation=$capabilityPolicy.operation;$task.requiresApproval=$true;$task.status='waiting_approval';$task.canonical_status='WAITING_APPROVAL';$task.approval=[ordered]@{type=$capabilityPolicy.capability;summary='本人の最終承認が必要です';status='pending';zero_review=[ordered]@{verdict='APPROVAL_OK';reason=$capabilityPolicy.reason;risks=@($capabilityPolicy.capability);checks=@('typed capability policy')}}}
                 if ($task.requiresApproval) { $task.timeline += , [ordered]@{ status = 'WAITING_APPROVAL'; label = '本人承認待ち'; at = [DateTime]::UtcNow.ToString('o') } }
                 Save-AI5Task $task
                 Write-AI5Log 'tasks' 'task_created' @{ task_id = $task.taskId; primary = $task.assignedPrimary; approval = $task.requiresApproval }
-                if ($task.requiresApproval) { $task | Add-Member -NotePropertyName approvalToken -NotePropertyValue (New-AI5ApprovalToken $task.taskId) -Force }
                 Send-Json $stream $task 202
                 if (!$task.requiresApproval) { Dispatch-Task $task }
                 continue
             }
             if ($method -eq 'GET' -and $path -eq '/api/tasks') { Send-Json $stream @{ tasks=@(Get-AI5Tasks 100) }; continue }
             if ($path -match '^/api/agents/(manus|gemini)/outbox$' -and $method -eq 'GET') { Send-Json $stream @{ agent=$Matches[1]; tasks=@(Get-AI5ExternalOutbox $Matches[1]) }; continue }
-            if ($path -match '^/api/tasks/([^/]+)$' -and $method -eq 'GET') { $task = Get-AI5Task $Matches[1]; if ($task -and !$Mock -and $task.assignedPrimary -eq 'codex' -and $task.status -in @('queued', 'running')) { Start-AI5CodexWorker | Out-Null }; if ($task) { if ($task.status -eq 'waiting_approval') { $task | Add-Member -NotePropertyName approvalToken -NotePropertyValue (New-AI5ApprovalToken $task.taskId) -Force }; Send-Json $stream $task } else { Send-Json $stream @{ error = 'not_found' } 404 }; continue }
+            if ($path -match '^/api/tasks/([^/]+)$' -and $method -eq 'GET') { $task = Get-AI5Task $Matches[1]; if ($task -and !$Mock -and $task.assignedPrimary -eq 'codex' -and $task.status -in @('queued', 'running')) { Start-AI5CodexWorker | Out-Null };if($task-and$task.assignedPrimary-eq'codex'-and$task.status-in@('reviewing','failed')){$task=Finalize-AI5CodexResult $task}; if ($task) { Send-Json $stream $task } else { Send-Json $stream @{ error = 'not_found' } 404 }; continue }
             if ($path -match '^/api/tasks/([^/]+)/result$' -and $method -eq 'GET') { $task = Get-AI5Task $Matches[1]; if (!$task) { Send-Json $stream @{ error = 'not_found' } 404 } elseif ($task.result) { Send-Json $stream @{ taskId = $task.taskId; status = $task.status; result = $task.result; bridge = $task.bridge } } else { Send-Json $stream @{ taskId = $task.taskId; status = $task.status; result = $null } 202 }; continue }
             if ($path -match '^/api/tasks/([^/]+)/result$' -and $method -eq 'POST') { $task=Get-AI5Task $Matches[1];if(!$task){Send-Json $stream @{error='not_found'} 404;continue};if($task.status-notin@('running','reviewing','blocked')){Send-Json $stream @{error='invalid_state'} 409;continue};try{$task=Receive-AI5ExternalResult $task (Parse-Body $request);Write-AI5Log 'tasks' 'zero_return_collected' @{task_id=$task.taskId;ai=$task.result.ai;verdict=$task.result.verdict};Send-Json $stream $task 202}catch{Write-AI5Log 'security' 'result_rejected' @{task_id=$task.taskId;error=$_.Exception.Message};Send-Json $stream @{error=$_.Exception.Message} 400};continue }
+            if ($path -match '^/api/tasks/([^/]+)/approval-challenge$' -and $method -eq 'POST') { $task=Get-AI5Task $Matches[1];if(!$task){Send-Json $stream @{error='not_found'} 404;continue};if($task.status-ne'waiting_approval'){Send-Json $stream @{error='invalid_state'} 409;continue};Write-AI5Log 'security' 'approval_challenge_created' @{task_id=$task.taskId;login=$session.login};Send-Json $stream @{approvalToken=(New-AI5ApprovalToken $task.taskId);expiresInSeconds=300};continue }
             if ($path -match '^/api/tasks/([^/]+)/approve$' -and $method -eq 'POST') { $task = Get-AI5Task $Matches[1]; if (!$task) { Send-Json $stream @{ error = 'not_found' } 404; continue }; if ($task.status -ne 'waiting_approval') { Send-Json $stream @{ error = 'invalid_state' } 409; continue }; $body = Parse-Body $request; if (!(Use-AI5ApprovalToken $task.taskId $body.approvalToken)) { Write-AI5Log 'security' 'approval_rejected' @{ task_id = $task.taskId }; Send-Json $stream @{ error = 'invalid_approval_token' } 403; continue }; $task.approval.status = 'approved'; Set-AI5TaskStatus $task 'RECEIVED' '本人承認済み'; Write-AI5Log 'security' 'approval' @{ task_id = $task.taskId; login = $session.login }; Send-Json $stream $task; Dispatch-Task $task; continue }
             if ($path -match '^/api/tasks/([^/]+)/(cancel|reject)$' -and $method -eq 'POST') { $task = Get-AI5Task $Matches[1]; if (!$task) { Send-Json $stream @{ error = 'not_found' } 404; continue }; if ($task.status -in @('completed', 'failed', 'cancelled')) { Send-Json $stream @{ error = 'invalid_state' } 409; continue }; Update-State $task 'cancelled' 'User rejected'; Write-AI5Log 'security' 'rejection' @{ task_id = $task.taskId; login = $session.login }; Send-Json $stream $task; continue }
             if ($path.StartsWith('/api/')) { Send-Json $stream @{ error = 'not_found' } 404 } else { Send-Static $stream $path }
