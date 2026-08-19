@@ -17,13 +17,14 @@ function Add-AI5AgentReport {
 }
 function Invoke-AI5DoubleJudge {
   param($Task)
-  $null=Initialize-AI5LoopTask $Task;$result=$Task.result;$tests=@($result.tests);$failed=@($tests|Where-Object{$_-match'(?i)fail|error|ng'});$codeWork=$Task.route.workType-in@('code','pc_task');$testEvidence=(!$codeWork-or$tests.Count-gt0)
+  $null=Initialize-AI5LoopTask $Task;$result=$Task.result;$tests=@($result.tests);$failed=@($tests|Where-Object{$_-match'(?i)fail|error|ng'});$codeWork=$Task.route.workType-eq'code'-or[bool]$Task.route.gitChange;$testEvidence=(!$codeWork-or$tests.Count-gt0)
   $codexPass=$result.status-in@('SUCCESS','success','COMPLETED','completed')-and!$failed.Count-and$testEvidence-and!$result.needs_human
   $codexReason=if($failed.Count){'失敗検査あり'}elseif(!$testEvidence){'技術検査証跡不足'}elseif(!$result){'Resultなし'}else{'Result・検査・Single Writerを確認'}
   $requiredBlocked=$Task.requested_target-eq'all'-and@($Task.agent_reports|Where-Object{$_.agent-ne'codex'-and$_.state-in@('FAILED','BLOCKED')}).Count-gt0
   $zeroPass=$codexPass-and![string]::IsNullOrWhiteSpace([string]$result.summary)-and!$Task.requiresApproval-and!$requiredBlocked
   $zeroReason=if($Task.requiresApproval){'本人承認が残っています'}elseif($requiredBlocked){'ALLで必須の専門AI結果が未回収'}elseif(!$codexPass){'Codex技術判定が未達'}else{'目的・結果・残承認を確認'}
-  $decision=if($Task.requiresApproval){'APPROVAL'}elseif($zeroPass){'COMPLETE'}elseif([int]$Task.loop_state.cycle-lt[int]$Task.loop_state.maxCycles){'REWORK'}else{'BLOCKED'}
+  $attemptLimitReached=$Task.max_attempts-and([int]$Task.attempt-ge[int]$Task.max_attempts)
+  $decision=if($Task.requiresApproval){'APPROVAL'}elseif($zeroPass){'COMPLETE'}elseif(!$attemptLimitReached-and[int]$Task.loop_state.cycle-lt[int]$Task.loop_state.maxCycles){'REWORK'}else{'BLOCKED'}
   $Task.judgements+=,[ordered]@{agent='codex';verdict=$(if($codexPass){'PASS'}else{'REWORK'});reason=$codexReason;at=[DateTime]::UtcNow.ToString('o')}
   Add-AI5AgentReport $Task 'codex' $(if($codexPass){'COMPLETE'}else{'REVIEW'}) '最終技術監査' $codexReason $(if($codexPass){'なし'}else{$codexReason}) $(if($codexPass){'Zero最終判定'}else{'再施工'})
   $Task.judgements+=,[ordered]@{agent='zero';verdict=$(if($zeroPass){'PASS'}else{$decision});reason=$zeroReason;at=[DateTime]::UtcNow.ToString('o')}

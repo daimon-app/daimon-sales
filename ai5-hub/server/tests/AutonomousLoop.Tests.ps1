@@ -4,5 +4,7 @@ $ok=New-LoopTask -tests @('unit PASS');$decision=Invoke-AI5DoubleJudge $ok;if($d
 $rework=New-LoopTask -tests @();$first=Invoke-AI5DoubleJudge $rework;if($first.decision-ne'REWORK'-or$rework.loop_state.cycle-ne1){throw 'automatic REWORK failed'}
 $rework.loop_state.cycle=3;$blocked=Invoke-AI5DoubleJudge $rework;if($blocked.decision-ne'BLOCKED'){throw 'loop guard failed'}
 $approval=New-LoopTask -tests @('PASS');$approval.requiresApproval=$true;$wait=Invoke-AI5DoubleJudge $approval;if($wait.decision-ne'APPROVAL'){throw 'approval stop failed'}
+$readOnly=[pscustomobject]@{taskId='pc-check';route=[pscustomobject]@{workType='pc_task';gitChange=$false};requiresApproval=$false;attempt=1;max_attempts=3;result=[pscustomobject]@{status='success';summary='QUEUE_MOBILE_OK';tests=@();needs_human=$false;risks=@()}};$readOnlyDecision=Invoke-AI5DoubleJudge $readOnly;if($readOnlyDecision.decision-ne'COMPLETE'){throw 'no-change PC result should not require code test evidence'}
+$limited=New-LoopTask -tests @();$limited|Add-Member attempt 3;$limited|Add-Member max_attempts 3;$limitDecision=Invoke-AI5DoubleJudge $limited;if($limitDecision.decision-ne'BLOCKED'){throw 'max attempts guard failed'}
 if(@(Get-AI5LineMessages @($ok) 'NORMAL').Count-lt2){throw 'durable line reports missing'}
 'AUTONOMOUS_LOOP_TESTS_OK'
