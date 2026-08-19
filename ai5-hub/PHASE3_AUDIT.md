@@ -20,8 +20,8 @@ Updated: 2026-08-19
 | Field Mode | PASS (local API) | auto-continue/approval-stop E2E |
 | 通知 | PARTIAL | foreground通知に加え、VAPID Web Push、購読API、SW push/click、重複防止を実装。payloadはTask内容を含まない。実端末購読・閉じた状態の着信は未実測 |
 | Auto Recovery | PASS | Task `AI5-20260818-0016`: retryable faultをattempt 1→2→3、自動再投入後、同一fingerprintを検出し安全停止 |
-| Android Phase 3 E2E | UNVERIFIED | tailnet限定のPhase 3検証URL（HTTPS 8443）を配信済み。実機確認待ち |
-| iPhone Phase 3 E2E | UNVERIFIED | tailnet限定のPhase 3検証URL（HTTPS 8443）を配信済み。実機確認待ち |
+| Android Phase 3 E2E | PASS (long input + self-update Queue scope) | Pixel 10a・モバイル回線で6,376文字Task、施工中Queue、Writer解放後の自動再開、`QUEUE_MOBILE_OK`、結果復元を実測 |
+| iPhone Phase 3 E2E | PASS (long input scope) | iPhone・HTTPS 8443で6,376文字Taskを送信。Task `AI5-20260819-0013`、Hash完全一致、attempt 1、`LONG_MESSAGE_MOBILE_OK`、完了表示を実測 |
 | PC再起動後Phase 3復旧 | PARTIAL | Phase 2.5のWindows再起動は実測済み。Phase 3ではLocal API再起動後、Bridge成功済みTask `AI5-20260818-0006` を重複施工せず復元し、Zero/Codex二重判定でCOMPLETEまで実測。Phase 3を載せたWindows全体再起動は未実測 |
 | Security | PASS (automated scope) | CSRF, HMAC, one-time token, loopback bind, `/api/shell` 404 |
 | Task復元 | PASS (Phase 2.5 evidence) | Android/iPhone/Windows再起動実測 |
@@ -34,8 +34,8 @@ Updated: 2026-08-19
 | FULL AUTONOMOUS LOOP | PASS (automated scope) | AI別report、永続LINE API、Zero/Codex二重判定、REWORK、Loop Guard、承認停止、再起動queue復旧を実装・自動E2E PASS |
 | LINE返信 / @指名 / ALL | PASS (automated scope) | replyTo永続化、@target解析、ALL専門分解、Zero Safety Layer維持 |
 | Screenshot Loop | PASS (automated scope) | JPEG/PNG/WebPのみ、5MB上限、magic signature検査、Local attachment ID経由。実スマホ添付は未確認 |
-| Long Message Ingestion | PASS (Android + automated) | 実原因はLocal APIの4,000文字制限。Android 5Gで6,376文字・SHA-256・Task 1件・Codex結果 `LONG_MESSAGE_MOBILE_OK` を実測。9,000文字API E2E、重複排除、欠損・改変・上限・ID traversal拒否もPASS。iPhone実機は未確認 |
-| HUB自己施工中Queue | PASS (automated scope) | 同一Project WRITEはQUEUED、別ProjectとREAD ONLYはDISPATCH、Writer解放後Zero再評価。実スマホ同時投入は未確認 |
+| Long Message Ingestion | PASS (Android + iPhone + automated) | 実原因はLocal APIの4,000文字制限。両実機で6,376文字・SHA-256・Task 1件・Codex結果 `LONG_MESSAGE_MOBILE_OK` を実測。9,000文字API E2E、重複排除、欠損・改変・上限・ID traversal拒否もPASS |
+| HUB自己施工中Queue | PASS (Android + automated) | AndroidでTask `AI5-20260819-0012` が `SINGLE_WRITER_BUSY`、位置1、attempt 0で保存。Writer解放後Zero再評価、Codex実行、`QUEUE_MOBILE_OK`、変更0、Zero/Codex PASS、結果復元まで実測 |
 | Stable Runtime / controlled switch | PASS (automated scope) | Stable/Working Copy分離を状態管理し、unit/security/E2E/PWA全PASS時のみ候補切替。Mock失敗時Stable維持。Windows実更新切替は未確認 |
 
 ## Current deployment state

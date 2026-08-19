@@ -3,6 +3,7 @@ $server = Split-Path $PSScriptRoot
 $app = Split-Path $server
 . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $server 'task-service\CodexService.ps1'))))
 $serviceSource=Get-Content -Raw -Encoding UTF8 (Join-Path $server 'task-service\CodexService.ps1');if($serviceSource-notmatch"Join-Path \`$PSHOME 'pwsh.exe'"){throw 'UTF-8 pwsh worker launcher missing'}
+$mobileSource=Get-Content -Raw -Encoding UTF8 (Join-Path $app 'start-mobile.ps1');if($mobileSource-notmatch'Get-Command pwsh.exe'-or$mobileSource-notmatch'AI5_STATE_ROOT'){throw 'stable launcher must use pwsh and persistent state root'}
 Initialize-AI5CodexService $server $app
 $one = Get-AI5CodexSignature 'task_phase2_signature' 'read only'
 $two = Get-AI5CodexSignature 'task_phase2_signature' 'read only'
