@@ -88,7 +88,8 @@ function Start-AI5CodexWorker {
     'launching' | Set-Content -LiteralPath $script:CodexWorkerLock -Encoding ASCII
     try {
         $psi = [Diagnostics.ProcessStartInfo]::new()
-        $psi.FileName = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+        $pwsh = Join-Path $PSHOME 'pwsh.exe'
+        $psi.FileName = if (Test-Path $pwsh) { $pwsh } else { "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" }
         $psi.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$script:CodexWorkerScript`" -ServerRoot `"$script:CodexServerRoot`" -AppRoot `"$script:CodexAppRoot`" -UserHome `"$env:USERPROFILE`""
         $psi.UseShellExecute = $false
         $psi.CreateNoWindow = $true

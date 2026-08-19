@@ -2,6 +2,7 @@ $ErrorActionPreference = 'Stop'
 $server = Split-Path $PSScriptRoot
 $app = Split-Path $server
 . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $server 'task-service\CodexService.ps1'))))
+$serviceSource=Get-Content -Raw -Encoding UTF8 (Join-Path $server 'task-service\CodexService.ps1');if($serviceSource-notmatch"Join-Path \`$PSHOME 'pwsh.exe'"){throw 'UTF-8 pwsh worker launcher missing'}
 Initialize-AI5CodexService $server $app
 $one = Get-AI5CodexSignature 'task_phase2_signature' 'read only'
 $two = Get-AI5CodexSignature 'task_phase2_signature' 'read only'

@@ -34,7 +34,7 @@ Updated: 2026-08-19
 | FULL AUTONOMOUS LOOP | PASS (automated scope) | AI別report、永続LINE API、Zero/Codex二重判定、REWORK、Loop Guard、承認停止、再起動queue復旧を実装・自動E2E PASS |
 | LINE返信 / @指名 / ALL | PASS (automated scope) | replyTo永続化、@target解析、ALL専門分解、Zero Safety Layer維持 |
 | Screenshot Loop | PASS (automated scope) | JPEG/PNG/WebPのみ、5MB上限、magic signature検査、Local attachment ID経由。実スマホ添付は未確認 |
-| Long Message Ingestion | PASS (automated scope) | 実原因はLocal APIの4,000文字制限。9,000文字API E2E、chunk/hash/length完全性、重複排除、欠損・改変・上限・ID traversal拒否を確認。Android/iPhone実機は未確認 |
+| Long Message Ingestion | PASS (Android + automated) | 実原因はLocal APIの4,000文字制限。Android 5Gで6,376文字・SHA-256・Task 1件・Codex結果 `LONG_MESSAGE_MOBILE_OK` を実測。9,000文字API E2E、重複排除、欠損・改変・上限・ID traversal拒否もPASS。iPhone実機は未確認 |
 | HUB自己施工中Queue | PASS (automated scope) | 同一Project WRITEはQUEUED、別ProjectとREAD ONLYはDISPATCH、Writer解放後Zero再評価。実スマホ同時投入は未確認 |
 | Stable Runtime / controlled switch | PASS (automated scope) | Stable/Working Copy分離を状態管理し、unit/security/E2E/PWA全PASS時のみ候補切替。Mock失敗時Stable維持。Windows実更新切替は未確認 |
 
