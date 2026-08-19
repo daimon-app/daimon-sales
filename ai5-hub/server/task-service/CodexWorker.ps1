@@ -116,6 +116,14 @@ try {
         }
 
         $currentTask = Read-Utf8Json $currentTaskPath
+        if ($currentTask.status -in @('completed','failed','cancelled')) {
+            Write-WorkerLog 'terminal_envelope_discarded' @{ task_id = $currentTask.taskId; status = $currentTask.status }
+            Remove-Item -LiteralPath $file.FullName -Force
+            $currentTask = $null
+            $currentTaskPath = $null
+            $currentEnvelopePath = $null
+            continue
+        }
         Set-TaskProperty $currentTask 'attempt' ([int]$currentTask.attempt + 1)
         $contextJson = if($envelope.signature_version-eq2){if($envelope.project_context){$envelope.project_context|ConvertTo-Json -Compress -Depth 10}else{''}}else{$null}
         $expected = Get-Signature $envelope.task_id $envelope.instruction $contextJson
