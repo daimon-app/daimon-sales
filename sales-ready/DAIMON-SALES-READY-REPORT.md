@@ -104,7 +104,7 @@ Existing release gate itself records signed APK device QA as incomplete. Four-mo
 
 The inspected native Morning candidate cannot be reused as the four-mode binary: it is a Morning-only Java Activity with applicationId `app.daimon.morning`, no WebView, and no Work/Night/Adversity implementation. Reusing that package or signed artifact would create a product-truth mismatch.
 
-Reusable foundations are limited to the proven JDK 17 / Gradle / Android SDK build procedure, release-signing procedure, portrait configuration, no-backup posture, and selected store artwork. The four-mode applicationId and wrapper/native architecture must be fixed before creating its Android project. Until then Android release build, AAB, signing and device behavior remain `UNVERIFIED`; the PWA four-mode candidate is the current canonical implementation.
+Reusable foundations are limited to the proven JDK 17 / Gradle / Android SDK build procedure, release-signing procedure, portrait configuration, no-backup posture, and selected store artwork. The four-mode foundation now exists under `android/` with provisional applicationId `app.daimon`. An actual unsigned release AAB was generated successfully; its hash and bundled-asset inspection are recorded in `android/BUILD_EVIDENCE_2026-08-20.md`. Production signing and installed-device behavior remain `UNVERIFIED`; the PWA four-mode source remains the canonical implementation bundled by the Android build.
 
 Required evidence:
 - install/update launch

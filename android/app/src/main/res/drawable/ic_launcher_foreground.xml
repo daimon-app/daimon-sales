@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Placeholder mark only: a simple centered orb standing in for real DAIMON
+  brand artwork. The PWA's own icons/icon-192.png and icons/icon-512.png could
+  were replaced with verified DAIMON brand PNG assets during Android readiness.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/ic_launcher_foreground"
+        android:pathData="M74,54 C74,65.046 65.046,74 54,74 C42.954,74 34,65.046 34,54 C34,42.954 42.954,34 54,34 C65.046,34 74,42.954 74,54 Z" />
+</vector>

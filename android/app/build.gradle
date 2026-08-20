@@ -1,0 +1,76 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The Android shell bundles the existing four-mode PWA (index.html, manifest.json,
+// sw.js, assets/, icons/) as offline WebView assets. The PWA source of truth lives
+// at the repository root, one directory above this Gradle project (android/..).
+// This task copies it into a generated assets dir at build time instead of
+// duplicating the (large, binary-heavy) PWA files into the Android module.
+def pwaRootDir = rootProject.projectDir.parentFile
+def pwaGeneratedAssetsDir = layout.buildDirectory.dir('generated/pwaAssets').get().asFile
+
+def requiredPwaEntries = ['index.html', 'manifest.json', 'sw.js', 'assets', 'icons']
+
+tasks.register('copyPwaAssets', Copy) {
+    description = 'Copies the offline four-mode PWA (index.html/manifest.json/sw.js/assets/icons) into the WebView asset bundle.'
+
+    doFirst {
+        def missing = requiredPwaEntries.findAll { !new File(pwaRootDir, it).exists() }
+        if (!missing.isEmpty()) {
+            throw new GradleException("Missing required PWA source under ${pwaRootDir}: ${missing.join(', ')}")
+        }
+    }
+
+    from(pwaRootDir) {
+        include 'index.html'
+        include 'manifest.json'
+        include 'sw.js'
+        include 'assets/**'
+        include 'icons/**'
+    }
+    into pwaGeneratedAssetsDir
+
+    // The PWA source files are the single source of truth; this task must never
+    // write back into them.
+    outputs.dir(pwaGeneratedAssetsDir)
+}
+
+tasks.named('preBuild').configure {
+    dependsOn 'copyPwaAssets'
+}
+
+android {
+    namespace 'app.daimon'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'app.daimon'
+        minSdk 23
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0-beta.1'
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs += pwaGeneratedAssetsDir
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        buildConfig = false
+    }
+}

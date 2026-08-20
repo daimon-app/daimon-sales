@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches manifest.json background_color/theme_color (#0a0a0a). -->
+    <color name="daimon_background">#0a0a0a</color>
+    <color name="ic_launcher_background">#0a0a0a</color>
+    <color name="ic_launcher_foreground">#F5F0E6</color>
+</resources>

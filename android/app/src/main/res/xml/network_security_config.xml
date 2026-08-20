@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Belt-and-suspenders alongside the missing INTERNET permission: even if some
+  future dependency requests network access, no cleartext traffic is permitted
+  and no domain is trusted for plaintext connections.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>
