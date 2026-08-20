@@ -1,7 +1,9 @@
 # DAIMON Data Safety / privacy implementation draft
 
-Date: 2026-08-20  
-Scope: unsigned four-mode Android AAB produced from the current branch  
+Date: 2026-08-20
+
+Scope: unsigned four-mode Android AAB produced from the current branch
+
 Status: `DRAFT — RECONFIRM AGAINST SIGNED UPLOAD ARTIFACT`
 
 ## Audited behavior
@@ -22,6 +24,8 @@ Status: `DRAFT — RECONFIRM AGAINST SIGNED UPLOAD ARTIFACT`
 | Delete path | Android uninstall or Clear storage removes local WebView data |
 
 `daimon.userName` is an optional local display value if already configured. It is
+read but not written by the current source. A repository-wide search found no
+other writer in `sw.js`, `assets/` or the Android shell and no network API. It is
 not transmitted by this candidate. `daimon.audioEnabled` stores only the local
 audio preference.
 
@@ -53,4 +57,4 @@ Any of the following changes make this draft stale: manifest permission changes,
 new Gradle/runtime dependency, remote URL/network access, Play Billing, analytics,
 crash reporting, ads, support form, account/login, cloud sync, push notification,
 camera/microphone/file access, or backup-policy change.
-
+Changes anywhere under `assets/` or to `sw.js` also require the same re-audit.
