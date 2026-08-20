@@ -16,10 +16,9 @@ function Select-AI5ManusRoute {
     $appReady = $Health.app -and $Health.app.state -eq 'READY'
     $webReady = $Health.web -and $Health.web.state -eq 'READY'
     $configuredPreference = [string]$Health.preferredRoute
-    if ($configuredPreference -eq 'WEB' -and $webReady) { return [ordered]@{preferred='WEB';selected='WEB';fallback=$(if($appReady){'APP'}else{''});singleDispatch=$true} }
     if ($configuredPreference -eq 'APP' -and $appReady) { return [ordered]@{preferred='APP';selected='APP';fallback=$(if($webReady){'WEB'}else{''});singleDispatch=$true} }
-    if ($appReady) { return [ordered]@{preferred='APP';selected='APP';fallback=$(if($webReady){'WEB'}else{''});singleDispatch=$true} }
-    if ($webReady) { return [ordered]@{preferred='WEB';selected='WEB';fallback='';singleDispatch=$true} }
+    if ($webReady) { return [ordered]@{preferred='WEB';selected='WEB';fallback=$(if($appReady){'APP'}else{''});singleDispatch=$true} }
+    if ($appReady) { return [ordered]@{preferred='APP';selected='APP';fallback='';singleDispatch=$true} }
     [ordered]@{preferred='';selected='';fallback='';singleDispatch=$true}
 }
 
@@ -34,7 +33,7 @@ function New-AI5ManusDispatchPlan {
     param($Task,$Health)
     $route=Select-AI5ManusRoute $Health
     if(!$Health.available-or![string]$route.selected){return [ordered]@{accepted=$false;route='';fallback='';reason='manus_route_unavailable';attempted=$false}}
-    [ordered]@{accepted=$true;route=$route.selected;fallback=$route.fallback;reason='private_result_bus_dispatch';attempted=$true;taskId=[string]$Task.taskId;createdAt=[DateTime]::UtcNow.ToString('o')}
+    [ordered]@{accepted=$true;route=$route.selected;fallback=$route.fallback;reason='private_result_bus_dispatch';attempted=$true;taskId=[string]$Task.taskId;createdAt=[DateTime]::UtcNow.ToString('o');processedResultIds=@()}
 }
 
 function ConvertFrom-AI5ManusBusResult {

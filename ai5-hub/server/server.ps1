@@ -148,9 +148,27 @@ function Dispatch-Task($task) {
 
 function Invoke-AI5ManusResultRecovery {
     foreach($local in @(Get-AI5Tasks 100|Where-Object{$_.assignedPrimary-eq'manus'-and$_.status-in@('running','retrying')})){
-      $busTasks=@(Get-AI5GitHubBusTasks|Where-Object{$_.task_id-eq$local.taskId-or$_.parent_task_id-eq$local.taskId}|Sort-Object created_at);$busIds=@($busTasks.task_id);$result=Get-AI5GitHubBusResults|Where-Object{$_.ai-eq'manus'-and$_.task_id-in$busIds}|Select-Object -Last 1;if(!$result){continue}
+      if(!$local.manus_dispatch){continue}
+      if(!($local.manus_dispatch.PSObject.Properties.Name-contains'processedResultIds')){$local.manus_dispatch|Add-Member -NotePropertyName processedResultIds -NotePropertyValue @() -Force}
+      $processed=@($local.manus_dispatch.processedResultIds)
+      $busTasks=@(Get-AI5GitHubBusTasks|Where-Object{$_.task_id-eq$local.taskId-or$_.parent_task_id-eq$local.taskId}|Sort-Object created_at);$busIds=@($busTasks.task_id)
+      $result=Get-AI5GitHubBusResults|Where-Object{$_.ai-eq'manus'-and$_.task_id-in$busIds-and$_.result_id-notin$processed}|Select-Object -Last 1
+      if(!$result){continue}
+      # Mark reconciled before branching so every exit path (reroute/redispatch/finalize) is exactly-once, even across repeated polls of the same still-latest bus result.
+      $local.manus_dispatch.processedResultIds=@($processed+$result.result_id)
       $next=@(Get-AI5GitHubBusTasks|Where-Object{$_.parent_task_id-eq$result.task_id-and$_.status-in@('QUEUED','CLAIMED','RUNNING')}|Select-Object -Last 1)[0]
-      if($result.result-ne'PASS'-and$next-and$next.assigned_ai-eq'manus'){$local.status='retrying';$local.manus_dispatch.route='APP';$local.manus_dispatch.attempted=$true;Add-AI5LineMessage $local 'zero' 'REWORK' 'Manus WEB失敗を確認。APP fallbackへ1回だけ再投入します。' 'routing';Save-AI5Task $local;continue}
+      if($result.result-ne'PASS'-and$next-and$next.assigned_ai-eq'manus'){$failedRoute=[string]$local.manus_dispatch.route;$fallbackRoute=[string]$local.manus_dispatch.fallback;if(!$fallbackRoute){Fail-Task $local 'manus_route_failed' 'Manus fallback route unavailable';Save-AI5Task $local;continue};$local.status='retrying';$local.manus_dispatch.route=$fallbackRoute;$local.manus_dispatch.fallback='';$local.manus_dispatch.attempted=$true;Add-AI5LineMessage $local 'zero' 'REWORK' "Manus $failedRoute 失敗を確認。$fallbackRoute fallbackへ1回だけ再投入します。" 'routing';Save-AI5Task $local;continue}
+      if($result.result-ne'PASS'-and$next-and$next.assigned_ai-ne'manus'){
+        # Both WEB and APP were exhausted; the Collector already redispatched a grandchild task off the Manus path (e.g. to claude). Keep lineage traceable and leave Codex uninvolved instead of finalizing as a bare failure.
+        $local.manus_dispatch|Add-Member -NotePropertyName fallbackTaskId -NotePropertyValue ([string]$next.task_id) -Force
+        $local.manus_dispatch|Add-Member -NotePropertyName fallbackAssignedAi -NotePropertyValue ([string]$next.assigned_ai) -Force
+        $local.result=ConvertFrom-AI5ManusBusResult $result
+        Add-AI5AgentReport $local 'manus' 'BLOCKED' "Manus $($local.manus_dispatch.route) read-only実行" $local.result.summary (@($local.result.issues)-join' / ') 'Zero統合監査'
+        Add-AI5LineMessage $local 'zero' 'REDISPATCH' "Manus WEB/APP双方失敗を確認。$($next.assigned_ai)へ再配分済み（Codex未介入、linkage: $($next.task_id)）。" 'routing'
+        $local|Add-Member -NotePropertyName errorType -NotePropertyValue 'manus_exhausted_redispatched' -Force
+        Set-AI5TaskStatus $local 'BLOCKED' "Manus WEB/APP双方失敗。$($next.assigned_ai)へ再配分済み"
+        Save-AI5Task $local;continue
+      }
       $local.result=ConvertFrom-AI5ManusBusResult $result;Add-AI5AgentReport $local 'manus' $(if($result.result-eq'PASS'){'COMPLETE'}else{'BLOCKED'}) "Manus $($local.manus_dispatch.route) read-only実行" $local.result.summary (@($local.result.issues)-join' / ') 'Zero統合監査'
       if($result.result-eq'PASS'){$local.validation=[ordered]@{passed=$true;checks=[ordered]@{manus_result_bus=$true;idempotency=$true};checked_at=[DateTime]::UtcNow.ToString('o')};$judge=Invoke-AI5DoubleJudge $local;Set-AI5TaskStatus $local $(if($judge.decision-eq'COMPLETE'){'COMPLETED'}else{'FAILED'}) "Manus Result回収: Zero $($judge.decision)"}else{Fail-Task $local 'manus_route_failed' $local.result.summary};Save-AI5Task $local
     }
