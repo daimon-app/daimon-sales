@@ -116,7 +116,7 @@ Required evidence:
 - Suspicion/overclaim risk: PASS if non-medical/no-guarantee wording retained.
 - Price coherence: PASS for ¥980 recommendation.
 - How to use: CONDITIONAL, onboarding needs release verification.
-- Four-mode value: COPY PASS / IMPLEMENTATION FAIL until adversity is certified.
+- Four-mode value: IMPLEMENTATION PASS at code/static-browser level on `product/daimon-four-mode-ready`; device/audio/offline certification remains UNVERIFIED.
 - Post-purchase navigation: CONDITIONAL, device QA pending.
 - Legal/contact: FAIL until owner fields finalized.
 
@@ -138,7 +138,7 @@ Only facts Zero cannot truthfully invent:
 ## SALES READY
 **NO — currently PRE-SALES-READY.**
 
-This is not a marketing-content gap. Remaining blockers are release-truth/technical proof plus owner/legal identity fields.
+Four-mode code truth is now synchronized. Remaining blockers are signed Android/device/offline proof plus owner/legal identity fields.
 
 ## 本人承認 Required
 At final gate only:
@@ -153,8 +153,8 @@ At final gate only:
 - paid services/ads if ever used
 
 ## Next Action
-1. Resolve Issue #3 and create one four-mode signed release candidate.
-2. Run device/offline/persistence/onboarding/navigation QA.
+1. Create one four-mode signed release candidate from `product/daimon-four-mode-ready`.
+2. Run device/audio/offline/persistence/onboarding/navigation QA.
 3. Regenerate Privacy/Data safety from the artifact.
 4. Replace Morning-only marketing truth with final release truth.
 5. Insert owner legal/contact facts.

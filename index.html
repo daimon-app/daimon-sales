@@ -9,7 +9,7 @@
 <title>DAIMON</title>
 <style>
 /* =========================================================
-   DAIMON 販売版  共通Engine＋朝・仕事・夜Mode Pack
+   DAIMON 販売版  共通Engine＋朝・仕事・夜・逆境Mode Pack
    - トーン（金/Georgia/ゴールドフレーム）は原本を踏襲
    - 各モード12枚は languagePacks.ja の各Mode Packから生成
    - 朝画像dataURIはindex.html内にインライン保持
@@ -33,6 +33,7 @@ button{font-family:inherit}
   position:fixed; inset:0; z-index:100;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   text-align:center; padding:calc(32px + var(--sat)) 24px calc(32px + var(--sab));
+  overflow-x:hidden; overflow-y:auto;
   background:radial-gradient(120% 100% at 50% 30%, #141414 0%, #0a0a0a 70%, #050505 100%);
   opacity:0; visibility:hidden; pointer-events:none;
   transition:opacity .8s ease, visibility 0s linear .8s;
@@ -64,10 +65,10 @@ button{font-family:inherit}
 .ghost{ margin-top:16px; cursor:pointer; background:none; border:1px solid rgba(212,175,55,.4);
   color:rgba(255,255,255,.7); letter-spacing:.12em; font-size:12px; padding:9px 22px; border-radius:40px }
 
-/* ===== HOME（3モード選択） ===== */
-#scrHome .home-title{ font-size:clamp(30px,9vw,58px); font-weight:700; letter-spacing:.22em;
+/* ===== HOME（4モード選択） ===== */
+#scrHome .home-title{ max-width:100%; font-size:clamp(28px,8vw,52px); font-weight:700; letter-spacing:.14em;
   color:var(--gold); text-shadow:0 2px 24px rgba(0,0,0,.9),0 0 40px rgba(212,175,55,.35) }
-#scrHome .home-tag{ margin-top:10px; font-size:12px; letter-spacing:.3em;
+#scrHome .home-tag{ max-width:100%; margin-top:10px; font-size:clamp(8px,2.4vw,12px); letter-spacing:.18em; line-height:1.6;
   color:rgba(255,255,255,.55) }
 .mode-list{ margin-top:38px; width:100%; max-width:420px; display:flex; flex-direction:column; gap:16px }
 .mode-card{ position:relative; cursor:pointer; text-align:left;
@@ -83,6 +84,12 @@ button{font-family:inherit}
   background:radial-gradient(circle at 50% 40%, rgba(212,175,55,.28), rgba(212,175,55,.06));
   border:1px solid rgba(212,175,55,.35) }
 .mode-card.soon{ opacity:.72 }
+@media (max-height:700px){
+  #scrHome{ justify-content:flex-start }
+  #scrHome .home-title{ margin-top:16px }
+  .mode-list{ margin-top:20px; gap:10px }
+  .mode-card{ padding:13px 16px }
+}
 
 /* ===== BREATH（呼吸・戻る時間） ===== */
 .breath-stage{ position:relative; width:230px;height:230px; display:flex;align-items:center;justify-content:center; margin:6px 0 26px }
@@ -212,7 +219,7 @@ button{font-family:inherit}
   <div class="gold-corner tl"></div><div class="gold-corner tr"></div>
   <div class="gold-corner bl"></div><div class="gold-corner br"></div>
   <div class="home-title">DAIMON</div>
-  <div class="home-tag">MORNING &nbsp;/&nbsp; WORK &nbsp;/&nbsp; NIGHT</div>
+  <div class="home-tag">MORNING &nbsp;/&nbsp; WORK &nbsp;/&nbsp; NIGHT &nbsp;/&nbsp; ADVERSITY</div>
   <div class="mode-list">
     <div class="mode-card" data-go="morning">
       <div class="mc-icon">☀</div>
@@ -236,6 +243,14 @@ button{font-family:inherit}
         <div class="mc-en">NIGHT</div>
         <div class="mc-jp">夜</div>
         <div class="mc-note">今日を閉じ、静かに明日へつなぐ</div>
+      </div>
+    </div>
+    <div class="mode-card" data-go="adversity">
+      <div class="mc-icon">🛡</div>
+      <div>
+        <div class="mc-en">ADVERSITY</div>
+        <div class="mc-jp">逆境</div>
+        <div class="mc-note">揺れた時、ここへ戻る</div>
       </div>
     </div>
   </div>
@@ -409,6 +424,33 @@ const languagePacks = {
         { image:"night11", main:"明日も、最高の一日になる。", support:"必要なことは、最適なタイミングで自然に決まっていく。", impact:"明日も最高。", audio:null },
         { image:"night12", main:"もう決まってる。", support:"安心して、今日を終える。", impact:"もう決まってる。", audio:null }
       ]
+    },
+    adversity: {
+      intro:{ en:"ADVERSITY", main:"揺れた時、ここへ戻る。", support:"止まって、軸を取り戻し、次の一手へ進む。" },
+      timingScale:1,
+      close:{ eyebrow:"ADVERSITY COMPLETE", peak:"俺は必ず勝つ。", button:"現実へ戻る", returnMain:"逆境の中でも、軸は戻せる。", returnSub:"次の一手を、そのまま進めればいい。" },
+      slides: [
+        {main:"この逆境は俺を壊しに来たんじゃない",support:"鍛えに来たんだ",impact:"俺は強くなる",accent:"#ff2233",freq:208,audio:null},
+        {main:"痛い　きつい",support:"それでも俺は前に進む",impact:"俺は止まらない",accent:"#ff6600",freq:210,audio:null},
+        {main:"崩れるものは崩れればいい",support:"俺の本質はどこにも行かない",impact:"俺の核心は不動だ",accent:"#4488ff",freq:205,audio:null},
+        {main:"追い込まれたとき",support:"人間の本当の強さが目を覚ます",impact:"俺の強さは本物だ",accent:"#cc44ff",freq:210,audio:null},
+        {main:"今が一番きつい",support:"だから今が一番成長できる",impact:"俺は今日も進化する",accent:"#44cc66",freq:208,audio:null},
+        {main:"文句は言わない　言い訳もしない",support:"ただやるだけだ",impact:"俺は行動する",accent:"#ff4400",freq:212,audio:null},
+        {main:"俺の仕事は木と鉄と汗でできている",support:"逆境もそこで返す",impact:"俺の手は本物だ",accent:"#cc8833",freq:207,audio:null},
+        {main:"誰かに証明するためじゃない",support:"俺が俺を信じるために動く",impact:"俺は俺を信じる",accent:"#9966ff",freq:205,audio:null},
+        {main:"市場が下げても現場が荒れても",support:"俺の軸は動かない",impact:"俺の中心は揺るがない",accent:"#2266cc",freq:203,audio:null},
+        {main:"逃げた先に未来はない",support:"踏ん張った先にある",impact:"俺は踏み越える",accent:"#ffaa00",freq:210,audio:null},
+        {main:"折れそうな夜でも朝は来る",support:"俺はその朝を待つ男だ",impact:"俺には夜明けが見える",accent:"#ff66aa",freq:206,audio:null},
+        {main:"損切りも決断のうちだ",support:"引くときの潔さが次を作る",impact:"俺の判断は正しい",accent:"#33aadd",freq:204,audio:null},
+        {main:"俺が積んできた経験は誰にも奪えない",support:"それが本物の資産だ",impact:"俺の技術は永遠だ",accent:"#ddaa22",freq:208,audio:null},
+        {main:"感情に飲まれない",support:"感情を燃料にして駆ける",impact:"俺は感情を制する",accent:"#ff5500",freq:211,audio:null},
+        {main:"完璧じゃなくていい",support:"諦めないことが唯一の正解だ",impact:"俺は絶対に諦めない",accent:"#ff1144",freq:209,audio:null},
+        {main:"一人で抱えなくていい",support:"でも決めるのは俺だ",impact:"俺が決める",accent:"#7744ff",freq:207,audio:null},
+        {main:"今日の逆境が",support:"10年後の俺の一番の武器になる",impact:"この苦しさは資産だ",accent:"#ffbb00",freq:210,audio:null},
+        {main:"弱さを認める勇気が",support:"本当の強さの始まりだ",impact:"俺は強さに向かっている",accent:"#cc55cc",freq:205,audio:null},
+        {main:"俺の手で作ったものは本物だ",support:"それだけで十分戦える",impact:"俺の仕事は本物だ",accent:"#cc7722",freq:208,audio:null},
+        {main:"俺はまだ終わっていない",support:"終わるまで終わらない",impact:"俺は必ず勝つ",accent:"#ff0000",freq:212,audio:null}
+      ]
     }
   }
 };
@@ -451,13 +493,36 @@ const AudioHook = {
   setEnabled(on){
     this.enabled=!!on;
     try{ localStorage.setItem('daimon.audioEnabled', String(this.enabled)); }catch(e){}
-    if(!this.enabled) this.stop(); updateAudioUI();
+    if(!this.enabled) this.stop();
+    else if(activeMode==='adversity'&&activeSlides[current]) BinauralHook.play(activeSlides[current].freq);
+    updateAudioUI();
   },
   stop(){
     ++this.speechToken;
     if('speechSynthesis' in window) speechSynthesis.cancel();
     if(this.el){ try{ this.el.pause(); this.el.currentTime=0; this.el.removeAttribute('src'); this.el.load(); }catch(e){} }
+    BinauralHook.stop();
   },
+};
+const BinauralHook = {
+  ctx:null, gain:null, right:null,
+  ensure(freq){
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false;
+    try{
+      if(!this.ctx){
+        this.ctx=new AC();
+        if(typeof this.ctx.createStereoPanner!=='function'){ this.ctx.close().catch(()=>{}); this.ctx=null; return false; }
+        this.gain=this.ctx.createGain(); this.gain.gain.value=0; this.gain.connect(this.ctx.destination);
+        const left=this.ctx.createOscillator(), lp=this.ctx.createStereoPanner(); left.type='sine'; left.frequency.value=200; lp.pan.value=-1; left.connect(lp); lp.connect(this.gain); left.start();
+        this.right=this.ctx.createOscillator(); const rp=this.ctx.createStereoPanner(); this.right.type='sine'; rp.pan.value=1; this.right.connect(rp); rp.connect(this.gain); this.right.start();
+      }
+      this.right.frequency.setTargetAtTime(Number(freq)||208,this.ctx.currentTime,.3);
+      if(this.ctx.state==='suspended') this.ctx.resume().catch(()=>{});
+      return true;
+    }catch(_){ this.gain=null; this.right=null; if(this.ctx) this.ctx.close().catch(()=>{}); this.ctx=null; return false; }
+  },
+  play(freq){ if(AudioHook.enabled&&this.ensure(freq)) this.gain.gain.setTargetAtTime(.18,this.ctx.currentTime,.3); },
+  stop(){ if(this.gain&&this.ctx) this.gain.gain.setTargetAtTime(0,this.ctx.currentTime,.15); }
 };
 function updateAudioUI(){
   const b=document.getElementById('audioToggle'); if(!b) return;
@@ -580,6 +645,7 @@ function buildMode(){
     const page=document.createElement('div');
     page.className='vb-page mode-'+activeMode;
     page.dataset.idx=i;
+    if(s.accent) page.style.setProperty('--gold',s.accent);
     const src=IMAGES[s.image]||'';
     if(!src) page.classList.add('image-pending');
     const pos=IMAGE_POS[s.image];
@@ -637,6 +703,7 @@ function enterMorning(){
 
 function enterMode(){
   AudioHook.stop();
+  if(activeMode==='adversity') BinauralHook.ensure(activeSlides[0].freq);
   const timing=modeTiming();
   document.documentElement.style.setProperty('--trans', timing.trans+'ms');
   document.documentElement.style.setProperty('--impact', timing.impact+'ms');
@@ -668,6 +735,7 @@ function playSlide(n, jump){
     const page=pages[current]; if(!page) return;
     page.classList.add('show');                 // ①② upSettle
     AudioHook.playSlide(activeSlides[current], activeMode);
+    if(activeMode==='adversity') BinauralHook.play(activeSlides[current].freq);
     const affirm=page.querySelector('.ov-affirm');
     // ③はリフローを挟んでからplay（アニメ再発火を確実に）
     if(affirm){ affirm.classList.remove('play'); void affirm.offsetWidth; }

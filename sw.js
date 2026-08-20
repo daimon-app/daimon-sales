@@ -5,6 +5,8 @@ const VERSION = 'daimon-sales-v10-pwa-integrity';
 const MODE_IMAGES = ['work', 'night'].flatMap((mode) =>
   Array.from({ length: 12 }, (_, i) => `./assets/${mode}/${mode}${String(i + 1).padStart(2, '0')}.jpg`)
 );
+// Morning images and the adversity pack are embedded in index.html.
+const EMBEDDED_MODES = ['morning', 'adversity'];
 const SHELL = [
   './',
   './index.html',

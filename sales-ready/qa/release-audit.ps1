@@ -41,6 +41,10 @@ if ($index) {
     if ($index.Contains($term)) { Pass "index contains mode label: $term" } else { Fail "index missing mode label: $term" }
   }
   if ($index.Contains('逆境')) { Pass 'index contains adversity label' } else { Fail 'index contains no verified adversity label' }
+  if ($index -match 'data-go="adversity"') { Pass 'home exposes adversity route' } else { Fail 'home lacks adversity route' }
+  $adversityFrequencies = [regex]::Matches($index, 'freq:\s*\d+')
+  if ($adversityFrequencies.Count -eq 20) { Pass 'adversity contains 20 frequency-mapped slides' } else { Fail "adversity slide/frequency count=$($adversityFrequencies.Count), expected 20" }
+  if ($index -match 'const BinauralHook' -and $index -match "activeMode==='adversity'" -and $index -match 'BinauralHook\.stop\(\)') { Pass 'adversity binaural start/update/stop integration found' } else { Fail 'adversity binaural lifecycle incomplete' }
 
   if ($index -match 'audioToggle|音声 ON|音声 OFF') { Pass 'audio toggle marker found' } else { Fail 'audio toggle marker missing' }
   if ($index -match 'audioStop|停止') { Pass 'audio stop marker found' } else { Fail 'audio stop marker missing' }
