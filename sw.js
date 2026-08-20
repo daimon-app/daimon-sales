@@ -1,7 +1,7 @@
 /* DAIMON 販売版 — Service Worker
    index.html は network-first（最新優先）、その他アセットは stale-while-revalidate。
    中身を差し替えたら VERSION を上げる（daimon-sales-v1 → v2 ...）。 */
-const VERSION = 'daimon-sales-v9-images-audio';
+const VERSION = 'daimon-sales-v10-pwa-integrity';
 const MODE_IMAGES = ['work', 'night'].flatMap((mode) =>
   Array.from({ length: 12 }, (_, i) => `./assets/${mode}/${mode}${String(i + 1).padStart(2, '0')}.jpg`)
 );
@@ -16,11 +16,9 @@ const SHELL = [
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
-  e.waitUntil(
-    caches.open(VERSION).then((c) =>
-      Promise.all(SHELL.map((u) => c.add(u).catch(() => null)))
-    )
-  );
+  // Required release assets are atomic: a missing file must fail installation
+  // instead of creating a partially offline-capable release unnoticed.
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)));
 });
 
 self.addEventListener('activate', (e) => {

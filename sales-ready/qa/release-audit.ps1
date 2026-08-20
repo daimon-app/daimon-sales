@@ -36,6 +36,7 @@ if ($manifestRaw) {
 }
 
 if ($index) {
+  if ($index -match '<link\s+rel=["'']manifest["'']\s+href=["'']manifest\.json["'']') { Pass 'index links manifest.json' } else { Fail 'index does not link manifest.json' }
   foreach ($term in @('朝','仕事','夜')) {
     if ($index.Contains($term)) { Pass "index contains mode label: $term" } else { Fail "index missing mode label: $term" }
   }
@@ -45,7 +46,7 @@ if ($index) {
   if ($index -match 'audioStop|停止') { Pass 'audio stop marker found' } else { Fail 'audio stop marker missing' }
   if ($index -match 'localStorage') { Pass 'localStorage use detected; privacy inventory required' } else { Pass 'no localStorage marker detected' }
 
-  $storageMatches = [regex]::Matches($index, "localStorage\.(?:getItem|setItem|removeItem)\(['\"]([^'\"]+)['\"]")
+  $storageMatches = [regex]::Matches($index, 'localStorage\.(?:getItem|setItem|removeItem)\([''"]([^''"]+)[''"]')
   $storageKeys = @($storageMatches | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
   if ($storageKeys.Count -gt 0) {
     Pass ('localStorage keys: ' + ($storageKeys -join ', '))
@@ -57,10 +58,10 @@ if ($index) {
 }
 
 if ($sw) {
-  if ($sw -match 'work01') { Pass 'service worker references work assets' } else { Fail 'service worker lacks work asset marker' }
-  if ($sw -match 'night01') { Pass 'service worker references night assets' } else { Fail 'service worker lacks night asset marker' }
+  if ($sw -match "\['work',\s*'night'\]" -or $sw -match 'work01') { Pass 'service worker references work assets' } else { Fail 'service worker lacks work asset marker' }
+  if ($sw -match "\['work',\s*'night'\]" -or $sw -match 'night01') { Pass 'service worker references night assets' } else { Fail 'service worker lacks night asset marker' }
   if ($sw -match 'advers|逆境') { Pass 'service worker references adversity assets' } else { Fail 'service worker lacks adversity asset marker' }
-  if ($sw -match 'cache\.addAll\([^)]+\)\.catch|Promise\.allSettled|catch\(') { Warn 'service worker contains tolerant catch path; verify required cache failures cannot be silently ignored' }
+  if ($sw -match 'c\.addAll\(SHELL\)' -and $sw -notmatch 'SHELL\.map\([^\r\n]+catch') { Pass 'required shell cache is atomic' } else { Fail 'required shell cache can hide missing assets' }
 }
 
 $requiredWorkNight = foreach ($mode in @('work','night')) {
