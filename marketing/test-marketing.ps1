@@ -36,15 +36,18 @@ Check (-not $posts.Contains((Decode '6Ieq5YiG44Gu5pmv6Imy44Gr5pu/44GI44KJ44KM44K
 Check ($cmScripts.Contains((Decode 'TW9ybmluZ+WwgueUqENNLUM='))) 'CM-C is Morning-only'
 Check (Test-Path (Join-Path $repo 'marketing/brand/asset-rights-ledger.csv')) 'asset rights ledger exists'
 Check (Test-Path (Join-Path $repo 'marketing/release-gates.md')) 'release gate register exists'
-$ffprobe=(Get-ChildItem (Join-Path $repo '.tools/ffmpeg') -Recurse -Filter ffprobe.exe -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
-foreach($entry in $videos.GetEnumerator()){Check (Test-Path $entry.Value) "$($entry.Key) exists";if($ffprobe -and (Test-Path $entry.Value)){$json=& $ffprobe -v error -show_entries format=duration,format_name:stream=codec_name,width,height,r_frame_rate -of json $entry.Value | ConvertFrom-Json;$s=$json.streams[0];Check ($s.width -eq 1080 -and $s.height -eq 1920) "$($entry.Key) resolution";Check ($s.codec_name -eq 'h264') "$($entry.Key) H.264";Check ($s.r_frame_rate -eq '30/1') "$($entry.Key) 30fps"}};Check ([Math]::Abs([double](& $ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 $videos['CM-A'])-7.0) -lt .1) 'CM-A 7 seconds';Check ([Math]::Abs([double](& $ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 $videos['CM-C'])-21.0) -lt .1) 'CM-C 21 seconds matches SSOT'
+$ffprobeCommand=Get-Command ffprobe -ErrorAction SilentlyContinue
+$ffprobe=if($env:FFPROBE_PATH){$env:FFPROBE_PATH}elseif($ffprobeCommand){$ffprobeCommand.Source}else{(Get-ChildItem (Join-Path $repo '.tools/ffmpeg') -Recurse -Filter ffprobe.exe -ErrorAction SilentlyContinue | Select-Object -First 1).FullName}
+Check ([bool]($ffprobe -and (Test-Path $ffprobe))) 'ffprobe available'
+foreach($entry in $videos.GetEnumerator()){Check (Test-Path $entry.Value) "$($entry.Key) exists";if($ffprobe -and (Test-Path $entry.Value)){$json=& $ffprobe -v error -show_entries format=duration,format_name:stream=codec_name,width,height,r_frame_rate -of json $entry.Value | ConvertFrom-Json;$s=$json.streams[0];Check ($s.width -eq 1080 -and $s.height -eq 1920) "$($entry.Key) resolution";Check ($s.codec_name -eq 'h264') "$($entry.Key) H.264";Check ($s.r_frame_rate -eq '30/1') "$($entry.Key) 30fps"}}
+if($ffprobe){Check ([Math]::Abs([double](& $ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 $videos['CM-A'])-7.0) -lt .1) 'CM-A 7 seconds';Check ([Math]::Abs([double](& $ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 $videos['CM-C'])-21.0) -lt .1) 'CM-C 21 seconds matches SSOT'}
 $cmReadme=[IO.File]::ReadAllText((Join-Path $repo 'marketing/cm/README.md'),[Text.Encoding]::UTF8)
 Check ($cmReadme.Contains('deprecated')) 'legacy unverified CM-A blocked'
 $screens=Get-ChildItem (Join-Path $repo 'marketing/play-store/screenshots') -Filter '*.png'
 Check ($screens.Count -ge 4) 'Play screenshots >= 4'
 Add-Type -AssemblyName System.Drawing
 foreach($shot in $screens){$img=[Drawing.Image]::FromFile($shot.FullName);try{Check ($img.Width -eq 1080 -and $img.Height -eq 1920) "screenshot $($shot.Name) 1080x1920"}finally{$img.Dispose()}}
-$private=[IO.Path]::GetFullPath((Join-Path $repo '..\private-sales-workspace'))
+$private=if($env:DAIMON_MORNING_PRIVATE_ROOT){[IO.Path]::GetFullPath($env:DAIMON_MORNING_PRIVATE_ROOT)}else{[IO.Path]::GetFullPath((Join-Path $repo '..\private-sales-workspace'))}
 $aab=Join-Path $private 'app/build/outputs/bundle/release/app-release.aab'
 $apk=Join-Path $private 'app/build/outputs/apk/release/app-release.apk'
 $manifest=Join-Path $private 'app/src/main/AndroidManifest.xml'

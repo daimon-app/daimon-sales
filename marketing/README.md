@@ -23,8 +23,9 @@ Repositoryルートの `preview-marketing.cmd` をダブルクリックする。
 ## 公開前残作業
 
 - 正式な事業者・問い合わせ情報と法務ページ最終確認
-- production署名鍵、実機QA
-- 販売ソース保存用private Repository
+- upload-key署名済みAAB/APKは完成。残りはupload keyの本人オフライン保管とPlay App Signing登録
+- 販売ソースはprivate Repository `daimon-app/daimon-morning-sales` へ分離済み
+- signed APKの実機QAと、同一build由来のPlay画像・CM-B/Cへの差し替え
 - Play Consoleの価格・国・Data safety・IARC入力
 - SNS本人認証とハンドル確定
 - LP公開、審査提出、販売開始の本人承認
