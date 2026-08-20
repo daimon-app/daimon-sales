@@ -21,6 +21,7 @@ function Log([string]$Event,$Fields) { $item=[ordered]@{timestamp=Now;event=$Eve
 function Config { $path=Join-Path $Root 'config.json';if(!(Test-Path $path)){$path=Join-Path $Root 'config.example.json'};Get-Content -Raw $path|ConvertFrom-Json }
 function Resolve-CodexExecutable {
   $config=Config;$found=$env:CODEX_EXECUTABLE
+  if(!$found){$cached=Join-Path $Runtime 'bin\codex.exe';if(Test-Path $cached){$found=$cached}}
   if(!$found){$found=$config.codex_executable}
   if(!$found){$cmd=Get-Command codex -ErrorAction SilentlyContinue;if($cmd){$found=$cmd.Source}}
   if(!$found){$candidate=Get-ChildItem "${env:ProgramFiles}\WindowsApps\OpenAI.Codex_*\app\resources\codex.exe" -ErrorAction SilentlyContinue|Sort-Object FullName -Descending|Select-Object -First 1;if($candidate){$found=$candidate.FullName}}

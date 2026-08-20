@@ -18,6 +18,16 @@ function Get-AI5SpecialistHealth {
             connection = $(if ($fresh) { $record.connection } else { 'stale' })
             quota = $record.quota
             checked_at = $record.checked_at
+            preferredRoute = $record.preferred_route
+            appState = $record.app_state
+            appAutomation = $record.app_automation
+            webState = $record.web_state
+            appIdentity = $record.app_identity
+            appVersion = $record.app_version
+            publisher = $record.publisher
+            installSource = $record.install_source
+            appAuthenticated = [bool]$record.app_authenticated
+            webAuthenticated = [bool]$record.web_authenticated
         }
     } catch {
         return [ordered]@{ available = $false; connection = 'error'; quota = 'unknown' }

@@ -5,6 +5,8 @@ try {
     New-Item -ItemType Directory -Force $root | Out-Null
     Copy-Item -LiteralPath $source -Destination (Join-Path $root 'bridge.ps1')
     $script = Join-Path $root 'bridge.ps1'
+    $bridgeSource=Get-Content -Raw -Encoding UTF8 $script
+    if(!$bridgeSource.Contains("cached=Join-Path `$Runtime 'bin\codex.exe'")) { throw 'cached official Codex executable recovery missing' }
     $first = & $script enqueue -TaskId task_retry_test -Instruction 'read only' | ConvertFrom-Json
     if (!$first.accepted -or $first.retry) { throw 'initial enqueue failed' }
     $path = Join-Path $root 'queue\task_retry_test.json'

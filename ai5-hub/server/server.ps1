@@ -5,7 +5,7 @@ $CodeServerRoot = if ($global:AI5CodeServerRoot) { $global:AI5CodeServerRoot } e
 $ServerRoot = if ($env:AI5_SERVER_DATA_ROOT) { [IO.Path]::GetFullPath($env:AI5_SERVER_DATA_ROOT) } elseif ($global:AI5ServerRoot) { $global:AI5ServerRoot } else { $PSScriptRoot }
 $AppRoot = Split-Path $CodeServerRoot
 
-foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1','storage\Attachments.ps1','storage\LongMessageIngestion.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'notifications\PushNotification.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1','orchestrator\AutonomousLoop.ps1','orchestrator\TaskQueue.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1','command-center\CommandCenter.ps1','deployment\StableRuntime.ps1','github-bus\GitHubResultLoop.ps1')) {
+foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1','storage\Attachments.ps1','storage\LongMessageIngestion.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'notifications\PushNotification.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1','orchestrator\AutonomousLoop.ps1','orchestrator\TaskQueue.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\ManusAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1','command-center\CommandCenter.ps1','deployment\StableRuntime.ps1','github-bus\GitHubResultLoop.ps1')) {
     . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $CodeServerRoot $module))))
 }
 Initialize-AI5Store $ServerRoot
@@ -127,7 +127,13 @@ function Dispatch-Task($task) {
       if($task.result.status-eq'SUCCESS'){$task.validation=[ordered]@{passed=$true;checks=@{claude_review=$true};checked_at=[DateTime]::UtcNow.ToString('o')};$task|Add-Member -NotePropertyName agent_results -NotePropertyValue @($task.result) -Force;$task.assignedSecondary=@($task.assignedSecondary+'claude'|Select-Object -Unique);$task.assignedPrimary='codex';$task.assigned_agent='codex';Add-AI5LineMessage $task 'zero' 'CONTINUE' 'Claude報告を受領。Codexへ最終技術監査を依頼します。' 'routing';Set-AI5TaskStatus $task 'RETRYING' 'Codex最終技術監査へ継続';Dispatch-Task $task}
       else{$task|Add-Member -NotePropertyName agent_results -NotePropertyValue @($task.result) -Force;$task.assignedPrimary='codex';$task.assigned_agent='codex';$task.result.next_action='REROUTE';Add-AI5LineMessage $task 'zero' 'REWORK' 'Claude結果をCodexへ再配分します。' 'routing';Set-AI5TaskStatus $task 'RETRYING' 'Claude失敗のためCodexへ再振り分け';Dispatch-Task $task};return
     }
-    if ($task.assignedPrimary -in @('gemini','manus','notebooklm')) { $original=$task.assignedPrimary;$task.assignedPrimary='codex';$task.assigned_agent='codex';$task.assignedSecondary=@($task.assignedSecondary+$original|Select-Object -Unique);Set-AI5TaskStatus $task 'RETRYING' "$original をCodex管理の正式経路へ再振り分け" }
+    if($task.assignedPrimary-eq'manus'){
+      $plan=New-AI5ManusDispatchPlan $task (Get-AI5ManusHealth);$task|Add-Member manus_dispatch $plan -Force
+      if(!$plan.accepted){Fail-Task $task 'manus_unavailable' 'Manus WEB/APP route is unavailable';return}
+      Set-AI5TaskStatus $task 'RUNNING' "Manus $($plan.route)へPrivate Task Bus経由で投入";Add-AI5LineMessage $task 'manus' 'RUNNING' "Manus $($plan.route)経路でread-only Taskを開始しました。" 'routing' $plan;Save-AI5Task $task
+      try{Publish-AI5LocalTaskToGitHubBus $task|Out-Null;Invoke-AI5GitHubBusAutoSync 'Manus direct Task dispatch'|Out-Null}catch{Fail-Task $task 'manus_bus_unavailable' 'Manus Private Task Bus dispatch failed'};return
+    }
+    if ($task.assignedPrimary -in @('gemini','notebooklm')) { $original=$task.assignedPrimary;$task.assignedPrimary='codex';$task.assigned_agent='codex';$task.assignedSecondary=@($task.assignedSecondary+$original|Select-Object -Unique);Set-AI5TaskStatus $task 'RETRYING' "$original をCodex管理の正式経路へ再振り分け" }
     if ($task.assignedPrimary -ne 'codex') { Fail-Task $task 'adapter_unavailable' "$($task.assignedPrimary) adapter is not connected"; return }
     $health = Get-AI5CodexHealth
     if (!$health.available) { Fail-Task $task 'bridge_unavailable' 'Zero-Codex Bridge is unavailable'; return }
@@ -137,6 +143,16 @@ function Dispatch-Task($task) {
     } catch {
         Write-AI5Log 'errors' 'bridge_submit_failed' @{ task_id = $task.taskId; error = $_.Exception.Message }
         Fail-Task $task 'bridge_unavailable' 'Zero-Codex Bridge submission failed'
+    }
+}
+
+function Invoke-AI5ManusResultRecovery {
+    foreach($local in @(Get-AI5Tasks 100|Where-Object{$_.assignedPrimary-eq'manus'-and$_.status-in@('running','retrying')})){
+      $busTasks=@(Get-AI5GitHubBusTasks|Where-Object{$_.task_id-eq$local.taskId-or$_.parent_task_id-eq$local.taskId}|Sort-Object created_at);$busIds=@($busTasks.task_id);$result=Get-AI5GitHubBusResults|Where-Object{$_.ai-eq'manus'-and$_.task_id-in$busIds}|Select-Object -Last 1;if(!$result){continue}
+      $next=@(Get-AI5GitHubBusTasks|Where-Object{$_.parent_task_id-eq$result.task_id-and$_.status-in@('QUEUED','CLAIMED','RUNNING')}|Select-Object -Last 1)[0]
+      if($result.result-ne'PASS'-and$next-and$next.assigned_ai-eq'manus'){$local.status='retrying';$local.manus_dispatch.route='APP';$local.manus_dispatch.attempted=$true;Add-AI5LineMessage $local 'zero' 'REWORK' 'Manus WEB失敗を確認。APP fallbackへ1回だけ再投入します。' 'routing';Save-AI5Task $local;continue}
+      $local.result=ConvertFrom-AI5ManusBusResult $result;Add-AI5AgentReport $local 'manus' $(if($result.result-eq'PASS'){'COMPLETE'}else{'BLOCKED'}) "Manus $($local.manus_dispatch.route) read-only実行" $local.result.summary (@($local.result.issues)-join' / ') 'Zero統合監査'
+      if($result.result-eq'PASS'){$local.validation=[ordered]@{passed=$true;checks=[ordered]@{manus_result_bus=$true;idempotency=$true};checked_at=[DateTime]::UtcNow.ToString('o')};$judge=Invoke-AI5DoubleJudge $local;Set-AI5TaskStatus $local $(if($judge.decision-eq'COMPLETE'){'COMPLETED'}else{'FAILED'}) "Manus Result回収: Zero $($judge.decision)"}else{Fail-Task $local 'manus_route_failed' $local.result.summary};Save-AI5Task $local
     }
 }
 
@@ -227,6 +243,7 @@ try {
             if($due){try{Invoke-AI5ProjectScan -Fetch $true|Out-Null}catch{Write-AI5Log 'errors' 'project_scheduler_failed' @{error=$_.Exception.Message}}}
             try{Invoke-AI5QueuedTaskDispatch}catch{Write-AI5Log 'errors' 'queued_task_dispatch_failed' @{error=$_.Exception.Message}}
             try{Invoke-AI5AutonomousRedispatch}catch{Write-AI5Log 'errors' 'autonomous_redispatch_failed' @{error=$_.Exception.Message}}
+            try{Invoke-AI5ManusResultRecovery}catch{Write-AI5Log 'errors' 'manus_result_recovery_failed' @{error=$_.Exception.Message}}
             try{$published=0;foreach($terminal in @(Get-AI5Tasks 100|Where-Object{$_.result-and$_.status-in@('completed','failed','waiting_approval')-and[int]$_.github_bus_published_version-ne[Math]::Max(1,([int]$_.attempt+1))}|Select-Object -First 5)){$version=[Math]::Max(1,([int]$terminal.attempt+1));$publication=Publish-AI5LocalTaskToGitHubBus $terminal;$terminal|Add-Member github_bus_published_version $version -Force;Save-AI5Task $terminal;if($publication.published-eq'RESULT'){$published++}};if($published){Invoke-AI5GitHubBusAutoSync 'AI5 LINE Result and Decision sync'|Out-Null}}catch{Write-AI5Log 'errors' 'github_task_result_publish_failed' @{error=$_.Exception.Message}}
             try{$collected=Invoke-AI5GitHubResultCollector;if($collected.processed-gt0){Invoke-AI5GitHubBusAutoSync|Out-Null}}catch{Write-AI5Log 'errors' 'github_result_collector_failed' @{error=$_.Exception.Message}}
             if([DateTimeOffset]::Now-ge$NextApprovalScheduleAt){try{$null=Invoke-AI5ApprovalNotificationSchedule -Tasks @(Get-AI5Tasks 100)}catch{Write-AI5Log 'errors' 'approval_notification_schedule_failed' @{error=$_.Exception.Message}};$NextApprovalScheduleAt=[DateTimeOffset]::Now.AddSeconds(30)}
@@ -272,11 +289,11 @@ try {
                 $bridgeHealth = Get-AI5CodexHealth
                 $claudeHealth = Get-AI5ClaudeHealth
                 $geminiHealth = Get-AI5SpecialistHealth 'gemini'
-                $manusHealth = Get-AI5SpecialistHealth 'manus'
+                $manusHealth = Get-AI5ManusHealth
                 $notebookHealth = Get-AI5NotebookLMHealth
                 $codexState = if ($Mock -or $bridgeHealth.available) { 'ready' } else { 'offline' }
                 $codexConnection = if ($Mock) { 'mock' } elseif ($bridgeHealth.available) { 'official_cli' } else { 'not_connected' }
-                Send-Json $stream @{ mode = $(if ($Mock) { 'mock' } else { 'live' }); bridge = $bridgeHealth; agents = @{ zero = @{ state = 'ready'; connection = 'local' }; codex = @{ state = $codexState; connection = $codexConnection }; gemini = @{ state = $(if ($Mock -or $geminiHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $geminiHealth.connection });quota=$geminiHealth.quota }; claude = @{ state = $(if ($Mock -or $claudeHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $claudeHealth.connection });quota=$claudeHealth.quota }; manus = @{ state = $(if ($Mock -or $manusHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $manusHealth.connection });quota=$manusHealth.quota }; notebooklm = @{ state = $(if ($Mock -or $notebookHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $notebookHealth.connection });quota=$notebookHealth.quota;mode='read_only' } }; tasks = @(Get-AI5Tasks) }
+                Send-Json $stream @{ mode = $(if ($Mock) { 'mock' } else { 'live' }); bridge = $bridgeHealth; agents = @{ zero = @{ state = 'ready'; connection = 'local' }; codex = @{ state = $codexState; connection = $codexConnection }; gemini = @{ state = $(if ($Mock -or $geminiHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $geminiHealth.connection });quota=$geminiHealth.quota }; claude = @{ state = $(if ($Mock -or $claudeHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $claudeHealth.connection });quota=$claudeHealth.quota }; manus = @{ state = $(if ($Mock -or $manusHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $manusHealth.connection });quota=$manusHealth.quota;app=$manusHealth.app;web=$manusHealth.web;route=$manusHealth.route }; notebooklm = @{ state = $(if ($Mock -or $notebookHealth.available) { 'ready' } else { 'offline' }); connection = $(if ($Mock) { 'mock' } else { $notebookHealth.connection });quota=$notebookHealth.quota;mode='read_only' } }; tasks = @(Get-AI5Tasks) }
                 continue
             }
             if ($method -eq 'GET' -and $path -eq '/api/command-center') { Send-Json $stream (Get-AI5CommandCenter);continue }

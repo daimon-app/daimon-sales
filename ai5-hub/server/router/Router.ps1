@@ -5,6 +5,11 @@
   if($RequestedTarget-notin$allowedTargets){throw 'invalid_target'}
   $text = $Message.ToLowerInvariant()
   $primary = 'codex'; $secondary = @(); $kind = 'pc_task'; $intent='task'; $usesKnowledge=$false
+  $addressedAgent=$null
+  if($text -match '^\s*(?:manus|マナス)[\s、,:：]'){$addressedAgent='manus'}
+  elseif($text -match '^\s*(?:gemini|ジェミニ)[\s、,:：]'){$addressedAgent='gemini'}
+  elseif($text -match '^\s*(?:claude|クロちゃん|クロード)[\s、,:：]'){$addressedAgent='claude'}
+  elseif($text -match '^\s*(?:codex|コーデックス)[\s、,:：]'){$addressedAgent='codex'}
   if ($text -match '^(こんにちは|ありがとう|了解|おはよう|こんばんは)[。!！ ]*$') {$intent='conversation'}
   if ($text -match '^(何|なぜ|どうして|教えて|質問)') {$intent='question'}
   if ($text -match 'キャンセル|中止|停止して') {$intent='cancel'}
@@ -18,6 +23,7 @@
   if ($text -match '販売準備') { $secondary += @('gemini','claude','codex') }
   if ($usesKnowledge -and $primary -ne 'notebooklm') { $secondary += 'notebooklm' }
   if ($usesKnowledge -and $text -match '実装|コード|現在|正本|矛盾') { $secondary += 'claude' }
+  if($addressedAgent){$primary=$addressedAgent;$kind=@{codex='code';claude='review';gemini='research';manus='web_operation'}[$primary]}
   $approvalPatterns = [ordered]@{
     payment='課金|購入|決済|送金|契約|プラン変更'; destructive='削除|消去|reset --hard|push --force';
     credential='認証情報|パスワード|api.?key|トークン|アカウント変更'; external_send='メール送信|sns投稿|第三者へ送信'; external_publish='公開|本番公開|販売開始|リリース'
