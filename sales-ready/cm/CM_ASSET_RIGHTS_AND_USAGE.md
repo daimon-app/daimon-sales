@@ -1,6 +1,6 @@
 # DAIMON 4-mode CM Asset — Rights and Usage
 
-Status: `PRODUCTION INPUT READY / NOT PUBLISHED`
+Status: `TEASER VIDEO READY / PRODUCT DEMO FOOTAGE REQUIRED / NOT PUBLISHED`
 
 ## Asset
 
@@ -26,8 +26,15 @@ Status: `PRODUCTION INPUT READY / NOT PUBLISHED`
 ## Production blockers
 
 - verified phone screen recording
-- video encoder
 - final commercial-use font selection
 - Owner-approved CTA and destination
 - Owner approval before any SNS publication
 
+## Generated teaser masters
+
+- `exports/daimon-{6,15,30}s-vertical-nosub-v1.mp4`
+- `exports/daimon-{6,15,30}s-vertical-sub-ja-v1.mp4`
+- H.264 / 1080x1920 / yuv420p / 30 fps / silent
+- Japanese subtitle frames visually checked for rendering and safe-area placement
+
+These are atmospheric teaser masters. They do not replace the required verified four-mode screen recording.
