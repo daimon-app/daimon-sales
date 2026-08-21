@@ -129,12 +129,14 @@ Claudeを監査専用にせず、CodexとManusの両方を補助・代替でき�
 
 ## 9. 本人承認ゲート
 
+承認ポリシーの正本は `AI_AUTO_APPROVAL_SPEC.md` と `APPROVAL_POLICY.md`。安全・可逆・workspace限定で、金銭・公開・本人性・破壊を伴わない技術工程は `TECHNICAL_AUTO` とし、検査後にAIが承認して連続実行する。本人ゲートは `OWNER_MONEY / OWNER_PUBLISH / OWNER_IDENTITY / OWNER_IRREVERSIBLE` に限定する。
+
 以下は本人承認なしに実行しない。Fallback先にも承認権限は移らない。
 
 - 課金、購入、契約、広告出稿
 - 2FA、CAPTCHA、本人確認、OAuth等の本人承認
 - 公開SNS投稿、DM送信
-- main merge、本番公開、Google Play公開、販売開始
+- 保護されたmainへのmerge、本番公開、Google Play公開、販売開始
 - 不可逆操作、秘密情報の外部送信
 
 ## 10. GitHub正本化

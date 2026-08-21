@@ -4,7 +4,7 @@ AI5 HUBは、鉄兵がZeroだけへ自然文で指示し、Zeroが目的・安�
 
 AI5の最新版運用正本は [DAIMON AI5 MULTI-EXECUTION OS v4](./ZERO_SPEC.md) です。Zeroを常時稼働・リソースルーティング対象外とし、ClaudeをCodexとManus双方の第二実働エンジン兼独立監査役として扱います。
 
-Phase 3ではTask Engine、共通Result Schema、検査・再振分け、Repository Lock、4画面スマホUIを追加しました。Tailscale Serveのprivate HTTPSと本人認証は実働確認済みです。Android Pixel 10aとiPhoneではstandalone起動、本人認証、キーボード表示、Task送信、Codex施工、結果返却、再起動後復元まで実測PASSしました。モバイル回線とWindows実再起動後の自動復旧もPASSし、Phase 2.5の必須確認は完了しています。詳細は [MOBILE_SETUP.md](./MOBILE_SETUP.md) を参照してください。
+Phase 3ではTask Engine、共通Result Schema、検査・再振分け、Repository Lock、4画面スマホUIを追加しました。承認は5分類され、可逆な技術工程は `TECHNICAL_AUTO`、金銭・公開・本人操作・不可逆操作だけがOwner Gateになります。Tailscale Serveのprivate HTTPSと本人認証は実働確認済みです。Android Pixel 10aとiPhoneではstandalone起動、本人認証、キーボード表示、Task送信、Codex施工、結果返却、再起動後復元まで実測PASSしました。モバイル回線とWindows実再起動後の自動復旧もPASSし、Phase 2.5の必須確認は完了しています。詳細は [MOBILE_SETUP.md](./MOBILE_SETUP.md) を参照してください。
 
 PROJECT CONTROL基盤では `CHAT / PROJECTS / SYSTEM` のスマホ導線、GitHub保存用Project JSON、一覧・詳細・Timeline、検索・フィルタ、Project登録、AUTO制御、停止・再開日時、承認ゲート、Credit Protection、Project単位Single Writer、stale RUNNING復旧、Git同期・巡回APIを追加しました。安全のため既存・新規ProjectともAUTO初期値はOFFです。
 
@@ -119,7 +119,7 @@ FULL AUTONOMOUS LINE LOOPは各AIの共通Resultと短文report、Zero `COMPLETE
 - Web Push payloadは「承認待ち/完了/重大失敗」とHUB確認案内だけで、Task目的・結果・認証情報を外部Pushサービスへ送りません。
 - Web Pushの音付き対象は本人承認待ちだけです。10:00/12:00/15:00は未処理承認を1回に集約し、18:00以降は新規承認を短時間debounceします。通常完了はHUB内表示・badgeのみです。端末の実際の通知音はOS設定に依存します。
 - Secretらしき入力とログはマスクし、APIキーやCookieを保存しません。
-- 公開、課金、送金、購入、大量削除、認証変更、第三者送信、破壊的Git操作は承認境界で停止します。
+- 一般公開、課金、送金、購入、本人認証、大量・不可逆削除、破壊的Git操作はOwner Gateで停止します。通常のコード変更、検査、build、commit、許可済みbranchへの通常push、公開前準備はAIが検査して続行します。
 - `git push --force`、`git reset --hard`、無断main変更、無断公開・課金は実行しません。
 
 設定例は `integrations/codex/zero-codex-bridge/config.example.json`。実設定、queue、results、logs、runtimeはGit対象外です。

@@ -24,12 +24,8 @@
   if ($usesKnowledge -and $primary -ne 'notebooklm') { $secondary += 'notebooklm' }
   if ($usesKnowledge -and $text -match '実装|コード|現在|正本|矛盾') { $secondary += 'claude' }
   if($addressedAgent){$primary=$addressedAgent;$kind=@{codex='code';claude='review';gemini='research';manus='web_operation'}[$primary]}
-  $approvalPatterns = [ordered]@{
-    payment='課金|購入|決済|送金|契約|プラン変更'; destructive='削除|消去|reset --hard|push --force';
-    credential='認証情報|パスワード|api.?key|トークン|アカウント変更'; external_send='メール送信|sns投稿|第三者へ送信'; external_publish='公開|本番公開|販売開始|リリース'
-  }
-  $approvalType=$null
-  foreach($entry in $approvalPatterns.GetEnumerator()){if($text -match $entry.Value){$approvalType=$entry.Key;break}}
+  $riskEvaluation=Get-AI5ApprovalRisk $Message
+  $approvalType=if($riskEvaluation.approval_class-eq'TECHNICAL_AUTO'){$null}else{$riskEvaluation.approval_class}
   $automaticPrimary=$primary
   if($RequestedTarget-eq'all'){$primary='codex';$secondary=@('claude','gemini','manus','notebooklm');$kind='full_audit'}
   elseif($RequestedTarget-ne'auto'-and$RequestedTarget-ne'zero'){
@@ -42,9 +38,20 @@
     objective=$Message; intent=$intent; workType=$kind; primary=$primary; secondary=@($secondary|Select-Object -Unique|Where-Object{$_ -ne $primary});
     externalOperation=($kind -eq 'web_operation'); gitChange=($text -match 'git|github|コード|実装|修正');
     risk=if($approvalType){'high'}elseif($text -match '変更|修正|作成'){'medium'}else{'low'};
-    requiresApproval=[bool]$approvalType; approvalType=$approvalType;
+    requiresApproval=[bool]$approvalType; approvalType=$approvalType;approvalClass=$riskEvaluation.approval_class;riskEvaluation=$riskEvaluation;
     requestedTarget=$RequestedTarget; routingMode=$(if($RequestedTarget-in@('auto','zero')){'auto'}else{'direct_via_zero'}); automaticPrimary=$automaticPrimary;
     executionMode=if(@($secondary).Count-gt 1){'parallel_safe'}else{'sequential'};
     doneWhen=if($usesKnowledge){'出典付き資料回答・GitHub正本照合・Zeroの結論'}elseif($kind -eq 'research'){'情報取得・比較・Zeroの結論'}elseif($kind -eq 'review'){'監査結果と指摘の整理'}else{'作業結果と検査結果の確認'}
   }
+}
+
+function Get-AI5ApprovalRisk {
+  param([Parameter(Mandatory=$true)][string]$Message)
+  $text=$Message.ToLowerInvariant();$preparation=$text-match'準備|下書き|ドラフト|直前|公開前|dry.?run|read.?only|確認|検査|テスト'
+  $money=$text-match'購入|課金|決済|支払い|有料契約|プラン変更|広告費'
+  $publish=(!$preparation)-and($text-match'一般公開|本番公開|販売開始|公開する|リリース実行|sns.{0,8}(投稿|公開)|広告出稿開始|boost|public repository')
+  $identity=$text-match'captcha|生体認証|本人確認書類|本人確認|2fa|sms認証|規約同意|年齢確認'
+  $destructive=$text-match'大量削除|不可逆|irreversible|repository削除|リポジトリ削除|production database削除|本番データベース削除|secret破棄|reset --hard|push --force|履歴書き換え'
+  $class=if($destructive){'OWNER_IRREVERSIBLE'}elseif($money){'OWNER_MONEY'}elseif($publish){'OWNER_PUBLISH'}elseif($identity){'OWNER_IDENTITY'}else{'TECHNICAL_AUTO'}
+  [ordered]@{approval_class=$class;reversible=(!$destructive);external_effect=($money-or$publish-or$identity);money_effect=$money;public_effect=$publish;identity_required=$identity;destructive=$destructive;scope=$(if($class-eq'TECHNICAL_AUTO'){'workspace_or_preparation'}else{'external_owner_gate'});target=$(if($class-eq'TECHNICAL_AUTO'){'ai_executor'}else{'owner'});evidence=@('message classifier','risk flags');rollback_method=$(if($destructive){'none_confirmed'}elseif($publish){'unpublish_or_release_control'}elseif($money){'provider_cancellation_policy'}else{'git revert or restore previous state'})}
 }

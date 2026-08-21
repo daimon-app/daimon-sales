@@ -6,11 +6,10 @@ function Get-AI5ZeroApprovalReview {
     $recommended = 'APPROVE'
 
     switch ([string]$Route.approvalType) {
-        'external_publish' { $risks += '外部公開または本番公開を含む'; $checks += '公開範囲は実行直前に再確認する' }
-        'payment' { $risks += '料金・購入・契約が発生する可能性'; $recommended = 'REJECT'; $checks += '金額と契約条件は未承認' }
-        'destructive' { $risks += '削除または不可逆操作を含む'; $recommended = 'REJECT'; $checks += '復旧方法は実行前に必要' }
-        'credential' { $risks += '認証情報またはアカウント変更を含む'; $recommended = 'REJECT'; $checks += '秘密情報はHUBへ入力しない' }
-        'external_send' { $risks += '第三者への外部送信を含む'; $checks += '送信先と内容は本人確認が必要' }
+        'OWNER_PUBLISH' { $risks += '一般ユーザーへ公開されます'; $checks += '公開先と公開内容を確認してください' }
+        'OWNER_MONEY' { $risks += '料金・購入・契約が発生します'; $recommended = 'REJECT'; $checks += '金額と契約条件を確認してください' }
+        'OWNER_IRREVERSIBLE' { $risks += '元に戻せない操作です'; $recommended = 'REJECT'; $checks += '復旧不能であることを確認してください' }
+        'OWNER_IDENTITY' { $risks += '本人による認証または意思確認が必要です'; $recommended = 'REJECT'; $checks += 'CAPTCHA・2FA・本人確認は本人が操作してください' }
         default { $risks += '本人承認が必要な重要操作'; $recommended = 'REJECT' }
     }
 
@@ -23,4 +22,9 @@ function Get-AI5ZeroApprovalReview {
         reviewed_at = [DateTime]::UtcNow.ToString('o')
         is_human_approval = $false
     }
+}
+
+function New-AI5ApprovalEvidence {
+    param($Task,[string]$Executor='zero',[string]$Verifier='codex')
+    [ordered]@{request=[string]$Task.objective;classification=[string]$Task.route.approvalClass;risk_evaluation=$Task.route.riskEvaluation;executor=$Executor;test_result=@($Task.result.tests);verifier=$Verifier;approval_result=$(if($Task.requiresApproval){'OWNER_GATE'}else{'AI_APPROVED'});timestamp=[DateTime]::UtcNow.ToString('o');commit=[string]$Task.result.commitId;rollback_information=[string]$Task.route.riskEvaluation.rollback_method}
 }

@@ -2,15 +2,17 @@ function Initialize-AI5PushNotifications {param([string]$ServerRoot,[string]$App
 function Get-AI5PushPublicKey {if(!$script:PushAvailable){return $null};try{(& node $script:PushScript public-key $script:PushServerRoot|ConvertFrom-Json).publicKey}catch{$null}}
 function Save-AI5PushSubscription {param($Subscription);$endpoint=[string]$Subscription.endpoint;if($endpoint-notmatch'^https://'-or!$Subscription.keys.p256dh-or!$Subscription.keys.auth){throw'invalid_push_subscription'};$sha=[Security.Cryptography.SHA256]::Create();try{$id=([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($endpoint)))).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose()};$record=[ordered]@{endpoint=$endpoint;expirationTime=$Subscription.expirationTime;keys=[ordered]@{p256dh=[string]$Subscription.keys.p256dh;auth=[string]$Subscription.keys.auth}}|ConvertTo-Json -Depth 5;[IO.File]::WriteAllText((Join-Path $script:PushSubscriptions ($id+'.json')),$record,[Text.UTF8Encoding]::new($false));[ordered]@{subscribed=$true;background=$true}}
 function Send-AI5PushNotification {
-    param([string]$EventId,[ValidateSet('approval','critical')][string]$Kind)
+    param([string]$EventId,[ValidateSet('approval','critical','money','publish','identity','irreversible','complete')][string]$Kind,[string]$TaskId='')
     $subscription = Get-ChildItem $script:PushSubscriptions -Filter '*.json' -ErrorAction SilentlyContinue | Select-Object -First 1
     if (!$script:PushAvailable -or !$subscription) { return [ordered]@{sent=$false;reason='no_subscription'} }
     $safe = $EventId -replace '[^A-Za-z0-9_.-]','_'
     $marker = Join-Path $script:PushSent ($safe+'.sent')
     if (Test-Path $marker) { return [ordered]@{sent=$false;reason='duplicate'} }
     $payloadPath = Join-Path $script:PushRoot ($safe+'.payload.json')
-    $title = @{approval='AI5 HUB 本人操作が必要';critical='AI5 HUB 重大障害'}[$Kind]
-    $payload = [ordered]@{title=$title;body='詳細は本人認証後にAI5 HUBで確認してください。';tag=('ai5-'+$safe);url='/'} | ConvertTo-Json -Compress
+    $title = @{approval='AI5 HUB 本人操作が必要';critical='AI5 HUB 施工停止';money='AI5 HUB 支払い確認';publish='AI5 HUB 公開確認';identity='AI5 HUB 本人操作';irreversible='AI5 HUB 元に戻せない操作';complete='AI5 HUB 完了'}[$Kind]
+    $body=@{money='金額と契約条件を確認してください。';publish='一般公開される内容を確認してください。';identity='本人認証を完了してください。';irreversible='元に戻せない操作です。対象を確認してください。';critical='本人操作がないと施工を再開できません。';complete='施工が完了しました。'}[$Kind]
+    if(!$body){$body='本人の判断が必要な項目を確認してください。'}
+    $payload = [ordered]@{title=$title;body=$body;level=$Kind;tag=('ai5-'+$safe);url=$(if($TaskId){'/?approval='+[uri]::EscapeDataString($TaskId)}else{'/'})} | ConvertTo-Json -Compress
     [IO.File]::WriteAllText($payloadPath,$payload,[Text.UTF8Encoding]::new($false))
     try {
         $result = & node $script:PushScript send $script:PushServerRoot $payloadPath | ConvertFrom-Json
@@ -39,5 +41,6 @@ function Invoke-AI5ApprovalNotificationSchedule {
     }
     [IO.File]::WriteAllText($script:ApprovalScheduleState,($state|ConvertTo-Json -Depth 6),[Text.UTF8Encoding]::new($false))
     if(!$event){return [ordered]@{sent=$false;reason='not_due';pending=$pending.Count}}
-    $result=Send-AI5PushNotification $event 'approval';$result.pending=$pending.Count;$result.event=$event;$result
+    $first=@($pending|Sort-Object createdAt|Select-Object -First 1)[0];$class=[string]$first.route.approvalClass;$kind=@{OWNER_MONEY='money';OWNER_PUBLISH='publish';OWNER_IDENTITY='identity';OWNER_IRREVERSIBLE='irreversible'}[$class];if(!$kind){$kind='approval'}
+    $result=Send-AI5PushNotification $event $kind $first.taskId;$result.pending=$pending.Count;$result.event=$event;$result.taskId=$first.taskId;$result
 }
