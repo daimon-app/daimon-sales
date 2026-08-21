@@ -23,8 +23,9 @@ signing and rebuild/re-audit the artifact.
 ## Artifact evidence
 
 - Unsigned release AAB: BUILD PASS
-- SHA-256: `C97AF8C8E281E8793619FC693B3705C29CE30936C3DB5D958482BBDC883F9AE6`
-- Size: 5,284,054 bytes
+- SHA-256: `04DCEC86FA103200BFA77D019F95DCA6CDB71E077A660B29FE0B1EEED1427C81`
+- Size: 5,283,964 bytes
+- Reconciliation: the previous hash/size referred to an older unsigned build. The values above were independently matched between the current Gradle output and the delivered AAB on 2026-08-21. A signed build will have a new hash and must receive fresh evidence before upload.
 - Evidence: `android/BUILD_EVIDENCE_2026-08-20.md`
 - Production signing and Play upload: `OWNER_PHYSICAL_ACTION_REQUIRED`
 - Installed-device behavior: `UNVERIFIED`
