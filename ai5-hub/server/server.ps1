@@ -189,6 +189,12 @@ function Restore-AI5TaskFromStoredCodexResult($task) {
     return $true
 }
 
+function Get-AI5MachineIdentity {
+    $hostName = [Environment]::MachineName.ToUpperInvariant()
+    $displayName = if ($env:AI5_MACHINE_DISPLAY_NAME) { [string]$env:AI5_MACHINE_DISPLAY_NAME } elseif ($hostName -eq 'LAPTOP-32D9HNI7') { '富士通' } else { $hostName }
+    [ordered]@{ id = $hostName.ToLowerInvariant(); hostName = $hostName; displayName = $displayName; state = 'online'; checkedAt = [DateTime]::UtcNow.ToString('o') }
+}
+
 function Get-MobileHealth {
     $bridge = Get-AI5CodexHealth
     $worker = 'idle'
@@ -199,7 +205,7 @@ function Get-MobileHealth {
     }
     $tailscaleState = 'not_installed'
     try{$tailService=Get-Service -Name 'Tailscale' -ErrorAction Stop;$tailscaleState=if($tailService.Status-eq'Running'){'service_running_unverified'}else{'service_stopped'}}catch{}
-    return [ordered]@{ server = 'online'; localApi = 'online'; bridge = $(if ($bridge.available) { 'ready' } else { 'unavailable' }); codex = $(if ($bridge.available) { 'available' } else { 'unavailable' }); worker = $worker; remote = $tailscaleState }
+    return [ordered]@{ machine = (Get-AI5MachineIdentity); pc = 'online'; runtime = 'online'; server = 'online'; localApi = 'online'; bridge = $(if ($bridge.available) { 'ready' } else { 'unavailable' }); codex = $(if ($bridge.available) { 'available' } else { 'unavailable' }); worker = $worker; tailscale = $tailscaleState; serve = $(if($tailscaleState-eq'service_running_unverified'){'configured_unverified'}else{'unavailable'}); remote = $tailscaleState }
 }
 
 function New-Task($body, [string]$idem) {
@@ -301,7 +307,7 @@ try {
                 Send-Json $stream @{ error = 'csrf' } 403
                 continue
             }
-            if ($method -eq 'GET' -and $path -eq '/api/health') { Send-Json $stream @{ ok = $true; service = 'ai5-hub'; mock = $Mock; csrfToken = $Csrf; components = (Get-MobileHealth); deployment=(Get-AI5Deployment); time = [DateTime]::UtcNow.ToString('o') }; continue }
+            if ($method -eq 'GET' -and $path -eq '/api/health') {$mobileHealth=Get-MobileHealth;Send-Json $stream @{ ok = $true; service = 'ai5-hub'; mock = $Mock; csrfToken = $Csrf; machine=$mobileHealth.machine;components = $mobileHealth; deployment=(Get-AI5Deployment); time = [DateTime]::UtcNow.ToString('o') }; continue }
             if ($method -eq 'GET' -and $path -eq '/api/update-status') {Send-Json $stream (Get-AI5Deployment);continue}
             if ($method -eq 'GET' -and $path -eq '/api/status') {
                 $bridgeHealth = Get-AI5CodexHealth
