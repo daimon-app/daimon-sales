@@ -42,6 +42,32 @@ function ConvertFrom-AI5ManusBusResult {
     [ordered]@{task_id=[string]$BusResult.task_id;agent='manus';status=$(if($passed){'SUCCESS'}else{'FAILED'});summary=[string]$BusResult.summary;actions=@($BusResult.actions);evidence=@($BusResult.evidence);tests=@($BusResult.tests);changedFiles=@();issues=@($BusResult.blockers);recommendation=[string]$BusResult.recommended_next_action;needsRework=!$passed;needsApproval=[bool]$BusResult.approval_required;failureReason=$(if($passed){$null}else{(@($BusResult.blockers)-join' / ')});needs_human=[bool]$BusResult.approval_required;userActionRequired=[bool]$BusResult.approval_required;retryable=!$passed}
 }
 
+function Register-AI5ManusMeasuredHealth {
+    param(
+        [string]$Connection,
+        [string]$CheckedAt,
+        [string]$Quota = 'unknown',
+        [ValidateSet('APP', 'WEB', '')][string]$PreferredRoute = '',
+        [ValidateSet('PASS', 'FAIL', 'UNKNOWN')][string]$AppMeasurementResult = 'UNKNOWN',
+        [ValidateSet('PASS', 'FAIL', 'UNKNOWN')][string]$WebMeasurementResult = 'UNKNOWN',
+        [string]$AppAutomation = '',
+        [string]$AppIdentity = '',
+        [string]$AppVersion = '',
+        [string]$Publisher = '',
+        [string]$InstallSource = '',
+        [bool]$AppAuthenticated = $false,
+        [bool]$WebAuthenticated = $false
+    )
+    $appState = switch ($AppMeasurementResult) { 'PASS' { 'READY' } 'FAIL' { 'DEGRADED' } default { 'OFFLINE' } }
+    $webState = switch ($WebMeasurementResult) { 'PASS' { 'READY' } 'FAIL' { 'DEGRADED' } default { 'OFFLINE' } }
+    Set-AI5SpecialistHealthRecord -Agent 'manus' -Connection $Connection -CheckedAt $CheckedAt -Quota $Quota `
+        -PreferredRoute $PreferredRoute -AppState $appState -WebState $webState `
+        -AppMeasurementResult $AppMeasurementResult -WebMeasurementResult $WebMeasurementResult `
+        -AppAutomation $AppAutomation -AppIdentity $AppIdentity -AppVersion $AppVersion `
+        -Publisher $Publisher -InstallSource $InstallSource `
+        -AppAuthenticated $AppAuthenticated -WebAuthenticated $WebAuthenticated
+}
+
 function Get-AI5ManusHealth {
     $base=Get-AI5SpecialistHealth 'manus'
     $appState=if($base.appState){[string]$base.appState}elseif($base.connection-match'windows_app'){'READY'}else{'OFFLINE'}
