@@ -18,6 +18,7 @@ try {
         message = $message
         route = [pscustomobject]@{ risk = 'green' }
         requiresApproval = $false
+        projectContext = [pscustomobject]@{projectId='test';repository='test-repo';worktreePath='C:\test';gitRoot='C:\test';branch='test'}
     }
     $result = Submit-AI5CodexTask $task
     if (!$result.accepted) { throw 'UTF-8 envelope was not accepted' }
@@ -27,7 +28,8 @@ try {
     if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) { throw 'UTF-8 envelope contains a BOM' }
     $envelope = [IO.File]::ReadAllText($path, [Text.UTF8Encoding]::new($false)) | ConvertFrom-Json
     if ($envelope.instruction -cne $message) { throw 'Japanese instruction did not round-trip' }
-    if ($envelope.signature -cne (Get-AI5CodexSignature $envelope.task_id $envelope.instruction)) { throw 'UTF-8 signature mismatch' }
+    $contextJson=$envelope.project_context|ConvertTo-Json -Compress -Depth 10
+    if ($envelope.signature -cne (Get-AI5CodexSignature $envelope.task_id $envelope.instruction $contextJson)) { throw 'UTF-8 signature mismatch' }
     'UTF8_BRIDGE_TESTS_OK'
 } finally {
     if (Test-Path $root) { Remove-Item -LiteralPath $root -Recurse -Force }

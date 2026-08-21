@@ -5,7 +5,7 @@ function Initialize-AI5ProjectControl {
   if(!(Test-Path (Join-Path $script:PCRoot 'registry.json'))){Copy-Item (Join-Path $script:PCSourceRoot 'registry.json') (Join-Path $script:PCRoot 'registry.json')}
   Get-ChildItem (Join-Path $script:PCSourceRoot 'projects') -Filter '*.json'|ForEach-Object{$to=Join-Path $script:PCProjects $_.Name;if(!(Test-Path $to)){Copy-Item $_.FullName $to}}
   if(!(Test-Path $script:PCSchedulerPath)){Write-PCJson @{status='STOPPED';lastScan='';nextScan='';activeProject='';lastResult='';intervalMinutes=60} $script:PCSchedulerPath}
-  foreach($p in Get-AI5Projects){if('mode'-notin$p.autoExecution.psobject.Properties.Name){$p.autoExecution|Add-Member mode 'OFF'};$p.autoExecution.enabled=($p.autoExecution.mode-ne'OFF');if('sync'-notin$p.repository.psobject.Properties.Name){$p.repository|Add-Member sync ([pscustomobject]@{state='UNKNOWN';localHead='';remoteHead='';defaultHead='';ahead=0;behind=0;dirty=$false;checkedAt='';error=''})};if('execution'-notin$p.psobject.Properties.Name){$p|Add-Member execution ([pscustomobject]@{taskId='';lockId='';submittedAt='';resultRecoveredAt='';lastResult='';recoveryRequired=$false})}elseif('recoveryRequired'-notin$p.execution.psobject.Properties.Name){$p.execution|Add-Member recoveryRequired $false};if('autoRunsDate'-notin$p.executionPolicy.psobject.Properties.Name){$p.executionPolicy|Add-Member autoRunsDate ''; $p.executionPolicy|Add-Member autoRunsToday 0};Save-AI5Project $p}
+  foreach($p in Get-AI5Projects){if('mode'-notin$p.autoExecution.psobject.Properties.Name){$p.autoExecution|Add-Member mode 'OFF'};$p.autoExecution.enabled=($p.autoExecution.mode-ne'OFF');if('sync'-notin$p.repository.psobject.Properties.Name){$p.repository|Add-Member sync ([pscustomobject]@{state='UNKNOWN';localHead='';remoteHead='';defaultHead='';ahead=0;behind=0;dirty=$false;checkedAt='';error=''})};if('execution'-notin$p.psobject.Properties.Name){$p|Add-Member execution ([pscustomobject]@{taskId='';lockId='';submittedAt='';resultRecoveredAt='';lastResult='';recoveryRequired=$false})}elseif('recoveryRequired'-notin$p.execution.psobject.Properties.Name){$p.execution|Add-Member recoveryRequired $false};if('autoRunsDate'-notin$p.executionPolicy.psobject.Properties.Name){$p.executionPolicy|Add-Member autoRunsDate ''; $p.executionPolicy|Add-Member autoRunsToday 0};$p=Update-AI5ProjectWorkspaceMetadata $p;Save-AI5Project $p}
 }
 function Get-PCNow{[DateTimeOffset]::Now.ToString('o')}
 function Get-PCSafeId([string]$Id){if($Id-notmatch'^[a-z0-9][a-z0-9._-]{1,79}$'){throw'invalid_project_id'};$Id}
@@ -63,7 +63,23 @@ function Update-AI5ProjectStopCode($Project){
   elseif($Project.blockedBy-eq'ZERO'){$Project.stopCode='ZERO_STOPPED'}elseif($Project.blockedBy-eq'CODEX'){$Project.stopCode='CODEX_STOPPED'}elseif($Project.blockedBy-eq'CLAUDE'){$Project.stopCode='CLAUDE_STOPPED'}elseif($Project.blockedBy-eq'GEMINI'){$Project.stopCode='GEMINI_STOPPED'}elseif($Project.blockedBy-eq'MANUS'){$Project.stopCode='MANUS_STOPPED'}elseif($Project.blockedBy-eq'TEPPEI'){$Project.stopCode='TEPPEI_WAITING'}
   Save-AI5Project $Project;$Project
 }
-function Get-AI5ProjectRepoPath($Project){if($Project.repository.localPath){return[IO.Path]::GetFullPath($Project.repository.localPath)};$script:PCWorkspaceRoot}
+function Get-AI5ProjectRepoPath($Project){
+  if($Project.repository.worktreePath){return [IO.Path]::GetFullPath([string]$Project.repository.worktreePath)}
+  if($Project.repository.localPath){return [IO.Path]::GetFullPath([string]$Project.repository.localPath)}
+  $current=[IO.Path]::GetFullPath($script:PCWorkspaceRoot);$origin=(& git -C $current remote get-url origin 2>$null)-join''
+  if($Project.repository.name-and$origin-match('[/:]'+[regex]::Escape([string]$Project.repository.name)+'(?:\.git)?$')){return $current}
+  [IO.Path]::GetFullPath((Join-Path (Split-Path $current) ([string]$Project.repository.name)))
+}
+function Update-AI5ProjectWorkspaceMetadata($Project){
+  $path=Get-AI5ProjectRepoPath $Project
+  foreach($name in @('repositoryPath','worktreePath','gitRoot')){if($name-notin$Project.repository.psobject.Properties.Name){$Project.repository|Add-Member $name ''}}
+  if(Test-Path $path){$root=((& git -C $path rev-parse --show-toplevel 2>$null)-join'').Trim();if($root){$root=[IO.Path]::GetFullPath($root);$Project.repository.repositoryPath=$root;$Project.repository.worktreePath=$root;$Project.repository.gitRoot=$root;$branch=((& git -C $root branch --show-current 2>$null)-join'').Trim();$head=((& git -C $root rev-parse HEAD 2>$null)-join'').Trim();if($branch){$Project.repository.activeBranch=$branch};if($head){$Project.repository.latestCommit=$head}}}
+  $Project
+}
+function Get-AI5ProjectExecutionContext([string]$ProjectId){
+  if(!$ProjectId){return $null};$p=Get-AI5Project $ProjectId;if(!$p){throw'project_context_not_registered'};$p=Update-AI5ProjectWorkspaceMetadata $p;Save-AI5Project $p
+  [ordered]@{projectId=$p.projectId;repository=$p.repository.name;repositoryPath=$p.repository.repositoryPath;worktreePath=$p.repository.worktreePath;gitRoot=$p.repository.gitRoot;branch=$p.repository.activeBranch;head=$p.repository.latestCommit;requestedBy='AI5_HUB';autoExecution=$false}
+}
 function Get-AI5GitSnapshot($Project,[bool]$Fetch=$true){
   $root=Get-AI5ProjectRepoPath $Project;$branch=(& git -C $root branch --show-current 2>$null)-join'';if(!$branch){throw'local_repository_unavailable'}
   if($Fetch){& git -C $root fetch --quiet origin $branch 2>$null;if($LASTEXITCODE-ne0){throw'remote_fetch_failed'}}
@@ -83,7 +99,7 @@ function Get-AI5RepositoryCandidates([string]$Owner='daimon-app',$Candidates=$nu
   @($names|ForEach-Object{$parts=([string]$_)-split"`t";$name=$parts[0];if($name){@{owner=$Owner;name=$name;state=$(if($registered-contains$name){'REGISTERED'}elseif($parts[1]-eq'true'){'ARCHIVED'}else{'UNREGISTERED'})}}})
 }
 function New-AI5ProjectTask($Project){
-  $id='PC-'+$Project.projectId+'-'+([DateTime]::UtcNow.ToString('yyyyMMddHHmmss'));$context=[ordered]@{projectId=$Project.projectId;repository=$Project.repository.name;branch=$Project.repository.activeBranch;currentTask=$Project.currentTask;nextAction=$Project.nextAction;phase=$Project.phase;risk=$Project.executionPolicy.risk;costClass=$Project.executionPolicy.costClass;retryCount=$Project.executionPolicy.retryCount;lockId=$id;requestedBy='PROJECT_CONTROL';autoExecution=$true}
+  $Project=Update-AI5ProjectWorkspaceMetadata $Project;$id='PC-'+$Project.projectId+'-'+([DateTime]::UtcNow.ToString('yyyyMMddHHmmss'));$context=[ordered]@{projectId=$Project.projectId;repository=$Project.repository.name;repositoryPath=$Project.repository.repositoryPath;worktreePath=$Project.repository.worktreePath;gitRoot=$Project.repository.gitRoot;branch=$Project.repository.activeBranch;head=$Project.repository.latestCommit;currentTask=$Project.currentTask;nextAction=$Project.nextAction;phase=$Project.phase;risk=$Project.executionPolicy.risk;costClass=$Project.executionPolicy.costClass;retryCount=$Project.executionPolicy.retryCount;lockId=$id;requestedBy='PROJECT_CONTROL';autoExecution=$true}
   $instruction="PROJECT CONTROL task. Project: $($Project.projectId). Repository: $($Project.repository.name). Branch: $($Project.repository.activeBranch). Current task: $($Project.currentTask). Next action: $($Project.nextAction). Preserve unrelated work, run relevant tests, and report structured results."
   $body=[pscustomobject]@{taskId=('task_'+($id-replace'[^A-Za-z0-9_.-]','_'));message=$instruction;source='PROJECT_CONTROL';priority='normal';conversationId='project-control';constraints=@('no main merge','no production publish')};$task=New-Task $body $id;$task|Add-Member projectContext $context;Save-AI5Task $task;$task
 }

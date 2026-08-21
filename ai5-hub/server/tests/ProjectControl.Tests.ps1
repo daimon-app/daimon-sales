@@ -29,7 +29,7 @@ try{
   for($i=1;$i-le100;$i++){New-AI5Project ([pscustomobject]@{projectId=('bulk-{0:d3}'-f$i);name="Bulk $i";repository=''})|Out-Null};Assert-PC ((Get-AI5Projects).Count-ge103) '100 project display source failed'
   $offlineShell=Get-Content -Raw (Join-Path $appRoot 'app.js');Assert-PC ($offlineShell-match'AI5 Runtimeへ再接続中'-and$offlineShell-match'PC本体の停止とは未確定'-and$offlineShell-match'refreshProjects') 'Partial failure / reconnect UI regression failed'
   Assert-PC ($offlineShell-match"state.mode==='offline'\|\|state.statusDegraded"-and$offlineShell-match'PCとAI5 Runtimeはオンラインです') 'Automatic reconnect or partial status isolation missing'
-  $sw=Get-Content -Raw (Join-Path $appRoot 'service-worker.js');Assert-PC ($sw-match'fetch'-and$sw-match'ai5-hub-v54'-and$sw-match'if\(response.ok\)') 'PWA safe cache version failed'
+  $sw=Get-Content -Raw (Join-Path $appRoot 'service-worker.js');Assert-PC ($sw-match'fetch'-and$sw-match'ai5-hub-v55'-and$sw-match'if\(response.ok\)') 'PWA safe cache version failed'
   $appJs=Get-Content -Raw (Join-Path $appRoot 'app.js');Assert-PC ($appJs-match"value.error==='csrf'"-and$appJs-match'allowCsrfRefresh') 'CSRF restart recovery missing'
   'PROJECT_CONTROL_TESTS_OK'
 }finally{if(Test-Path $temp){Remove-Item -Recurse -Force $temp}}

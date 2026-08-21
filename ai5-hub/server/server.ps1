@@ -114,7 +114,7 @@ function Execute-Mock($task) {
 
 function Fail-Task($task, [string]$type, [string]$summary) {
     $task | Add-Member -NotePropertyName errorType -NotePropertyValue $type -Force
-    $task.result = [ordered]@{ status = 'failed'; summary = $summary; details = @(); filesChanged = @(); tests = @(); warnings = @(); failureReason = $type; retryable = ($type -in @('bridge_unavailable', 'codex_unavailable', 'timeout')); userActionRequired = ($type -eq 'authentication_failed') }
+    $task.result = [ordered]@{ status = 'failed'; summary = $summary; details = @(); filesChanged = @(); tests = @(); warnings = @(); failureReason = $type; retryable = ($type -in @('bridge_unavailable', 'codex_unavailable', 'timeout','UNTRUSTED_WORKDIR')); next_action=$(if($type-eq'UNTRUSTED_WORKDIR'){'REPAIR_ENVIRONMENT_AND_RETRY'}else{'ESCALATE_ZERO'}); userActionRequired = ($type -eq 'authentication_failed') }
     Update-State $task 'failed' $summary
 }
 
@@ -141,8 +141,12 @@ function Dispatch-Task($task) {
         $submitted = Submit-AI5CodexTask $task
         if (!$submitted.workerStarted) { Fail-Task $task 'bridge_unavailable' 'Codex worker could not start' }
     } catch {
-        Write-AI5Log 'errors' 'bridge_submit_failed' @{ task_id = $task.taskId; error = $_.Exception.Message }
-        Fail-Task $task 'bridge_unavailable' 'Zero-Codex Bridge submission failed'
+        $errorText=$_.Exception.Message;$type=if($errorText-match'PROJECT_CONTEXT_MISSING|project_context'){'project_context_missing'}elseif($errorText-match'UNTRUSTED_WORKDIR|trusted directory'){'UNTRUSTED_WORKDIR'}else{'bridge_unavailable'}
+        Write-AI5Log 'errors' 'bridge_submit_failed' @{ task_id = $task.taskId; error = $errorText;classification=$type }
+        if($type-eq'UNTRUSTED_WORKDIR'-and$task.project_id){
+          try{$task.projectContext=Get-AI5ProjectExecutionContext ([string]$task.project_id);Add-AI5LineMessage $task 'codex' 'REWORK' '作業場所を正本Projectから復元し、施工を自動再開しました。' 'environment_repair';Set-AI5TaskStatus $task 'RETRYING' 'REPAIR_ENVIRONMENT_AND_RETRY';$repaired=Submit-AI5CodexTask $task;if($repaired.workerStarted){return}}catch{Write-AI5Log 'errors' 'worktree_repair_failed' @{task_id=$task.taskId;error=$_.Exception.Message}}
+        }
+        Fail-Task $task $type $(if($type-eq'UNTRUSTED_WORKDIR'){'Codex作業場所の認識に失敗。自動修復が必要です。'}elseif($type-eq'project_context_missing'){'施工先Projectが未指定のため安全停止しました。'}else{'Zero-Codex Bridge submission failed'})
     }
 }
 
@@ -224,6 +228,7 @@ function New-Task($body, [string]$idem) {
         children=@();idempotencyKey = $idem; created_at=$now;updated_at=$now;createdAt = $now; updatedAt = $now
     }
     $null=Initialize-AI5LoopTask $task
+    if($task.project_id){$task|Add-Member -NotePropertyName projectContext -NotePropertyValue (Get-AI5ProjectExecutionContext ([string]$task.project_id)) -Force}
     Add-AI5LineMessage $task 'zero' 'PLAN' "目的を整理しました。$($route.primary)を中心に開始します。" 'plan' @{target=$route.requestedTarget;doneWhen=$route.doneWhen}
     $task.children=New-AI5Children $task $route
     $task.field_decision=Get-AI5FieldModeDecision $route $task.field_mode

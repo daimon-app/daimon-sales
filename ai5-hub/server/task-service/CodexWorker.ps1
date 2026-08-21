@@ -30,19 +30,20 @@ function Write-Utf8Json($value, [string]$path, [int]$depth = 15) {
 }
 
 function Resolve-ProjectWorkspace($context) {
-    if (!$context) { return $null }
+    if (!$context -or !$context.projectId) { throw 'PROJECT_CONTEXT_MISSING: Codex requires a registered Project and canonical worktree' }
     $repository = [string]$context.repository
     if ($repository -notmatch '^[A-Za-z0-9_.-]{2,100}$') { throw 'Invalid project repository name' }
-    $currentRoot = [IO.Path]::GetFullPath((Split-Path $AppRoot))
-    $origin = (& git -C $currentRoot remote get-url origin 2>$null) -join ''
-    $currentMatches = $origin -match ('[/:]' + [regex]::Escape($repository) + '(?:\.git)?$')
-    $candidate = if ($currentMatches) { $currentRoot } else { Join-Path (Split-Path $currentRoot) $repository }
+    $candidate = if($context.worktreePath){[string]$context.worktreePath}elseif($context.repositoryPath){[string]$context.repositoryPath}else{throw 'PROJECT_CONTEXT_MISSING: canonical worktree is absent'}
     $candidate = [IO.Path]::GetFullPath($candidate)
     $allowedRoot = [IO.Path]::GetFullPath((Join-Path $UserHome 'Documents\GitHub')).TrimEnd('\') + '\'
-    if (!$candidate.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase) -or !(Test-Path (Join-Path $candidate '.git'))) { throw 'Project workspace is not an approved Git worktree' }
+    if (!$candidate.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase) -or !(Test-Path $candidate)) { throw 'UNTRUSTED_WORKDIR: canonical worktree is outside the repository allowlist or missing' }
+    $gitRoot=((& git -C $candidate rev-parse --show-toplevel 2>$null)-join'').Trim();if(!$gitRoot){throw'UNTRUSTED_WORKDIR: git root unavailable'};$gitRoot=[IO.Path]::GetFullPath($gitRoot)
+    if($gitRoot-ne$candidate-or($context.gitRoot-and[IO.Path]::GetFullPath([string]$context.gitRoot)-ne$gitRoot)){throw'UNTRUSTED_WORKDIR: canonical worktree and git root do not match'}
+    $origin=((& git -C $gitRoot remote get-url origin 2>$null)-join'').Trim();if(!$origin-or$origin-notmatch('[/:]'+[regex]::Escape($repository)+'(?:\.git)?$')){throw'UNTRUSTED_WORKDIR: repository origin does not match signed Project context'}
     $branch = (& git -C $candidate branch --show-current 2>$null) -join ''
     if (!$branch -or ($context.branch -and $branch -ne [string]$context.branch)) { throw 'Project workspace branch does not match signed context' }
-    return $candidate
+    $head=((& git -C $candidate rev-parse HEAD 2>$null)-join'').Trim();$status=@(& git -C $candidate status --short 2>$null)
+    [pscustomobject]@{path=$candidate;gitRoot=$gitRoot;branch=$branch;head=$head;status=$status;trusted=$true;repository=$repository;projectId=[string]$context.projectId}
 }
 
 function Get-Signature($id, $instruction, [string]$contextJson=$null) {
@@ -150,7 +151,10 @@ try {
         Set-TaskState $currentTask $currentTaskPath 'planning' 'Zero prepared a structured Codex instruction'
         Set-TaskState $currentTask $currentTaskPath 'running' 'Codex execution started'
 
-        $workspace = Resolve-ProjectWorkspace $envelope.project_context
+        $preflight = Resolve-ProjectWorkspace $envelope.project_context
+        Set-TaskProperty $currentTask 'worktree_preflight' ([ordered]@{projectId=$preflight.projectId;repository=$preflight.repository;expectedWorktree=[string]$envelope.project_context.worktreePath;actualCwd=$preflight.path;gitRoot=$preflight.gitRoot;branch=$preflight.branch;head=$preflight.head;gitStatus=@($preflight.status);trusted=$preflight.trusted;checkedAt=[DateTime]::UtcNow.ToString('o')})
+        Save-Task $currentTask $currentTaskPath;Write-WorkerLog 'codex_worktree_preflight_passed' $currentTask.worktree_preflight
+        $workspace = $preflight.path
         & "$bridge\bridge.ps1" enqueue -TaskId $envelope.task_id -Instruction $envelope.instruction -Workspace $workspace | Out-Null
         $result = & "$bridge\bridge.ps1" run-once | ConvertFrom-Json
         if (!$result -or $result.task_id -ne $envelope.task_id) {
@@ -223,13 +227,14 @@ try {
             $null=Initialize-AI5LoopTask $currentTask
             Add-AI5AgentReport $currentTask 'codex' 'FAILED' '施工・検査' $summary ([string]$result.error) '安全な自動再施工またはZero再配分'
             Set-TaskProperty $currentTask 'errorType' 'task_failed'
-            $fingerprintSource = if ($result.error) { [string]$result.error } else { 'task_failed' }
+            $untrusted=([string]$result.error)-match'(?i)(not inside a trusted directory|UNTRUSTED_WORKDIR|git root unavailable)';if($untrusted){Set-TaskProperty $currentTask 'errorType' 'UNTRUSTED_WORKDIR';$currentTask.result.failureReason='UNTRUSTED_WORKDIR';$currentTask.result.next_action='REPAIR_ENVIRONMENT_AND_RETRY';Add-AI5LineMessage $currentTask 'codex' 'REWORK' '作業場所の認識に失敗。canonical worktreeを自動修復します。本人操作は不要です。' 'environment_repair'}
+            $fingerprintSource = if($untrusted){'UNTRUSTED_WORKDIR'}elseif ($result.error) { [string]$result.error } else { 'task_failed' }
             $sha = [Security.Cryptography.SHA256]::Create()
             try { $fingerprint = ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($fingerprintSource)))).Replace('-', '').ToLowerInvariant() } finally { $sha.Dispose() }
             $seen = @($currentTask.failure_fingerprints)
             Set-TaskProperty $currentTask 'failure_fingerprints' @($seen + $fingerprint)
             $repeatCount = @($seen | Where-Object { $_ -eq $fingerprint }).Count
-            $canRetry = [bool]$result.retryable -and ![bool]$result.human_action_required -and [int]$currentTask.attempt -lt [int]$currentTask.max_attempts -and $repeatCount -lt 2
+            $canRetry = !$untrusted -and [bool]$result.retryable -and ![bool]$result.human_action_required -and [int]$currentTask.attempt -lt [int]$currentTask.max_attempts -and $repeatCount -lt 2
             if ($canRetry) {
                 Set-TaskState $currentTask $currentTaskPath 'retrying' 'Codex failure classified; safe retry queued'
                 & "$bridge\bridge.ps1" enqueue -TaskId $envelope.task_id -Instruction $envelope.instruction -Workspace $workspace -Retry | Out-Null
@@ -239,7 +244,7 @@ try {
                 $currentEnvelopePath = $null
                 continue
             }
-            Set-TaskState $currentTask $currentTaskPath 'failed' $(if($repeatCount-ge2){'Repeated Codex failure stopped'}else{'Codex execution failed'})
+            Set-TaskState $currentTask $currentTaskPath 'failed' $(if($untrusted){'Canonical worktree repair required before retry'}elseif($repeatCount-ge2){'Repeated Codex failure stopped'}else{'Codex execution failed'})
         }
 
         Save-Task $currentTask $currentTaskPath

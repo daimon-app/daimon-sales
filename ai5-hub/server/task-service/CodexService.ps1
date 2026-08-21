@@ -108,6 +108,8 @@ function Start-AI5CodexWorker {
 
 function Submit-AI5CodexTask {
     param($Task)
+    if($Task.project_id-and(Get-Command Get-AI5ProjectExecutionContext -ErrorAction SilentlyContinue)){$Task|Add-Member -NotePropertyName projectContext -NotePropertyValue (Get-AI5ProjectExecutionContext ([string]$Task.project_id)) -Force;Save-AI5Task $Task}
+    if(!$Task.projectContext){throw 'PROJECT_CONTEXT_MISSING: registered Project is required before Codex dispatch'}
     $instruction = Get-AI5CodexInstruction $Task
     $context = if($Task.projectContext){$Task.projectContext}else{$null}
     $contextJson = if($context){$context|ConvertTo-Json -Compress -Depth 10}else{''}

@@ -45,7 +45,8 @@ function Execute([string]$Text,[string]$WorkspaceOverride) {
     $workspace=[IO.Path]::GetFullPath($WorkspaceOverride)
     $allowedRoot=[IO.Path]::GetFullPath((Join-Path $env:USERPROFILE 'Documents\GitHub')).TrimEnd('\')+'\'
     if(!$workspace.StartsWith($allowedRoot,[StringComparison]::OrdinalIgnoreCase)){throw 'Project workspace is outside the approved GitHub root'}
-    if(!(Test-Path (Join-Path $workspace '.git'))){throw 'Project workspace is not a Git worktree'}
+    $gitRoot=((& git -C $workspace rev-parse --show-toplevel 2>$null)-join'').Trim()
+    if(!$gitRoot-or[IO.Path]::GetFullPath($gitRoot)-ne$workspace){throw 'UNTRUSTED_WORKDIR: Project workspace is not the canonical Git worktree'}
   }
   New-Item -ItemType Directory -Force $workspace|Out-Null
   $output=Join-Path $Runtime 'last.json';$events=Join-Path $Runtime 'events.jsonl';$errors=Join-Path $Runtime 'stderr.txt';Remove-Item -LiteralPath $output -Force -ErrorAction SilentlyContinue
@@ -54,7 +55,7 @@ function Execute([string]$Text,[string]$WorkspaceOverride) {
   $prompt="Perform only the requested safe local task. Never modify unrelated files, credentials, system settings, remotes, or main. Verify completion. Return schema JSON with evidence. Use failed when impossible.`nTASK:`n$Text"
   $input=Join-Path $Runtime 'prompt.txt';[IO.File]::WriteAllText($input,$prompt,[Text.UTF8Encoding]::new($false));$arguments+='-'
   $pathValue=$env:PATH;Remove-Item Env:PATH -ErrorAction SilentlyContinue;$env:Path=$pathValue
-  $process=Start-Process -FilePath $exe -ArgumentList $arguments -NoNewWindow -PassThru -RedirectStandardInput $input -RedirectStandardOutput $events -RedirectStandardError $errors
+  $process=Start-Process -FilePath $exe -ArgumentList $arguments -WorkingDirectory $workspace -NoNewWindow -PassThru -RedirectStandardInput $input -RedirectStandardOutput $events -RedirectStandardError $errors
   $timeout=[Math]::Max(1,[int]$config.timeout_seconds)*1000
   if(!$process.WaitForExit($timeout)){$process.Kill();$process.WaitForExit();return [ordered]@{status='failed';result='';error='Codex execution timed out';details=@();files_changed=@();tests=@();warnings=@();commit_id='';retryable=$true;human_action_required=$false;session=$null;code=124}}
   $exitCode=$process.ExitCode
