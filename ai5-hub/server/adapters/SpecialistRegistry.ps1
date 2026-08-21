@@ -69,6 +69,8 @@ function Set-AI5SpecialistHealthRecord {
         install_source = $InstallSource
         app_authenticated = [bool]$AppAuthenticated
         web_authenticated = [bool]$WebAuthenticated
+        app_measurement_result = $AppMeasurementResult
+        web_measurement_result = $WebMeasurementResult
     }
     $path = Join-Path $script:AgentRegistryRoot ($Agent + '.json')
     ($record | ConvertTo-Json -Depth 5) | Set-Content -Encoding UTF8 -LiteralPath $path
@@ -83,16 +85,23 @@ function Get-AI5SpecialistHealth {
     }
     try {
         $record = Get-Content -Raw -Encoding UTF8 $path | ConvertFrom-Json
-        $fresh = ([DateTime]::UtcNow - (ConvertTo-AI5UtcDateTime $record.checked_at)).TotalHours -lt 24
+        $checkedAtUtc = ConvertTo-AI5UtcDateTime $record.checked_at
+        $appMeasurementResult = if ($record.app_measurement_result) { [string]$record.app_measurement_result } else { 'UNKNOWN' }
+        $webMeasurementResult = if ($record.web_measurement_result) { [string]$record.web_measurement_result } else { 'UNKNOWN' }
+        $appState = Resolve-AI5SpecialistMeasuredState ([string]$record.app_state) $appMeasurementResult $checkedAtUtc
+        $webState = Resolve-AI5SpecialistMeasuredState ([string]$record.web_state) $webMeasurementResult $checkedAtUtc
+        $fresh = $appState -eq 'READY' -or $webState -eq 'READY'
         return [ordered]@{
             available = $fresh
             connection = $(if ($fresh) { $record.connection } else { 'stale' })
             quota = $record.quota
             checked_at = $record.checked_at
             preferredRoute = $record.preferred_route
-            appState = $record.app_state
+            appState = $appState
             appAutomation = $record.app_automation
-            webState = $record.web_state
+            webState = $webState
+            appMeasurementResult = $appMeasurementResult
+            webMeasurementResult = $webMeasurementResult
             appIdentity = $record.app_identity
             appVersion = $record.app_version
             publisher = $record.publisher

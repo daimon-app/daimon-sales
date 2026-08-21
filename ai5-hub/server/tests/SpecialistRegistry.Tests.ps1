@@ -30,6 +30,14 @@ try {
   $freshRead=Get-AI5SpecialistHealth 'notebooklm'
   if(!$freshRead.available-or$freshRead.appState-ne'READY'-or$freshRead.quota-ne'10/50'){throw'fresh READY record did not round-trip through Get-AI5SpecialistHealth'}
 
+  # READY must expire when read, even when the persisted record was fresh at write time.
+  $notebookPath=Join-Path (Join-Path $root 'runtime\agents') 'notebooklm.json'
+  $persisted=Get-Content -Raw -Encoding UTF8 $notebookPath|ConvertFrom-Json
+  $persisted.checked_at=[DateTime]::UtcNow.AddHours(-2).ToString('o')
+  $persisted|ConvertTo-Json -Depth 5|Set-Content -Encoding UTF8 -LiteralPath $notebookPath
+  $expiredRead=Get-AI5SpecialistHealth 'notebooklm'
+  if($expiredRead.available-or$expiredRead.appState-ne'OFFLINE'-or$expiredRead.connection-ne'stale'){throw'READY record did not expire on read'}
+
   'SPECIALIST_REGISTRY_TESTS_OK'
 } finally {
   if(Test-Path $root){Remove-Item -LiteralPath $root -Recurse -Force}
