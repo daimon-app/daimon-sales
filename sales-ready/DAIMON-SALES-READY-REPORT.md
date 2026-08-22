@@ -48,9 +48,9 @@ Core: 「ズレる → 気付く → 戻る」.
 Not positioned as medical treatment, psychotherapy, diagnosis, success guarantee, wealth guarantee, or a generic affirmation audio player.
 
 ## Price
-Recommended M02 launch: **¥980 one-time / Android / no ads**.
+Current owner decision (2026-08-22): **free download + ¥2,500/month auto-renewing subscription / Android / no ads**.
 
-Reason: current release value is primarily a finite on-device experience. Subscription `¥2,500/month` is deferred until real recurring service value exists.
+The earlier ¥980 one-time recommendation is **DEPRECATED**. Billing/server verification and recurring-value truth are required before sale.
 
 ## LP
 Buyer-facing copy, mode explanation, FAQ direction and CTA rules are prepared in `sales-ready/SALES_READY_PACK.md`.
@@ -120,7 +120,7 @@ Required evidence:
 ### First-time buyer view
 - Meaning in seconds: PASS at copy/design level.
 - Suspicion/overclaim risk: PASS if non-medical/no-guarantee wording retained.
-- Price coherence: PASS for ¥980 recommendation.
+- Price coherence: CONDITIONAL for ¥2,500/month pending final Play configuration and buyer-facing recurring-value verification.
 - How to use: CONDITIONAL, onboarding needs release verification.
 - Four-mode value: IMPLEMENTATION PASS at code/static-browser level on `product/daimon-four-mode-ready`; device/audio/offline certification remains UNVERIFIED.
 - Post-purchase navigation: CONDITIONAL, device QA pending.
@@ -138,7 +138,7 @@ Only facts Zero cannot truthfully invent:
 - required address/phone handling
 - support email/contact route
 - target sale countries
-- final acceptance of ¥980 one-time price
+- final Play Console confirmation of the ¥2,500/month base plan
 - final refund/cancellation commercial policy after store/legal alignment
 
 ## SALES READY

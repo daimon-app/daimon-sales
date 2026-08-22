@@ -13,7 +13,7 @@ Status: `READY FOR OWNER DEVICE QA / SIGNING / STORE INPUT`
 | Version | `1.0.0-beta.1` (`versionCode 1`) | RELEASE CANDIDATE |
 | Min / target SDK | 23 / 35 | VERIFIED IN SOURCE |
 | Distribution | Google Play, Android App Bundle | CANDIDATE |
-| Business model | One-time purchase, no ads | RECOMMENDED; final price is `OWNER_INPUT_REQUIRED` |
+| Business model | Free download + ¥2,500/month auto-renewing subscription, no ads | Current owner decision; Play product activation pending |
 | Category | Lifestyle | CANDIDATE; select during Console entry |
 
 Do not rename the package after the first production Play upload. If `app.daimon`
@@ -82,7 +82,7 @@ same data behavior and actual seller/support information as the release artifact
 - Android device behavior, WebView speech synthesis, binaural perception and audio
   interruption behavior remain `UNVERIFIED` until the owner device batch runs.
 - Android uses bundled `file:///android_asset` content and deliberately has no
-  `INTERNET` permission; external links and file picking are disabled.
+  `INTERNET` is present for Google Play Billing only; external WebView links and file picking remain disabled.
 - The app does not preserve a mode-in-progress across process death.
 - Local preferences may survive an app update but are removed by uninstall/clear
   storage; both flows require device verification.
@@ -97,4 +97,3 @@ Device QA: `UNVERIFIED`
 Production signing: `OWNER_PHYSICAL_ACTION_REQUIRED`  
 Legal/contact/price fields: `OWNER_INPUT_REQUIRED`  
 Overall: `CONDITIONAL READY FOR USER APPROVAL — DEVICE/SIGNING/STORE INPUT ONLY`
-

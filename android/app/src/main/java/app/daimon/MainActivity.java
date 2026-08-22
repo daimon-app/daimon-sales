@@ -16,8 +16,8 @@ import org.json.JSONObject;
  *
  * The PWA is bundled into the APK's assets by the copyPwaAssets Gradle task
  * (see app/build.gradle) and loaded from file:///android_asset/index.html.
- * The app has no INTERNET permission: navigation is restricted to that asset
- * origin only, and the page's own service worker registration (which cannot
+ * Product content has no remote origin: navigation is restricted to that asset
+ * origin. INTERNET exists solely for Google Play Billing, and the page's own service worker registration (which cannot
  * function under file:// and is a no-op here) is left untouched.
  */
 public class MainActivity extends Activity {

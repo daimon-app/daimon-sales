@@ -1,5 +1,7 @@
 # DAIMON Data Safety / privacy implementation draft
 
+> **DEPRECATED SNAPSHOT:** This predates Play Billing and server verification. Do not submit it. Use `DATA_SAFETY_CODE_MAPPING.md` as the current working source.
+
 Date: 2026-08-20
 
 Scope: unsigned four-mode Android AAB produced from the current branch

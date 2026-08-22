@@ -23,6 +23,7 @@ final class DaimonBilling implements PurchasesUpdatedListener {
     private final Activity activity;
     private final Listener listener;
     private final BillingClient client;
+    private final BillingVerificationClient verifier = new BillingVerificationClient();
     private ProductDetails productDetails;
 
     DaimonBilling(Activity activity, Listener listener) {
@@ -49,6 +50,7 @@ final class DaimonBilling implements PurchasesUpdatedListener {
     }
 
     void purchase() {
+        if (!BuildConfig.BILLING_IDS_VERIFIED) { notifyState(BillingState.Entitlement.PLAY_UNAVAILABLE, "", "Billing IDs are provisional"); return; }
         if (!client.isReady() || productDetails == null) { connect(); notifyState(BillingState.Entitlement.UNKNOWN, "", "Product is not ready"); return; }
         List<ProductDetails.SubscriptionOfferDetails> offers = productDetails.getSubscriptionOfferDetails();
         if (offers == null || offers.isEmpty()) { notifyState(BillingState.Entitlement.UNKNOWN, "", "No eligible subscription offer"); return; }
@@ -59,13 +61,14 @@ final class DaimonBilling implements PurchasesUpdatedListener {
         if (selected == null) { notifyState(BillingState.Entitlement.UNKNOWN, "", "Configured base plan is unavailable"); return; }
         BillingFlowParams.ProductDetailsParams item = BillingFlowParams.ProductDetailsParams.newBuilder()
                 .setProductDetails(productDetails).setOfferToken(selected.getOfferToken()).build();
+        notifyState(BillingState.Entitlement.PURCHASE_IN_PROGRESS, "", "");
         BillingResult result = client.launchBillingFlow(activity, BillingFlowParams.newBuilder()
                 .setProductDetailsParamsList(Collections.singletonList(item)).build());
         if (result.getResponseCode() != BillingClient.BillingResponseCode.OK) notifyState(BillingState.Entitlement.UNKNOWN, "", result.getDebugMessage());
     }
 
     void restore() { if (client.isReady()) queryPurchases(); else connect(); }
-    void close() { if (client.isReady()) client.endConnection(); }
+    void close() { verifier.close(); if (client.isReady()) client.endConnection(); }
 
     private void queryProduct() {
         QueryProductDetailsParams.Product product = QueryProductDetailsParams.Product.newBuilder()
@@ -102,14 +105,27 @@ final class DaimonBilling implements PurchasesUpdatedListener {
             boolean matches = purchase.getProducts().contains(BuildConfig.BILLING_PRODUCT_ID);
             BillingState.Entitlement current = BillingState.fromPurchase(purchase.getPurchaseState(), matches);
             if (current == BillingState.Entitlement.ENTITLED) {
-                entitlement = current;
-                if (!purchase.isAcknowledged()) client.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder()
-                        .setPurchaseToken(purchase.getPurchaseToken()).build(), ignored -> queryPurchases());
+                entitlement = purchase.isAcknowledged() ? BillingState.Entitlement.UNKNOWN : BillingState.Entitlement.PURCHASED_UNACKNOWLEDGED;
+                verifyAuthoritatively(purchase);
                 break;
             }
             if (current == BillingState.Entitlement.PENDING) entitlement = current;
         }
         notifyState(entitlement, "", "");
+    }
+
+    private void verifyAuthoritatively(Purchase purchase) {
+        verifier.verify(purchase.getPurchaseToken(), (verdict, message) -> {
+            if ("ACTIVE".equals(verdict)) {
+                if (purchase.isAcknowledged()) notifyState(BillingState.Entitlement.ENTITLED, "", "");
+                else client.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder()
+                        .setPurchaseToken(purchase.getPurchaseToken()).build(), result -> {
+                    if (result.getResponseCode() == BillingClient.BillingResponseCode.OK) notifyState(BillingState.Entitlement.ENTITLED, "", "");
+                    else notifyState(BillingState.Entitlement.PURCHASED_UNACKNOWLEDGED, "", "Purchase acknowledgement failed");
+                });
+            } else if ("PENDING".equals(verdict)) notifyState(BillingState.Entitlement.PENDING, "", message);
+            else notifyState(BillingState.Entitlement.NOT_ENTITLED, "", message);
+        });
     }
 
     private void notifyState(BillingState.Entitlement state, String price, String message) {

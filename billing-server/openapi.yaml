@@ -1,0 +1,52 @@
+openapi: 3.1.0
+info: {title: DAIMON Billing Verification, version: 0.1.0}
+paths:
+  /healthz:
+    get:
+      responses: {'200': {description: Health}}
+  /v1/google-play/subscriptions/verify:
+    post:
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [purchaseToken, productId, packageName]
+              additionalProperties: false
+              properties:
+                purchaseToken: {type: string, minLength: 1, maxLength: 4096}
+                productId: {type: string}
+                packageName: {type: string}
+      responses:
+        '200': {description: Authoritative normalized entitlement}
+        '400': {description: Invalid request}
+        '401': {description: Unauthorized}
+        '403': {description: Identity mismatch}
+        '404': {description: Purchase not found}
+        '503': {description: Fail-closed verification failure}
+  /v1/client/subscriptions/verify:
+    post:
+      description: Mobile endpoint using authoritative Play-token verification; no reusable server secret is embedded in the APK.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [purchaseToken, productId, packageName]
+              additionalProperties: false
+              properties:
+                purchaseToken: {type: string, minLength: 1, maxLength: 4096}
+                productId: {type: string}
+                packageName: {type: string}
+      responses:
+        '200': {description: Authoritative normalized entitlement}
+        '400': {description: Invalid request}
+        '403': {description: Identity mismatch}
+        '404': {description: Purchase not found}
+        '503': {description: Fail-closed verification failure}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer}

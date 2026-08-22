@@ -23,7 +23,7 @@ If adversity remains absent, the fallback commercial truth is **three-mode DAIMO
 
 ## 2. Price decision
 ### Recommended launch price
-**¥980 one-time purchase, Android, no ads** for the current unified offline/local-first experience.
+**Current owner decision (2026-08-22): free download + ¥2,500/month auto-renewing subscription, Android, no ads.**
 
 Reasoning:
 - materially above the prior ¥490 Morning-only concept
@@ -32,7 +32,7 @@ Reasoning:
 - avoids charging subscription economics before recurring coaching/content/service value is actually implemented
 
 ### Deferred price
-**¥2,500/month is NOT the M02 launch recommendation**. Reserve subscription pricing for a later DAIMON service that proves ongoing recurring value such as dynamic coaching, personalization, structured programs, cloud services, or regularly delivered premium content.
+The former ¥980 one-time recommendation is **DEPRECATED — not the current sales specification**. Recurring-value scope and cancellation/restore behavior remain release gates.
 
 Final price requires owner approval in Play Console.
 
@@ -81,7 +81,7 @@ NOTE: 逆境コピーはP0-01 PASS後のみ公開可能。
 
 ### Product facts
 - Android launch
-- one-time purchase
+- free download with monthly auto-renewing subscription
 - no ads
 - smartphone portrait-first
 - PWA/local-first architecture base
@@ -109,7 +109,7 @@ A. 特定の心理状態、健康、収入、仕事成果その他の結果を�
 A. M02推奨販売モデルは広告なしです。公開ビルドで最終確認します。
 
 **Q. 料金は？**
-A. M02推奨はAndroid版¥980の買い切りです。公開価格はGoogle Play上の最終表示を正とします。
+A. 現行仕様は無料ダウンロード＋月額2,500円の自動更新サブスクリプションです。購入前にはGoogle Playが返す正式な現地価格と更新条件を表示します。
 
 **Q. データはどこに保存されますか？**
 A. 公開前にリリース候補ビルドの保存項目を監査し、プライバシーポリシーとGoogle Play Data safetyへ一致させます。未監査項目を「保存しない」と断定しません。

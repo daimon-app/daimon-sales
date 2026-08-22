@@ -2,6 +2,40 @@ plugins {
     id 'com.android.application'
 }
 
+def billingProductId = providers.gradleProperty('DAIMON_BILLING_PRODUCT_ID')
+        .orElse(providers.environmentVariable('DAIMON_BILLING_PRODUCT_ID'))
+        .getOrElse('daimon_monthly')
+def billingBasePlanId = providers.gradleProperty('DAIMON_BILLING_BASE_PLAN_ID')
+        .orElse(providers.environmentVariable('DAIMON_BILLING_BASE_PLAN_ID'))
+        .getOrElse('monthly-2500-jpy')
+def billingIdsVerified = providers.gradleProperty('DAIMON_BILLING_IDS_VERIFIED')
+        .orElse(providers.environmentVariable('DAIMON_BILLING_IDS_VERIFIED'))
+        .map { it.equalsIgnoreCase('true') }.getOrElse(false)
+def billingVerificationUrl = providers.gradleProperty('DAIMON_BILLING_VERIFICATION_URL')
+        .orElse(providers.environmentVariable('DAIMON_BILLING_VERIFICATION_URL'))
+        .getOrElse('')
+def billingServerVerified = providers.gradleProperty('DAIMON_BILLING_SERVER_VERIFIED')
+        .orElse(providers.environmentVariable('DAIMON_BILLING_SERVER_VERIFIED'))
+        .map { it.equalsIgnoreCase('true') }.getOrElse(false)
+
+if (!(billingProductId ==~ /[a-z0-9_.]+/) || !(billingBasePlanId ==~ /[a-z0-9-]+/)) {
+    throw new GradleException('Invalid DAIMON Billing product/base-plan identifier.')
+}
+if (billingServerVerified && !(billingVerificationUrl ==~ /https:\/\/[A-Za-z0-9.-]+(?::[0-9]+)?(?:\/.*)?/)) {
+    throw new GradleException('Verified Billing server requires an HTTPS verification URL.')
+}
+
+def signingValues = [
+        storeFile: providers.environmentVariable('DAIMON_UPLOAD_STORE_FILE').orNull,
+        storePassword: providers.environmentVariable('DAIMON_UPLOAD_STORE_PASSWORD').orNull,
+        keyAlias: providers.environmentVariable('DAIMON_UPLOAD_KEY_ALIAS').orNull,
+        keyPassword: providers.environmentVariable('DAIMON_UPLOAD_KEY_PASSWORD').orNull
+]
+def signingValueCount = signingValues.values().count { it != null && !it.isEmpty() }
+if (signingValueCount != 0 && signingValueCount != signingValues.size()) {
+    throw new GradleException('All four DAIMON upload-signing environment values are required together.')
+}
+
 dependencies {
     implementation 'com.android.billingclient:billing:9.1.0'
     testImplementation 'junit:junit:4.13.2'
@@ -56,14 +90,28 @@ android {
     namespace 'app.daimon'
     compileSdk 35
 
+    signingConfigs {
+        if (signingValueCount == signingValues.size()) {
+            releaseUpload {
+                storeFile file(signingValues.storeFile)
+                storePassword signingValues.storePassword
+                keyAlias signingValues.keyAlias
+                keyPassword signingValues.keyPassword
+            }
+        }
+    }
+
     defaultConfig {
         applicationId 'app.daimon'
         minSdk 23
         targetSdk 35
         versionCode 1
         versionName '1.0.0-beta.1'
-        buildConfigField 'String', 'BILLING_PRODUCT_ID', '"daimon_monthly"'
-        buildConfigField 'String', 'BILLING_BASE_PLAN_ID', '"monthly-2500-jpy"'
+        buildConfigField 'String', 'BILLING_PRODUCT_ID', '"' + billingProductId + '"'
+        buildConfigField 'String', 'BILLING_BASE_PLAN_ID', '"' + billingBasePlanId + '"'
+        buildConfigField 'boolean', 'BILLING_IDS_VERIFIED', billingIdsVerified.toString()
+        buildConfigField 'String', 'BILLING_VERIFICATION_URL', '"' + billingVerificationUrl + '"'
+        buildConfigField 'boolean', 'BILLING_SERVER_VERIFIED', billingServerVerified.toString()
     }
 
     sourceSets {
@@ -76,6 +124,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (signingValueCount == signingValues.size()) signingConfig signingConfigs.releaseUpload
         }
     }
 

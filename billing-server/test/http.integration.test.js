@@ -1,0 +1,10 @@
+import test from'node:test';import assert from'node:assert/strict';import{createHttpServer}from'../src/server.js';import{FakeVerifier}from'../src/core.js';
+const config={mode:'fake',packageName:'app.daimon',productId:'daimon_monthly',apiKey:'integration-key',hmacKey:'hmac',timeoutMs:100,maxRetries:0,auditFile:'unused'};
+test('HTTP auth, verification and fail closed',async t=>{const server=createHttpServer({config,verifier:new FakeVerifier(new Map([['good',{expiryTimeMillis:Date.now()+60000,acknowledged:true}]])),audit:()=>{}}).listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));t.after(()=>server.close());const url=`http://127.0.0.1:${server.address().port}/v1/google-play/subscriptions/verify`;let response=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:'{}'});assert.equal(response.status,401);const headers={authorization:'Bearer integration-key','content-type':'application/json'};response=await fetch(url,{method:'POST',headers,body:JSON.stringify({purchaseToken:'good',productId:'daimon_monthly',packageName:'app.daimon'})});assert.equal(response.status,200);assert.equal((await response.json()).entitlement,'ACTIVE');response=await fetch(url,{method:'POST',headers,body:JSON.stringify({purchaseToken:'bad',productId:'daimon_monthly',packageName:'app.daimon'})});assert.equal(response.status,404);assert.equal((await response.json()).failClosed,true);});
+
+test('mobile client verifies without embedding the internal API key',async t=>{
+ const server=createHttpServer({config,verifier:new FakeVerifier(new Map([['mobile',{expiryTimeMillis:Date.now()+60000,acknowledged:true}]])),audit:()=>{}}).listen(0,'127.0.0.1');
+ await new Promise(r=>server.once('listening',r));t.after(()=>server.close());
+ const response=await fetch(`http://127.0.0.1:${server.address().port}/v1/client/subscriptions/verify`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({purchaseToken:'mobile',productId:'daimon_monthly',packageName:'app.daimon'})});
+ assert.equal(response.status,200);assert.equal((await response.json()).entitlement,'ACTIVE');
+});

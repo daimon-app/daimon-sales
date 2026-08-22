@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Belt-and-suspenders alongside the missing INTERNET permission: even if some
+  Product WebView traffic remains deny-by-default even though Play Billing requires INTERNET:
   future dependency requests network access, no cleartext traffic is permitted
   and no domain is trusted for plaintext connections.
 -->

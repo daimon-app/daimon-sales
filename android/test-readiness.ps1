@@ -7,7 +7,7 @@
    - the four-mode PWA source (index.html/manifest.json/sw.js/assets/icons)
      the Android project copies at build time is present at the repo root
    - the Android project files are well-formed XML
-   - the security posture requested for this shell (no INTERNET permission,
+   - the security posture requested for this shell (Billing-only INTERNET permission,
      no cleartext traffic, exported launcher activity, minimal WebView file
      access) is actually present in the manifest / Gradle / Java source
    - the Gradle version/AGP/JDK/SDK pins match what was requested
@@ -117,6 +117,8 @@ $RequiredFiles = @(
     'app/proguard-rules.pro',
     'app/src/main/AndroidManifest.xml',
     'app/src/main/java/app/daimon/MainActivity.java',
+    'app/src/main/java/app/daimon/DaimonBilling.java',
+    'app/src/main/java/app/daimon/BillingState.java',
     'app/src/main/res/values/strings.xml',
     'app/src/main/res/values/styles.xml',
     'app/src/main/res/values/colors.xml',
@@ -170,10 +172,10 @@ $ManifestPath = Join-Path $AndroidRoot 'app/src/main/AndroidManifest.xml'
 if (Test-Path $ManifestPath) {
     $manifestText = Get-Content -Raw -Path $ManifestPath
 
-    if ($manifestText -notmatch 'uses-permission[^>]*INTERNET') {
-        Pass "AndroidManifest.xml declares no INTERNET permission"
+    if ($manifestText -match 'uses-permission[^>]*INTERNET' -and $manifestText -match 'Google Play Billing') {
+        Pass "AndroidManifest.xml limits documented network purpose to Google Play Billing"
     } else {
-        Fail "AndroidManifest.xml declares android.permission.INTERNET (must not, per requirements)"
+        Fail "AndroidManifest.xml Billing INTERNET declaration/documentation mismatch"
     }
 
     if ($manifestText -match 'android:usesCleartextTraffic\s*=\s*"false"') {

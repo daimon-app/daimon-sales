@@ -1,1 +1,7 @@
 releases/*.zip
+*.jks
+*.keystore
+key.properties
+keystore.properties
+secrets/
+android/local.properties
