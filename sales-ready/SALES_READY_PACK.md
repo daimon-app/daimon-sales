@@ -136,7 +136,7 @@ DAIMONが重視するのは「一度もズレないこと」ではなく、気�
 
 DAIMONは医療、診断、治療、心理療法を提供するアプリではなく、特定の成果を保証しません。
 
-M02販売モデル: 買い切り / 広告なし / Android初版。
+M02販売モデル（DEPRECATED）: 旧・買い切り案。現行は無料ダウンロード＋月額2,500円の自動更新サブスクリプション / 広告なし / Android初版。
 
 ## 7. Social inventory direction
 Primary launch message:
