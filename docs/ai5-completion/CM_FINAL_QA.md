@@ -4,7 +4,15 @@ Audit date: 2026-08-22 (JST)
 
 ## Overall result
 
-**0 PASS / 4 PARTIAL / 32 MISSING within the requested 36-file target.** This is not a final visual/audio QA pass. Hash, byte size, Git tracking, and Windows Shell duration were verified for four candidates. Full-frame playback, decoded resolution/FPS, audio inspection, safe areas, subtitle accuracy, ending frame, and claims review remain unverified.
+## 2026-08-22 generated safe set update
+
+The requested 36 slots now exist under `cm-generated/`. FFprobe/remux-backed duration and dimension checks plus SHA-256 inventory are `36 PASS / 0 FAIL` in `CM_GENERATED_HASH_QA.md`. These files use only programmatic shapes and product copy and contain no audio stream or downloaded third-party media.
+
+This is **not** a final human visual/language/accessibility approval. Human full-frame review, brand approval, platform upload testing, and final claims review remain `UNVERIFIED`; no generated file is approved for publication yet.
+
+## Legacy four-file audit snapshot
+
+The earlier search found **0 PASS / 4 PARTIAL / 32 MISSING** before the safe set was generated. The following table remains as evidence for those legacy files, not as the current target-slot count.
 
 ## Candidate QA
 
@@ -28,4 +36,3 @@ Audit date: 2026-08-22 (JST)
 ## Evidence limitation
 
 `ffprobe` was not available in this environment. Windows Shell reported durations only and did not expose width/height/FPS. Filename suffixes such as `1080x1920` are not measurements. No human full-playback evidence was produced in this audit; therefore machine existence/hash checks cannot be promoted to release QA PASS.
-

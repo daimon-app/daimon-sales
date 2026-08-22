@@ -3,9 +3,13 @@
 Audit date: 2026-08-22 (JST)  
 Scope: files available under the current `daimon-sales` workspace. No remote fetch, Web search, upload, generation, or publication was performed.
 
+## 2026-08-22 generated target set
+
+After this discovery snapshot, the 36 requested slots were generated under `cm-generated/`: 3 products × 3 durations × 2 caption variants × 2 output sizes. `CM_GENERATED_HASH_QA.md` is the current file/hash/machine-QA ledger. Machine QA is 36/36 PASS; human QA and publication approval remain UNVERIFIED.
+
 ## Decision
 
-The statement “36 CM files exist” is **not supported** by the inspected workspace. Four actual video files were found. None can yet be admitted into the requested 36-file canonical set because the requested product/duration/caption/X-variant identity and final rights/visual/audio QA are not all evidenced.
+At the time of the initial search, the statement “36 CM files exist” was not supported and only four legacy videos were found. The generated target set above now satisfies file-count/duration/dimension/hash evidence, while final rights/copy/visual approval remains open.
 
 Canonical target:
 
@@ -49,4 +53,3 @@ The two 7-second and one 21-second videos are retained as noncanonical candidate
 2. Decode technical metadata with a trusted media inspector and perform complete playback QA.
 3. Reconcile DAIMON copy with the current four-mode/monthly product; existing candidates are Morning-edition artifacts.
 4. Generate only the missing, rights-clear target files, then hash and inventory each actual output.
-
