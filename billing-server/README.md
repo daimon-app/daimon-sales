@@ -35,4 +35,4 @@ On Google/storage failure, deny new entitlement changes, retain only last server
 
 ## Current limits
 
-This is a tested local foundation, not a deployed purchase authority. Its memory ledger is process-local. Google credentials, durable storage, cloud deployment, Pub/Sub configuration and live purchase tests remain external/Owner gates.
+The default runtime uses an atomic durable JSON ledger with cross-process lock, stale-lock recovery and crash-safe temp-file replacement. It is a single-instance foundation; horizontal deployment should migrate the same interface to a transactional database with a unique fingerprint constraint. Google credentials, cloud deployment, Pub/Sub configuration and live purchase tests remain external/Owner gates.

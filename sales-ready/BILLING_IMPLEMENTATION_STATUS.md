@@ -9,4 +9,5 @@
 - Unit tests/build: PASS. Static readiness: 76 PASS / 0 WARN / 0 FAIL.
 - Security: bundled `file:///android_asset/` origin only; external navigation/file chooser disabled; purchase token is not exposed to JavaScript or logs.
 - Server-backed verdict: Android sends the purchase token to the configured HTTPS client endpoint and grants entitlement/acknowledges only after an authoritative ACTIVE verdict. No reusable server secret is embedded in the APK.
-- Not release-PASS: deployed HTTPS endpoint, durable ledger, Play internal-track purchase/renew/cancel/refund evidence and final Console ID/base-plan match.
+- Server durability: atomic single-instance ledger with restart/crash recovery and replay-safe refresh is implemented; multi-instance production requires transactional shared storage.
+- Not release-PASS: deployed HTTPS endpoint, Play internal-track purchase/renew/cancel/refund evidence and final Console ID/base-plan match.

@@ -8,5 +8,6 @@ export function loadConfig(env = process.env) {
     productId: env.EXPECTED_PRODUCT_ID, basePlanId: env.EXPECTED_BASE_PLAN_ID || '', apiKey: env.INTERNAL_API_KEY,
     hmacKey: env.TOKEN_HMAC_KEY, credentialsFile: env.GOOGLE_PLAY_CREDENTIALS_FILE || '',
     timeoutMs: Number(env.GOOGLE_PLAY_TIMEOUT_MS || 5000), maxRetries: Number(env.GOOGLE_PLAY_MAX_RETRIES || 2), cacheMs: Number(env.VERIFICATION_CACHE_MS || 60000),
-    auditFile: env.AUDIT_LOG_FILE || './data/audit.jsonl' });
+    auditFile: env.AUDIT_LOG_FILE || './data/audit.jsonl', ledgerFile: env.LEDGER_FILE || './data/ledger.json',
+    rateLimitWindowMs: Number(env.RATE_LIMIT_WINDOW_MS || 60000), rateLimitMax: Number(env.RATE_LIMIT_MAX || 60) });
 }

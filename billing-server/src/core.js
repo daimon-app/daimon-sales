@@ -29,12 +29,12 @@ export class FakeVerifier{
 }
 export class ProductionVerifier{async verify(){throw Object.assign(new Error('Google Play verifier adapter not configured'),{status:503});}}
 export function createService({config,verifier,ledger,audit,now=()=>Date.now()}){return async body=>{
-  validateRequest(body,config);const fingerprint=tokenFingerprint(body.purchaseToken,config.hmacKey),identity=`${body.packageName}:${body.productId}`,prior=ledger.get(fingerprint);
+  validateRequest(body,config);const fingerprint=tokenFingerprint(body.purchaseToken,config.hmacKey),identity=`${body.packageName}:${body.productId}`,prior=await ledger.get(fingerprint);
   if(prior&&prior.identity!==identity)throw Object.assign(new Error('purchase token replay mismatch'),{status:409});
   if(prior&&now()-Date.parse(prior.response.verifiedAt)<Number(config.cacheMs||60000)){audit({event:'verification_idempotent',fingerprint});return{...prior.response,idempotent:true};}
   try{const verified=await withTimeoutRetry(()=>verifier.verify(body),{timeoutMs:config.timeoutMs,maxRetries:config.maxRetries});
     if(verified.packageName!==config.packageName||verified.productId!==config.productId)throw Object.assign(new Error('upstream identity mismatch'),{status:403});
     const response={entitlement:decideEntitlement(verified,now()),expiryTimeMillis:Number(verified.expiryTimeMillis||0),acknowledged:Boolean(verified.acknowledged),autoRenewing:Boolean(verified.autoRenewing),cancelReason:verified.cancelReason||null,verifiedAt:new Date(now()).toISOString(),idempotent:false};
-    ledger.put(fingerprint,identity,response);audit({event:prior?'verification_refreshed':'verification_complete',fingerprint,entitlement:response.entitlement});return{...response,idempotent:Boolean(prior)};
+    await ledger.put(fingerprint,identity,response);audit({event:prior?'verification_refreshed':'verification_complete',fingerprint,entitlement:response.entitlement});return{...response,idempotent:Boolean(prior)};
   }catch(error){audit({event:'verification_failed',fingerprint,reason:error.message});throw error;}
 };}

@@ -1,0 +1,2 @@
+import test from'node:test';import assert from'node:assert/strict';import{FixedWindowLimiter}from'../src/server.js';
+test('fixed window limiter blocks excess and recovers next window',()=>{let now=1000;const limiter=new FixedWindowLimiter({windowMs:100,max:2,clock:()=>now});assert.equal(limiter.allow('a'),true);assert.equal(limiter.allow('a'),true);assert.equal(limiter.allow('a'),false);assert.equal(limiter.allow('b'),true);now=1100;assert.equal(limiter.allow('a'),true);});
