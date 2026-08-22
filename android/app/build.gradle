@@ -2,6 +2,18 @@ plugins {
     id 'com.android.application'
 }
 
+dependencies {
+    implementation 'com.android.billingclient:billing:9.1.0'
+    testImplementation 'junit:junit:4.13.2'
+}
+
+// Billing 9 uses the merged Kotlin stdlib. Remove legacy split artifacts pulled
+// by older transitive Android tooling to prevent duplicate jdk7/jdk8 classes.
+configurations.configureEach {
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+}
+
 // The Android shell bundles the existing four-mode PWA (index.html, manifest.json,
 // sw.js, assets/, icons/) as offline WebView assets. The PWA source of truth lives
 // at the repository root, one directory above this Gradle project (android/..).
@@ -50,6 +62,8 @@ android {
         targetSdk 35
         versionCode 1
         versionName '1.0.0-beta.1'
+        buildConfigField 'String', 'BILLING_PRODUCT_ID', '"daimon_monthly"'
+        buildConfigField 'String', 'BILLING_BASE_PLAN_ID', '"monthly-2500-jpy"'
     }
 
     sourceSets {
@@ -70,7 +84,5 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    buildFeatures {
-        buildConfig = false
-    }
+    buildFeatures { buildConfig = true }
 }

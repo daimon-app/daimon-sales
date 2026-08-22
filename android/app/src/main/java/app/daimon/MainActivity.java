@@ -8,6 +8,8 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.JavascriptInterface;
+import org.json.JSONObject;
 
 /**
  * Offline shell for the DAIMON four-mode PWA (morning / work / night / adversity).
@@ -24,6 +26,7 @@ public class MainActivity extends Activity {
     private static final String START_URL = ASSET_ORIGIN_PREFIX + "index.html";
 
     private WebView webView;
+    private DaimonBilling billing;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,8 +74,20 @@ public class MainActivity extends Activity {
         // File chooser is intentionally left unimplemented: the bundled PWA has
         // no file-upload UI, so <input type="file"> must not open a picker.
         webView.setWebChromeClient(new WebChromeClient());
+        billing = new DaimonBilling(this, (state, price, message) -> {
+            String payload = "window.dispatchEvent(new CustomEvent('daimon-billing',{detail:{state:" +
+                    JSONObject.quote(state.name()) + ",price:" + JSONObject.quote(price) +
+                    ",message:" + JSONObject.quote(message) + "}}));";
+            webView.evaluateJavascript(payload, null);
+        });
+        webView.addJavascriptInterface(new Object() {
+            @JavascriptInterface public void subscribe() { runOnUiThread(() -> billing.purchase()); }
+            @JavascriptInterface public void restore() { runOnUiThread(() -> billing.restore()); }
+            @JavascriptInterface public String productId() { return BuildConfig.BILLING_PRODUCT_ID; }
+        }, "DaimonBilling");
 
         webView.loadUrl(START_URL);
+        billing.connect();
     }
 
     @Override
@@ -105,6 +120,7 @@ public class MainActivity extends Activity {
         super.onResume();
         webView.onResume();
         webView.resumeTimers();
+        if (billing != null) billing.restore();
     }
 
     @Override
@@ -113,6 +129,7 @@ public class MainActivity extends Activity {
             ((ViewGroup) webView.getParent()).removeView(webView);
         }
         webView.removeAllViews();
+        if (billing != null) billing.close();
         webView.destroy();
         super.onDestroy();
     }

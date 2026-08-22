@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!--
-      No network permission by design: the four-mode PWA is bundled offline under
-      file:///android_asset and must not depend on INTERNET access.
-    -->
+    <!-- Required only for Google Play Billing. Product media remains bundled/offline. -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="false"
