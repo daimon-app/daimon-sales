@@ -12,12 +12,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 final class BillingVerificationClient {
-    interface Callback { void onResult(String entitlement, String message); }
+    interface Callback { void onResult(String entitlement, String lifecycle, String message); }
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     void verify(String purchaseToken, Callback callback) {
         if (!BuildConfig.BILLING_SERVER_VERIFIED || BuildConfig.BILLING_VERIFICATION_URL.isEmpty()) {
-            callback.onResult("INACTIVE", "Billing verification server is not release-verified");
+            callback.onResult("INACTIVE", "PLAY_UNAVAILABLE", "Billing verification server is not release-verified");
             return;
         }
         executor.execute(() -> {
@@ -43,10 +43,10 @@ final class BillingVerificationClient {
                     String line; while ((line = reader.readLine()) != null) raw.append(line);
                 }
                 JSONObject response = new JSONObject(raw.toString());
-                callback.onResult(response.optString("entitlement", "INACTIVE"), "");
+                callback.onResult(response.optString("entitlement", "INACTIVE"), response.optString("lifecycle", "UNKNOWN"), "");
             } catch (Exception error) {
                 // Never include the purchase token or server response in user-visible text/logs.
-                callback.onResult("INACTIVE", "Authoritative purchase verification unavailable");
+                callback.onResult("INACTIVE", "NETWORK_ERROR", "Authoritative purchase verification unavailable");
             } finally { if (connection != null) connection.disconnect(); }
         });
     }

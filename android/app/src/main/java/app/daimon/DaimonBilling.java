@@ -115,17 +115,26 @@ final class DaimonBilling implements PurchasesUpdatedListener {
     }
 
     private void verifyAuthoritatively(Purchase purchase) {
-        verifier.verify(purchase.getPurchaseToken(), (verdict, message) -> {
+        verifier.verify(purchase.getPurchaseToken(), (verdict, lifecycle, message) -> {
             if ("ACTIVE".equals(verdict)) {
-                if (purchase.isAcknowledged()) notifyState(BillingState.Entitlement.ENTITLED, "", "");
+                BillingState.Entitlement authoritative = parseLifecycle(lifecycle);
+                if (!BillingPresentation.unlocks(authoritative)) {
+                    notifyState(authoritative, "", message);
+                    return;
+                }
+                if (purchase.isAcknowledged()) notifyState(authoritative, "", message);
                 else client.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder()
                         .setPurchaseToken(purchase.getPurchaseToken()).build(), result -> {
-                    if (result.getResponseCode() == BillingClient.BillingResponseCode.OK) notifyState(BillingState.Entitlement.ENTITLED, "", "");
+                    if (result.getResponseCode() == BillingClient.BillingResponseCode.OK) notifyState(authoritative, "", message);
                     else notifyState(BillingState.Entitlement.PURCHASED_UNACKNOWLEDGED, "", "Purchase acknowledgement failed");
                 });
-            } else if ("PENDING".equals(verdict)) notifyState(BillingState.Entitlement.PENDING, "", message);
-            else notifyState(BillingState.Entitlement.NOT_ENTITLED, "", message);
+            } else notifyState(parseLifecycle(lifecycle), "", message);
         });
+    }
+
+    private BillingState.Entitlement parseLifecycle(String lifecycle) {
+        try { return BillingState.Entitlement.valueOf(lifecycle); }
+        catch (IllegalArgumentException error) { return BillingState.Entitlement.NOT_ENTITLED; }
     }
 
     private void notifyState(BillingState.Entitlement state, String price, String message) {

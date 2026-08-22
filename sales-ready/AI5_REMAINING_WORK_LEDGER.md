@@ -4,16 +4,16 @@ Updated: 2026-08-22. Stop condition: `AI_EXECUTABLE_REMAINDER = 0`.
 
 | Lane | Current evidence | AI-executable remainder | Owner-only remainder |
 |---|---|---|---|
-| Billing app | Billing 9.1.0, unit tests/build PASS, provisional IDs and server endpoint fail-closed | Expanded fake lifecycle UI tests | Play product/base-plan creation and license-test purchase |
-| Billing server | Subscriptions v2 adapter/client endpoint, 9 tests PASS | Durable transactional ledger and deployment abuse controls | Google Cloud/Play API credentials and deployment approval |
-| Signing | New protected upload key, signed AAB and verification PASS | Artifact inventory/evidence commit | Play App Signing enrollment |
-| Play package | Field/Data Safety/Content Rating matrices drafted | Final cross-file consistency and asset production | D-U-N-S, identity, Console submission |
-| CM | Four files found; 0/36 accepted | Produce missing original-rights-safe assets after real product capture; visual QA | Human sensory/brand final approval and public upload |
-| SNS | Profile/post drafts prepared | Final image/header files and handle availability audit where accessible | OTP/CAPTCHA/2FA and public posting |
-| Tester | Templates prepared | Non-PII local workflow/form implementation | Real invitees and approval |
+| Billing app | Billing 9.1.0; authoritative lifecycle UI/locking; Android, browser-fake and build tests PASS | None before live Play testing | Play product/base-plan creation and license-test purchase |
+| Billing server | Subscriptions v2 adapter, durable ledger, rate limiting and lifecycle response; 14 tests PASS | Production shared transactional store only if multi-instance deployment is selected | Google Cloud/Play API credentials and deployment approval |
+| Signing | Protected upload key; signed AAB `9FD5EC...F0C82A`; certificate/build verified | None | Play App Signing enrollment |
+| Play package | Field/Data Safety/Content Rating matrices and tester pack complete | Canonical public URLs unavailable | D-U-N-S, identity, URLs/Console submission |
+| CM | 36 final MP4s exist with hashes; machine and contact-sheet QA PASS | Full human playback/final brand acceptance | Public upload |
+| SNS | Seven-channel pack, original SVG assets, 28 drafts and checklist complete | Some handle availability is UNVERIFIED | OTP/CAPTCHA/2FA and public posting |
+| Tester | Non-PII templates and DPAPI-protected local workflow PASS | None before real recruitment | Real invitees and approval |
 | Emulator/device | Emulator/system image/AVD installed; boot blocked by missing Windows hypervisor driver | Resume automation after hypervisor availability | UAC/reboot for hypervisor or Pixel USB/ADB approval; perceived audio QA |
-| Switch | 0-yen free beta confirmed | Cross-repo text sweep and QA | Beta public GO only if required |
-| CAD | 23/23 and FIELD pack | Android/emulator/export QA | Physical FIELD-001 |
-| Affirmation | Multiple candidates, no canonical proof | Remote/archives/backups exhaustive search | None unless private storage authentication needed |
+| Switch | 0-yen free beta confirmed and remote evidence pushed | None before live beta/device test | Beta publication/device test |
+| CAD | 26/26 and release inventory 14/14; PWA/export/FIELD pack pushed | Zero Android-wrapper decision | Physical FIELD-001 |
+| Affirmation | Exhaustive local/GitHub/backup search complete; canonical unresolved with hashes recorded | None | Another private source only if Owner identifies one |
 
 Current status: `AI_EXECUTABLE_REMAINDER > 0`; this document is a checkpoint, not completion.

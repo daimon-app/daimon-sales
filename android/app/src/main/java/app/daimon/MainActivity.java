@@ -75,15 +75,15 @@ public class MainActivity extends Activity {
         // no file-upload UI, so <input type="file"> must not open a picker.
         webView.setWebChromeClient(new WebChromeClient());
         billing = new DaimonBilling(this, (state, price, message) -> {
+            String safeMessage = message == null || message.isEmpty() ? BillingPresentation.message(state) : message;
             String payload = "window.dispatchEvent(new CustomEvent('daimon-billing',{detail:{state:" +
                     JSONObject.quote(state.name()) + ",price:" + JSONObject.quote(price) +
-                    ",message:" + JSONObject.quote(message) + "}}));";
+                    ",message:" + JSONObject.quote(safeMessage) + "}}));";
             webView.evaluateJavascript(payload, null);
         });
         webView.addJavascriptInterface(new Object() {
             @JavascriptInterface public void subscribe() { runOnUiThread(() -> billing.purchase()); }
             @JavascriptInterface public void restore() { runOnUiThread(() -> billing.restore()); }
-            @JavascriptInterface public String productId() { return BuildConfig.BILLING_PRODUCT_ID; }
         }, "DaimonBilling");
 
         webView.loadUrl(START_URL);

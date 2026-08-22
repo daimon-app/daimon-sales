@@ -84,6 +84,12 @@ button{font-family:inherit}
   background:radial-gradient(circle at 50% 40%, rgba(212,175,55,.28), rgba(212,175,55,.06));
   border:1px solid rgba(212,175,55,.35) }
 .mode-card.soon{ opacity:.72 }
+.billing-panel{ display:none; width:100%; max-width:420px; margin-top:16px; padding:12px 16px; border:1px solid rgba(212,175,55,.45); border-radius:14px; background:rgba(0,0,0,.72); text-align:left }
+.billing-panel.on{ display:block }
+.billing-status{ font-size:12px; line-height:1.6; color:rgba(255,255,255,.82) }
+.billing-actions{ display:flex; gap:8px; flex-wrap:wrap }
+.billing-actions button{ margin-top:10px; padding:9px 15px; font-size:11px }
+.mode-list.billing-locked .mode-card{ opacity:.35; pointer-events:none }
 @media (max-height:700px){
   #scrHome{ justify-content:flex-start }
   #scrHome .home-title{ margin-top:16px }
@@ -220,6 +226,13 @@ button{font-family:inherit}
   <div class="gold-corner bl"></div><div class="gold-corner br"></div>
   <div class="home-title">DAIMON</div>
   <div class="home-tag">MORNING &nbsp;/&nbsp; WORK &nbsp;/&nbsp; NIGHT &nbsp;/&nbsp; ADVERSITY</div>
+  <div class="billing-panel" id="billingPanel" aria-live="polite">
+    <div class="billing-status" id="billingStatus">購入状態を確認しています。</div>
+    <div class="billing-actions">
+      <button class="gbtn" id="billingSubscribe" type="button">月額プランを確認</button>
+      <button class="ghost" id="billingRestore" type="button">購入を復元</button>
+    </div>
+  </div>
   <div class="mode-list">
     <div class="mode-card" data-go="morning">
       <div class="mc-icon">☀</div>
@@ -829,6 +842,25 @@ document.addEventListener('visibilitychange', ()=>{
 /* ---------- 画面回転・リサイズ：③はみ出しガードを再計算 ---------- */
 window.addEventListener('resize', ()=>{ if($('scrMorning').classList.contains('on')) fitAllAffirms(); });
 window.addEventListener('orientationchange', ()=>{ setTimeout(()=>{ if($('scrMorning').classList.contains('on')) fitAllAffirms(); }, 300); });
+
+/* ---------- Android Play Billing UI（authoritative server verdict only） ---------- */
+(function billingUi(){
+  if(!window.DaimonBilling) return;
+  const panel=$('billingPanel'), status=$('billingStatus'), list=document.querySelector('.mode-list');
+  const subscribe=$('billingSubscribe'), restore=$('billingRestore');
+  panel.classList.add('on'); list.classList.add('billing-locked');
+  const messages={UNKNOWN:'購入状態を確認しています。',NOT_ENTITLED:'利用には月額プランが必要です。',PURCHASE_IN_PROGRESS:'Google Playで購入手続き中です。',PURCHASED_UNACKNOWLEDGED:'購入確認を完了しています。',ENTITLED:'月額プランは有効です。',PENDING:'お支払いは保留中です。完了後に再確認してください。',GRACE_PERIOD:'お支払いの猶予期間です。Google Playをご確認ください。',CANCELED_ACTIVE:'解約済みですが期限までは利用できます。',EXPIRED:'月額プランの有効期限が切れています。',REFUNDED:'購入は返金または取り消し済みです。',NETWORK_ERROR:'通信できません。接続後に再試行してください。',PLAY_UNAVAILABLE:'Google Play Billingを利用できません。'};
+  window.addEventListener('daimon-billing', event=>{
+    const detail=event.detail||{}, state=String(detail.state||'UNKNOWN');
+    const unlocked=['ENTITLED','GRACE_PERIOD','CANCELED_ACTIVE'].includes(state);
+    list.classList.toggle('billing-locked',!unlocked);
+    status.textContent=(messages[state]||messages.UNKNOWN)+(detail.price&&!unlocked?' '+detail.price:'')+(detail.message?' '+detail.message:'');
+    subscribe.hidden=unlocked||['PURCHASE_IN_PROGRESS','PURCHASED_UNACKNOWLEDGED','PENDING'].includes(state);
+    restore.hidden=['PURCHASE_IN_PROGRESS','PURCHASED_UNACKNOWLEDGED'].includes(state);
+  });
+  subscribe.addEventListener('click',()=>window.DaimonBilling.subscribe());
+  restore.addEventListener('click',()=>window.DaimonBilling.restore());
+})();
 
 /* ---------- Service Worker（GitHub更新→次回起動で自動更新） ---------- */
 if('serviceWorker' in navigator){

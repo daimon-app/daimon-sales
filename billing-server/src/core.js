@@ -13,6 +13,16 @@ export function decideEntitlement(result,now=Date.now()){
   if(result.paymentState==='PENDING'||result.onHold||!result.acknowledged)return ENTITLEMENT.PENDING;
   return ENTITLEMENT.ACTIVE;
 }
+export function decideLifecycle(result,now=Date.now()){
+  if(!result)return 'UNKNOWN';
+  if(result.refunded||result.revoked)return 'REFUNDED';
+  if(Number(result.expiryTimeMillis||0)<=now)return 'EXPIRED';
+  if(result.paymentState==='PENDING'||result.onHold)return 'PENDING';
+  if(result.inGracePeriod)return 'GRACE_PERIOD';
+  if(result.autoRenewing===false)return 'CANCELED_ACTIVE';
+  if(!result.acknowledged)return 'PURCHASED_UNACKNOWLEDGED';
+  return 'ENTITLED';
+}
 export async function withTimeoutRetry(operation,{timeoutMs,maxRetries}){
   let lastError;
   for(let attempt=0;attempt<=maxRetries;attempt++)try{return await Promise.race([operation(attempt),new Promise((_,reject)=>setTimeout(()=>reject(new Error('verification timeout')),timeoutMs))]);}
@@ -34,7 +44,7 @@ export function createService({config,verifier,ledger,audit,now=()=>Date.now()})
   if(prior&&now()-Date.parse(prior.response.verifiedAt)<Number(config.cacheMs||60000)){audit({event:'verification_idempotent',fingerprint});return{...prior.response,idempotent:true};}
   try{const verified=await withTimeoutRetry(()=>verifier.verify(body),{timeoutMs:config.timeoutMs,maxRetries:config.maxRetries});
     if(verified.packageName!==config.packageName||verified.productId!==config.productId)throw Object.assign(new Error('upstream identity mismatch'),{status:403});
-    const response={entitlement:decideEntitlement(verified,now()),expiryTimeMillis:Number(verified.expiryTimeMillis||0),acknowledged:Boolean(verified.acknowledged),autoRenewing:Boolean(verified.autoRenewing),cancelReason:verified.cancelReason||null,verifiedAt:new Date(now()).toISOString(),idempotent:false};
+    const response={entitlement:decideEntitlement(verified,now()),lifecycle:decideLifecycle(verified,now()),expiryTimeMillis:Number(verified.expiryTimeMillis||0),acknowledged:Boolean(verified.acknowledged),autoRenewing:Boolean(verified.autoRenewing),cancelReason:verified.cancelReason||null,verifiedAt:new Date(now()).toISOString(),idempotent:false};
     await ledger.put(fingerprint,identity,response);audit({event:prior?'verification_refreshed':'verification_complete',fingerprint,entitlement:response.entitlement});return{...response,idempotent:Boolean(prior)};
   }catch(error){audit({event:'verification_failed',fingerprint,reason:error.message});throw error;}
 };}
