@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">DAIMON profile master</title>
+  <desc id="desc">Gold D monogram on a black circular field</desc>
+  <rect width="1024" height="1024" fill="#090909"/>
+  <circle cx="512" cy="512" r="410" fill="none" stroke="#c9a227" stroke-width="28"/>
+  <path d="M350 280h170c164 0 270 90 270 232S684 744 520 744H350zm94 86v292h70c105 0 178-53 178-146s-73-146-178-146z" fill="#c9a227"/>
+</svg>
