@@ -8,7 +8,11 @@ Audit date: 2026-08-22 (JST)
 
 The requested 36 slots now exist under `cm-generated/`. FFprobe/remux-backed duration and dimension checks plus SHA-256 inventory are `36 PASS / 0 FAIL` in `CM_GENERATED_HASH_QA.md`. These files use only programmatic shapes and product copy and contain no audio stream or downloaded third-party media.
 
-This is **not** a final human visual/language/accessibility approval. Human full-frame review, brand approval, platform upload testing, and final claims review remain `UNVERIFIED`; no generated file is approved for publication yet.
+The WebM files are generation sources. The authoritative publication candidates are the H.264 MP4 files under `cm-final/`; `CM_MP4_FINAL_LEDGER.md` records 36/36 ffprobe machine PASS.
+
+Independent sampled-frame inspection covered start/middle/end for every file (108 decoded frames) using the six contact sheets under `cm-qa-sheets/`. DAIMON and 切り替えスイッチ passed product name, CTA, price/status, claim, clipping and sampled ending-frame checks. The first CAD render clipped its long hook; it was regenerated with shorter copy and smaller/wrapped text, then all 12 CAD candidates passed repeat sampling. This is **sampled-frame visual PASS**, not full-frame human playback, hearing, brand approval, or platform upload PASS.
+
+All 36 MP4s have zero audio streams. Listening is therefore `NOT APPLICABLE (NO AUDIO STREAM)`, not a claimed human hearing PASS. No file has been published.
 
 ## Legacy four-file audit snapshot
 
@@ -35,4 +39,4 @@ The earlier search found **0 PASS / 4 PARTIAL / 32 MISSING** before the safe set
 
 ## Evidence limitation
 
-`ffprobe` was not available in this environment. Windows Shell reported durations only and did not expose width/height/FPS. Filename suffixes such as `1080x1920` are not measurements. No human full-playback evidence was produced in this audit; therefore machine existence/hash checks cannot be promoted to release QA PASS.
+FFmpeg/ffprobe 9.0.1 became available from the local marketing toolchain and was used for the final MP4 audit. Each final file is H.264 High, yuv420p, 30/1 fps, expected 1080×1920 or 720×1280, exact 6/15/30-second slot (within the strict script tolerance), zero audio streams, and start/middle/end decode success. Full-frame playback and actual platform upload remain UNVERIFIED.

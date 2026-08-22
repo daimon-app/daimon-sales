@@ -5,7 +5,7 @@ Scope: files available under the current `daimon-sales` workspace. No remote fet
 
 ## 2026-08-22 generated target set
 
-After this discovery snapshot, the 36 requested slots were generated under `cm-generated/`: 3 products × 3 durations × 2 caption variants × 2 output sizes. `CM_GENERATED_HASH_QA.md` is the current file/hash/machine-QA ledger. Machine QA is 36/36 PASS; human QA and publication approval remain UNVERIFIED.
+After this discovery snapshot, the 36 requested slots were generated as WebM sources under `cm-generated/` and finalized as H.264 MP4 publication candidates under `cm-final/`: 3 products × 3 durations × 2 caption variants × 2 output sizes. `CM_MP4_FINAL_LEDGER.md` is the authoritative file/hash/ffprobe ledger. Machine QA is 36/36 PASS. Three sampled frames per file (108 frames total) were visually inspected; publication approval and real platform upload tests remain UNVERIFIED.
 
 ## Decision
 
@@ -17,7 +17,7 @@ Canonical target:
 - X: matching 720×1280 exports = 18 files.
 - Total target: 36 actual video files.
 
-Measured status: **0/36 accepted, 4 candidate files found, 32 target slots have no candidate file, 36/36 not release-ready.**
+Current measured status: **36/36 MP4 candidates exist; 36/36 machine PASS; 36/36 sampled-frame visual PASS; 0/36 published.** The four legacy files below remain noncanonical historical evidence.
 
 ## Actual files found
 

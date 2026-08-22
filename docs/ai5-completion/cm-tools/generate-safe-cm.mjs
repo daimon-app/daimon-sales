@@ -9,7 +9,7 @@ await mkdir(outDir, { recursive: true });
 const products = [
   { id: 'daimon', name: 'DAIMON', hook: 'ズレたら、戻ればいい。', benefit: '朝・仕事・夜・逆境の4モード', cta: '月額2,500円｜公開準備中' },
   { id: 'kirikae-switch', name: '切り替えスイッチ', hook: '休憩から、次の一手へ。', benefit: '短い休憩と再始動を支えるPWA', cta: '0円・無料公開β｜準備中' },
-  { id: 'daiku-ai-cad', name: '大工AI CAD', hook: '割付と材料拾いを、現場で確かめる。', benefit: 'FIELD-001 実証参加者を募集中', cta: 'FIELD VALIDATION｜準備中' },
+  { id: 'daiku-ai-cad', name: '大工AI CAD', hook: '割付と材料拾いを、現場で検証。', benefit: 'FIELD-001 実証参加者を募集中', cta: 'FIELD VALIDATION｜準備中' },
 ];
 const durations = [6, 15, 30];
 const variants = [
@@ -21,7 +21,8 @@ const formats = [
   { id: 'x', width: 720, height: 1280 },
 ];
 
-const specs = formats.flatMap(format => products.flatMap(product => durations.flatMap(seconds => variants.map(variant => ({ format, product, seconds, variant })) )));
+const selectedProducts = process.env.CM_PRODUCT ? products.filter(product => product.id === process.env.CM_PRODUCT) : products;
+const specs = formats.flatMap(format => selectedProducts.flatMap(product => durations.flatMap(seconds => variants.map(variant => ({ format, product, seconds, variant })) )));
 const browser = await chromium.launch({ executablePath: 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe', headless: true, args: ['--autoplay-policy=no-user-gesture-required'] });
 
 async function render(spec) {
@@ -64,7 +65,7 @@ async function render(spec) {
       ctx.fillText(product.name, w / 2, h * 0.12);
       ctx.fillStyle = '#ffffff';
       ctx.font = `700 ${Math.round(w * 0.062)}px sans-serif`;
-      const lines = product.hook.length > 18 ? [product.hook.slice(0, Math.ceil(product.hook.length / 2)), product.hook.slice(Math.ceil(product.hook.length / 2))] : [product.hook];
+      const lines = product.hook.length > 15 ? [product.hook.slice(0, Math.ceil(product.hook.length / 2)), product.hook.slice(Math.ceil(product.hook.length / 2))] : [product.hook];
       lines.forEach((line, index) => ctx.fillText(line, w / 2, h * 0.52 + index * w * 0.08));
       ctx.fillStyle = '#d4d4d8';
       ctx.font = `500 ${Math.round(w * 0.034)}px sans-serif`;
@@ -80,7 +81,7 @@ async function render(spec) {
         ctx.fillStyle = 'rgba(0,0,0,.72)';
         ctx.fillRect(w * 0.08, h * 0.755, w * 0.84, h * 0.055);
         ctx.fillStyle = '#fff';
-        ctx.font = `600 ${Math.round(w * 0.029)}px sans-serif`;
+        ctx.font = `600 ${Math.round(w * (product.hook.length > 15 ? 0.023 : 0.029))}px sans-serif`;
         ctx.fillText(product.hook, w / 2, h * 0.79);
       }
       if (elapsed < seconds) requestAnimationFrame(draw);
