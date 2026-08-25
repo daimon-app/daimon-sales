@@ -10,7 +10,7 @@ This runbook turns the DAIMON MORNING Japan launch work into a reusable, quickly
 
 Goal:
 
-`GitHub canonical -> product QA -> release artifact -> device QA -> sales page/payment -> creative production -> SNS accounts -> draft/upload -> Owner-only gates -> public release -> end-to-end verification -> measurement -> iteration`
+`GitHub canonical -> behavioral-science design -> product QA -> release artifact -> device QA -> sales page/payment -> evidence-based creative production -> SNS accounts -> draft/upload -> Owner-only gates -> public release -> end-to-end verification -> measurement -> iteration`
 
 Do not reconstruct this flow from chat history. Update this runbook when a reusable improvement is confirmed.
 
@@ -27,6 +27,16 @@ product:
   platform: "<ANDROID/PWA/etc>"
   canonical_repo: "<owner/repo>"
   canonical_branch: "<branch>"
+behavioral_science:
+  required: true
+  domains:
+    - psychology
+    - behavioral_economics
+    - cognitive_science
+    - neuroscience
+    - human_factors
+    - behavioral_design
+  evidence_map: "<PATH_TO_EVIDENCE_MAP>"
 release:
   artifact_type: "<APK/AAB/PWA/ZIP>"
   artifact_sha256: "<SHA256>"
@@ -45,11 +55,105 @@ owner_gates:
   destructive_irreversible: true
 ```
 
-## 3. Release state machine
+## 3. Mandatory behavioral-science design baseline
+
+Every new app/product and every CM/marketing creative must begin with an explicit behavioral-science design pass. This is a default production requirement, not an optional late-stage decoration.
+
+Required domains to consider where relevant:
+- psychology, including applicable subfields such as cognitive, social, motivational, learning, attention, memory, emotion, habit and decision psychology
+- behavioral economics and judgment/decision-making
+- cognitive science
+- neuroscience / neuropsychology where the evidence genuinely supports the design choice
+- human factors / ergonomics / cognitive load
+- behavioral design, habit formation and behavior-change research
+- persuasion/communication research where ethically appropriate
+
+“Use all” means **systematically evaluate all relevant domains and use every supported principle that improves the product/creative for its intended purpose**. It does not mean forcing every named discipline or effect into every screen, phrase or CM.
+
+### Required workflow before implementation
+1. Define target user, context, desired behavior/outcome and constraints.
+2. Generate a behavioral-science evidence map.
+3. Map candidate principles to concrete product/creative elements.
+4. Classify each claim/design rationale by evidence strength.
+5. Reject unsupported, irrelevant, manipulative or counterproductive applications.
+6. Implement the strongest justified design.
+7. Test actual behavior/usability/conversion and revise from evidence.
+
+### Evidence map minimum fields
+For each material design choice or marketing claim, record:
+- `ELEMENT`
+- `USER_PROBLEM_OR_BEHAVIOR`
+- `DOMAIN`
+- `PRINCIPLE_OR_MECHANISM`
+- `IMPLEMENTATION`
+- `EXPECTED_EFFECT`
+- `EVIDENCE_SOURCE`
+- `EVIDENCE_STRENGTH`
+- `LIMITATIONS`
+- `CLAIM_LEVEL`
+- `MEASUREMENT`
+
+### Claim levels
+- `A`: strong enough for the intended factual claim, with suitable evidence
+- `B`: reasonable design rationale but avoid overstating causal/clinical effects
+- `C`: hypothesis to test; do not market as established fact
+- `PROHIBITED`: unsupported/misleading claim; do not use
+
+### Guardrails
+- Do not use scientific terminology merely as authority decoration.
+- Do not claim “scientifically proven”, “changes the brain”, “guarantees success”, clinical benefit, or other strong causal effects without evidence that supports that exact claim and context.
+- Distinguish a scientifically informed design from a scientifically proven outcome.
+- Do not use dark patterns, deceptive scarcity, hidden costs, coercive defaults or intentionally confusing consent.
+- Optimize for durable user value, comprehension, appropriate motivation and low friction—not manipulation for its own sake.
+
+### Product-design application
+Before coding a new app or material feature, explicitly evaluate behavioral-science implications for:
+- onboarding
+- information architecture
+- cognitive load
+- choice architecture
+- defaults
+- friction and activation energy
+- attention and salience
+- motivation and self-efficacy
+- habit/re-entry design
+- reminders and timing
+- feedback/reward
+- progress representation
+- error recovery
+- trust and transparency
+- language/framing
+- accessibility and human factors
+- retention without coercion
+
+The product architecture should embody supported principles rather than adding psychology language after implementation.
+
+### CM/marketing application
+Before scripting/rendering a CM, explicitly evaluate:
+- audience state/problem
+- hook/attention
+- product comprehension
+- memory/brand recall
+- framing
+- loss/gain framing where appropriate
+- social proof only when genuine
+- ambiguity reduction
+- cognitive fluency
+- price/value framing without deception
+- CTA friction
+- repetition/frequency strategy
+- sequencing across multiple creatives
+- trust/credibility
+- evidence limits for scientific claims
+
+Creative production starts from this map, then moves to script/storyboard/rendering.
+
+## 4. Release state machine
 
 Use these states consistently:
 
 - `CANONICAL_READY`
+- `BEHAVIORAL_SCIENCE_MAP_READY`
 - `PRODUCT_QA_READY`
 - `ARTIFACT_READY`
 - `DEVICE_QA_READY`
@@ -66,7 +170,7 @@ Use these states consistently:
 
 One blocked platform/task must not stop unrelated lanes.
 
-## 4. Canonical-first rule
+## 5. Canonical-first rule
 
 Before work:
 1. Read `MASTER.md`.
@@ -74,8 +178,9 @@ Before work:
 3. Read this runbook.
 4. Inspect current branch/code/evidence; do not assume old chat/ZIP state is current.
 5. Record exact branch/commit/SHA for release-critical artifacts.
+6. For new app/product/feature/CM work, create or update the behavioral-science evidence map before final implementation/production.
 
-## 5. Product/release artifact lane
+## 6. Product/release artifact lane
 
 Required evidence where applicable:
 - application/package ID
@@ -91,7 +196,7 @@ Required evidence where applicable:
 
 Never call an artifact READY from a filename alone; hash and actual decode/install/build evidence where relevant.
 
-## 6. Pixel / device QA lane
+## 7. Pixel / device QA lane
 
 For Android releases, prefer AI-controlled Pixel/ADB/Operator work. Owner should not be asked to search settings or move files when AI routes exist.
 
@@ -104,10 +209,11 @@ Verify as applicable:
 - offline/network behavior
 - purchase/delivery/install instructions
 - screenshots/video evidence
+- behavioral-science design does not create usability/accessibility regressions
 
 Owner-only Android gates: biometric/identity/OS-protected action that automation cannot legally/technically perform.
 
-## 7. Sales page + payment lane
+## 8. Sales page + payment lane
 
 Before traffic:
 - product name matches canonical
@@ -119,13 +225,14 @@ Before traffic:
 - CTA text matches actual sale state
 - no stale text such as `販売開始前` when sales are LIVE
 - payment link valid
+- framing/choice architecture is clear and non-deceptive
 
 E2E:
 `SNS/profile -> sales page -> product/price -> consent -> purchase CTA -> payment boundary`
 
 Do not create a real charge merely to repeat a previously evidenced payment E2E unless specifically required.
 
-## 8. Creative engine
+## 9. Creative engine
 
 Do not rely on one CM. Maintain a creative inventory with distinct jobs.
 
@@ -141,11 +248,15 @@ Reusable roles:
 - Feature
 - Phrase/content series
 
+Every CM must start from the behavioral-science evidence map in section 3 and explicitly state which supported principles are being used and why.
+
 For each asset record:
 - CM/content ID
 - hook
 - target
 - purpose
+- behavioral-science mechanisms used
+- evidence references/claim level
 - script
 - narration/source/license
 - subtitles
@@ -159,7 +270,7 @@ For each asset record:
 
 Scientific claims must be evidence-mapped. Do not use psychology/behavioral economics/cognitive science/neuroscience merely as authority decoration.
 
-## 9. Media technical QA
+## 10. Media technical QA
 
 For short vertical video, record actual properties rather than assuming them. Typical DAIMON launch target used:
 - 1080x1920
@@ -174,7 +285,7 @@ For short vertical video, record actual properties rather than assuming them. Ty
 
 Old/superseded/muted assets must be clearly prohibited from posting.
 
-## 10. SNS account lane
+## 11. SNS account lane
 
 Maintain one canonical account inventory. Never create duplicate accounts simply because one session is unavailable.
 
@@ -188,7 +299,7 @@ For each platform record:
 - publication state
 - public post URL/ID
 
-## 11. Platform publication lanes
+## 12. Platform publication lanes
 
 ### Instagram
 Verify:
@@ -222,7 +333,7 @@ Prefer an already-authenticated session/device. If Pixel is logged in and USB/Op
 
 Owner login/OTP/CAPTCHA/biometric is isolated to TikTok; other lanes continue.
 
-## 12. Publish authorization
+## 13. Publish authorization
 
 Read `APPROVAL_PERMISSION_MASTER.md`.
 
@@ -230,7 +341,7 @@ A Publish GO is scoped. Once the Owner explicitly grants publication for a defin
 
 Normal draft/upload/QA/technical preparation is not a Publish Gate.
 
-## 13. Post-publication proof
+## 14. Post-publication proof
 
 A button click is not PASS. For every published post capture:
 - platform
@@ -245,7 +356,7 @@ A button click is not PASS. For every published post capture:
 
 Only then mark `LIVE = PASS`.
 
-## 14. Measurement
+## 15. Measurement
 
 Never invent unavailable metrics and never treat `null` as zero.
 
@@ -265,7 +376,9 @@ Track when available:
 
 Link metrics to platform + post ID + CM/content ID.
 
-## 15. Organic recognition loop
+Behavioral-science hypotheses must also have measurable outcomes where practical. Use actual data to retain, revise or reject design hypotheses.
+
+## 16. Organic recognition loop
 
 Free distribution strategy is not repeated identical spam. Use multiple angles so the same audience can recognize the brand repeatedly:
 
@@ -273,17 +386,17 @@ Free distribution strategy is not repeated identical spam. Use multiple angles s
 
 Maintain a queue across product demo, WHY, problem, return/recovery, price, trust, brand and phrase/content series. Use actual performance to decide what to repeat/cutdown/retire.
 
-## 16. AI5 responsibilities
+## 17. AI5 responsibilities
 
-- Zero: canonical specification, prioritization, integration, GitHub canonical management.
+- Zero: canonical specification, prioritization, integration, GitHub canonical management, behavioral-science design requirements.
 - Codex: implementation, builds, upload/publish automation, QA, evidence and measurements.
-- Claude: difficult technical review/implementation and claim-quality review.
-- Gemini: market/competitor/research/hook/data analysis.
+- Claude: difficult technical review/implementation and rigorous claim/design review.
+- Gemini: market/competitor/research/hook/data analysis and evidence discovery.
 - Manus: web/sales/LP/SNS conversion review and production support.
 
-Do not make all AIs perform identical work. Cross-check only where independence adds value.
+For important behavioral-science claims, use independent review where it materially reduces error. Do not make all AIs perform identical work.
 
-## 17. Evidence and GitHub structure
+## 18. Evidence and GitHub structure
 
 Prefer stable paths that are easy to update:
 
@@ -300,25 +413,30 @@ marketing/
   CONTENT_QUEUE.md
   media-evidence.json
   claims/
+behavioral-science/
+  EVIDENCE_MAP.md
+  SOURCES.md
 evidence/
   YYYY-MM-DD/
 ```
 
 Project-specific repos may use existing equivalent paths; do not create duplicate structures unnecessarily.
 
-Keep `CURRENT_RELEASE.yaml`, `CHECKPOINT.md`, `FUNNEL_STATUS.md`, and `CONTENT_QUEUE.md` short and overwrite/update them as current-state documents. Put historical evidence in dated files. This keeps the system easy to edit without rewriting the runbook.
+Keep `CURRENT_RELEASE.yaml`, `CHECKPOINT.md`, `FUNNEL_STATUS.md`, `CONTENT_QUEUE.md`, and the active behavioral-science map concise and updateable. Put historical evidence in dated files. This keeps the system easy to edit without rewriting the runbook.
 
-## 18. Failure isolation
+## 19. Failure isolation
 
 - `WAITING_OWNER` blocks only its own lineage.
 - One social platform failure does not block other platforms.
 - One AI failure does not stop other AI tasks.
 - Sales-page hotfix does not stop creative production unless the funnel is unsafe to expose.
 - Creative production does not block already-approved publishing of a different ready asset.
+- A disputed/unsupported scientific claim blocks that claim, not unrelated implementation or publishing work.
 
-## 19. Definition of done — Japan direct sales
+## 20. Definition of done — Japan direct sales
 
 A direct-sales launch is complete when the required target scope is explicitly defined and all required items are measured PASS, typically:
+- behavioral-science map completed for material product/creative decisions
 - product/release artifact ready
 - device QA pass
 - sales page current and production
@@ -331,12 +449,12 @@ A direct-sales launch is complete when the required target scope is explicitly d
 
 Do not declare completion merely because files or drafts exist.
 
-## 20. Google Play reuse pipeline
+## 21. Google Play reuse pipeline
 
 This runbook is intentionally structured so the same core can feed Google Play.
 
 Reuse:
-`GitHub canonical -> build/test -> signed artifact -> SHA/evidence -> Pixel QA -> listing assets/copy -> privacy/legal/data declarations -> console upload -> test track -> review gates -> production publish -> post-release measurement`.
+`GitHub canonical -> behavioral-science design -> build/test -> signed artifact -> SHA/evidence -> Pixel QA -> listing assets/copy -> privacy/legal/data declarations -> console upload -> test track -> review gates -> production publish -> post-release measurement`.
 
 Google Play-specific additions:
 - signed AAB
@@ -349,9 +467,11 @@ Google Play-specific additions:
 - review/status handling
 - staged/production release
 
+Store listing copy and promotional assets follow the same evidence-based behavioral-science/claim rules as other marketing creatives.
+
 Owner-only gates remain limited to genuine Google identity/consent/money/publication actions that cannot be automated.
 
-## 21. Fast update rule
+## 22. Fast update rule
 
 When a reusable lesson is discovered:
 1. Update the smallest relevant section of this runbook.
