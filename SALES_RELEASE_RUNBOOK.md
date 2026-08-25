@@ -10,7 +10,7 @@ This runbook turns the DAIMON MORNING Japan launch work into a reusable, quickly
 
 Goal:
 
-`GitHub canonical -> behavioral-science design -> product QA -> release artifact -> device QA -> sales page/payment -> evidence-based creative production -> SNS accounts -> draft/upload -> Owner-only gates -> public release -> end-to-end verification -> measurement -> iteration`
+`GitHub canonical -> behavioral-science design -> product QA -> release artifact -> device QA -> sales page/payment -> evidence-based creative production -> post-build behavioral explanation -> SNS accounts -> draft/upload -> Owner-only gates -> public release -> end-to-end verification -> measurement -> iteration`
 
 Do not reconstruct this flow from chat history. Update this runbook when a reusable improvement is confirmed.
 
@@ -37,6 +37,7 @@ behavioral_science:
     - human_factors
     - behavioral_design
   evidence_map: "<PATH_TO_EVIDENCE_MAP>"
+  post_build_explanation: "<PATH_TO_BEHAVIORAL_SALES_EXPLANATION>"
 release:
   artifact_type: "<APK/AAB/PWA/ZIP>"
   artifact_sha256: "<SHA256>"
@@ -148,7 +149,81 @@ Before scripting/rendering a CM, explicitly evaluate:
 
 Creative production starts from this map, then moves to script/storyboard/rendering.
 
-## 4. Release state machine
+## 4. Mandatory post-build behavioral & sales explanation
+
+After every material app/product/feature and every CM/marketing creative is produced, create a concise but concrete explanation of **what behavioral science was actually used, why it was used, what customer behavior is expected, and how that behavior connects to the sales structure**.
+
+This is mandatory even when the implementation passed technical QA. `CREATIVE_READY` or product completion is not sufficient without this explanation for material work.
+
+### Required explanation fields
+For each material element, explain:
+1. `WHAT WAS BUILT` — the actual screen, flow, phrase, hook, CTA, timing, audio, visual, pricing presentation, etc.
+2. `PSYCHOLOGY / SCIENCE USED` — the specific domain and principle/mechanism actually used.
+3. `WHY IT WAS USED` — the user problem or decision friction it is intended to address.
+4. `EXPECTED CUSTOMER RESPONSE` — what the customer is expected to notice, understand, feel, remember or do next.
+5. `BEHAVIORAL PATH` — the next observable action expected from that response.
+6. `SALES ROLE` — how that action advances the customer through the funnel.
+7. `EVIDENCE / CLAIM LEVEL` — evidence source/strength and A/B/C/PROHIBITED classification where relevant.
+8. `WHAT WOULD DISPROVE IT` — metric/result that would show the hypothesis is not working.
+9. `NEXT OPTIMIZATION` — what to change if actual behavior differs from the hypothesis.
+
+### Required customer-behavior chain
+Every product/CM explanation must explicitly describe the intended chain, adapted to the product:
+
+`EXPOSURE -> ATTENTION -> COMPREHENSION -> MEMORY/TRUST/MOTIVATION -> NEXT ACTION -> PROFILE/STORE/LP -> PURCHASE INTENT -> CHECKOUT -> PURCHASE -> USE/RETURN/RETENTION`
+
+Not every artifact owns every stage. State which stage(s) it is designed to influence.
+
+### Required sales-structure explanation
+Do not merely say “this should sell”. Explain:
+- which customer state the asset/product addresses
+- which friction/barrier it removes
+- why the chosen mechanism should affect that barrier
+- what action the customer should take next
+- where that action lands in the actual funnel
+- how conversion will be measured
+- what alternative explanation/confound could produce the same observed result
+
+### Example format
+```text
+ELEMENT: 3-second opening hook
+SCIENCE: selective attention / salience / cognitive fluency
+WHY: initial viewers do not yet know the product; reduce time-to-comprehension
+EXPECTED RESPONSE: viewer understands the problem/product category before swiping
+NEXT ACTION: continue watching past 3 seconds
+SALES ROLE: increases qualified exposure to CTA and profile route
+MEASURE: 3-second hold, completion, profile visits
+CLAIM LEVEL: B
+FAIL CONDITION: hold improves but profile visits do not; hook may attract without purchase relevance
+```
+
+### Product explanation requirement
+For apps/products, cover at minimum:
+- onboarding
+- core interaction loop
+- choice/default structure
+- friction reduction
+- feedback/reward
+- re-entry/retention design
+- trust/consent/pricing presentation
+- purchase/use transition
+
+### CM explanation requirement
+For each CM, cover at minimum:
+- hook
+- problem framing
+- product explanation
+- visual/audio/narration choices where behaviorally material
+- memory/brand device
+- CTA
+- price/value framing if present
+- intended funnel stage
+- expected next customer action
+
+### No hindsight fabrication
+The post-build explanation must map to the design actually implemented. Do not invent psychological rationales after the fact for choices that were not evidence-based. If an element has no behavioral-science rationale, say `NONE / aesthetic or technical choice` rather than manufacturing a scientific story.
+
+## 5. Release state machine
 
 Use these states consistently:
 
@@ -160,6 +235,7 @@ Use these states consistently:
 - `SALES_PAGE_READY`
 - `PAYMENT_READY`
 - `CREATIVE_READY`
+- `BEHAVIORAL_SALES_EXPLANATION_READY`
 - `POST_READY`
 - `WAITING_OWNER` only for genuine Owner-only gates
 - `LIVE`
@@ -170,7 +246,7 @@ Use these states consistently:
 
 One blocked platform/task must not stop unrelated lanes.
 
-## 5. Canonical-first rule
+## 6. Canonical-first rule
 
 Before work:
 1. Read `MASTER.md`.
@@ -179,8 +255,9 @@ Before work:
 4. Inspect current branch/code/evidence; do not assume old chat/ZIP state is current.
 5. Record exact branch/commit/SHA for release-critical artifacts.
 6. For new app/product/feature/CM work, create or update the behavioral-science evidence map before final implementation/production.
+7. After material implementation/creative production, create/update the behavioral & sales explanation before declaring the work fully ready.
 
-## 6. Product/release artifact lane
+## 7. Product/release artifact lane
 
 Required evidence where applicable:
 - application/package ID
@@ -196,7 +273,7 @@ Required evidence where applicable:
 
 Never call an artifact READY from a filename alone; hash and actual decode/install/build evidence where relevant.
 
-## 7. Pixel / device QA lane
+## 8. Pixel / device QA lane
 
 For Android releases, prefer AI-controlled Pixel/ADB/Operator work. Owner should not be asked to search settings or move files when AI routes exist.
 
@@ -213,7 +290,7 @@ Verify as applicable:
 
 Owner-only Android gates: biometric/identity/OS-protected action that automation cannot legally/technically perform.
 
-## 8. Sales page + payment lane
+## 9. Sales page + payment lane
 
 Before traffic:
 - product name matches canonical
@@ -232,7 +309,7 @@ E2E:
 
 Do not create a real charge merely to repeat a previously evidenced payment E2E unless specifically required.
 
-## 9. Creative engine
+## 10. Creative engine
 
 Do not rely on one CM. Maintain a creative inventory with distinct jobs.
 
@@ -248,7 +325,7 @@ Reusable roles:
 - Feature
 - Phrase/content series
 
-Every CM must start from the behavioral-science evidence map in section 3 and explicitly state which supported principles are being used and why.
+Every CM must start from the behavioral-science evidence map in section 3 and explicitly state which supported principles are being used and why. After rendering, it must also receive the post-build explanation in section 4.
 
 For each asset record:
 - CM/content ID
@@ -257,6 +334,8 @@ For each asset record:
 - purpose
 - behavioral-science mechanisms used
 - evidence references/claim level
+- intended customer behavior
+- intended funnel stage
 - script
 - narration/source/license
 - subtitles
@@ -266,11 +345,12 @@ For each asset record:
 - evidence/claim limits
 - SHA-256
 - technical QA
+- behavioral/sales explanation path
 - Owner QA if genuinely required
 
 Scientific claims must be evidence-mapped. Do not use psychology/behavioral economics/cognitive science/neuroscience merely as authority decoration.
 
-## 10. Media technical QA
+## 11. Media technical QA
 
 For short vertical video, record actual properties rather than assuming them. Typical DAIMON launch target used:
 - 1080x1920
@@ -285,7 +365,7 @@ For short vertical video, record actual properties rather than assuming them. Ty
 
 Old/superseded/muted assets must be clearly prohibited from posting.
 
-## 11. SNS account lane
+## 12. SNS account lane
 
 Maintain one canonical account inventory. Never create duplicate accounts simply because one session is unavailable.
 
@@ -299,7 +379,7 @@ For each platform record:
 - publication state
 - public post URL/ID
 
-## 12. Platform publication lanes
+## 13. Platform publication lanes
 
 ### Instagram
 Verify:
@@ -333,7 +413,7 @@ Prefer an already-authenticated session/device. If Pixel is logged in and USB/Op
 
 Owner login/OTP/CAPTCHA/biometric is isolated to TikTok; other lanes continue.
 
-## 13. Publish authorization
+## 14. Publish authorization
 
 Read `APPROVAL_PERMISSION_MASTER.md`.
 
@@ -341,7 +421,7 @@ A Publish GO is scoped. Once the Owner explicitly grants publication for a defin
 
 Normal draft/upload/QA/technical preparation is not a Publish Gate.
 
-## 14. Post-publication proof
+## 15. Post-publication proof
 
 A button click is not PASS. For every published post capture:
 - platform
@@ -356,7 +436,7 @@ A button click is not PASS. For every published post capture:
 
 Only then mark `LIVE = PASS`.
 
-## 15. Measurement
+## 16. Measurement
 
 Never invent unavailable metrics and never treat `null` as zero.
 
@@ -376,108 +456,12 @@ Track when available:
 
 Link metrics to platform + post ID + CM/content ID.
 
-Behavioral-science hypotheses must also have measurable outcomes where practical. Use actual data to retain, revise or reject design hypotheses.
+Behavioral-science hypotheses must also have measurable outcomes where practical. Use actual data to retain, revise or reject design hypotheses. Compare observed customer behavior with the post-build behavioral/sales explanation and update the explanation when evidence contradicts the original hypothesis.
 
-## 16. Organic recognition loop
+## 17. Organic recognition loop
 
 Free distribution strategy is not repeated identical spam. Use multiple angles so the same audience can recognize the brand repeatedly:
 
 `UNKNOWN -> RECOGNIZED -> INTERESTED -> PROFILE -> SALES PAGE -> CHECKOUT -> PURCHASE`
 
-Maintain a queue across product demo, WHY, problem, return/recovery, price, trust, brand and phrase/content series. Use actual performance to decide what to repeat/cutdown/retire.
-
-## 17. AI5 responsibilities
-
-- Zero: canonical specification, prioritization, integration, GitHub canonical management, behavioral-science design requirements.
-- Codex: implementation, builds, upload/publish automation, QA, evidence and measurements.
-- Claude: difficult technical review/implementation and rigorous claim/design review.
-- Gemini: market/competitor/research/hook/data analysis and evidence discovery.
-- Manus: web/sales/LP/SNS conversion review and production support.
-
-For important behavioral-science claims, use independent review where it materially reduces error. Do not make all AIs perform identical work.
-
-## 18. Evidence and GitHub structure
-
-Prefer stable paths that are easy to update:
-
-```text
-MASTER.md
-APPROVAL_PERMISSION_MASTER.md
-SALES_RELEASE_RUNBOOK.md
-release/
-  CURRENT_RELEASE.yaml
-  CHECKPOINT.md
-sales/
-  FUNNEL_STATUS.md
-marketing/
-  CONTENT_QUEUE.md
-  media-evidence.json
-  claims/
-behavioral-science/
-  EVIDENCE_MAP.md
-  SOURCES.md
-evidence/
-  YYYY-MM-DD/
-```
-
-Project-specific repos may use existing equivalent paths; do not create duplicate structures unnecessarily.
-
-Keep `CURRENT_RELEASE.yaml`, `CHECKPOINT.md`, `FUNNEL_STATUS.md`, `CONTENT_QUEUE.md`, and the active behavioral-science map concise and updateable. Put historical evidence in dated files. This keeps the system easy to edit without rewriting the runbook.
-
-## 19. Failure isolation
-
-- `WAITING_OWNER` blocks only its own lineage.
-- One social platform failure does not block other platforms.
-- One AI failure does not stop other AI tasks.
-- Sales-page hotfix does not stop creative production unless the funnel is unsafe to expose.
-- Creative production does not block already-approved publishing of a different ready asset.
-- A disputed/unsupported scientific claim blocks that claim, not unrelated implementation or publishing work.
-
-## 20. Definition of done — Japan direct sales
-
-A direct-sales launch is complete when the required target scope is explicitly defined and all required items are measured PASS, typically:
-- behavioral-science map completed for material product/creative decisions
-- product/release artifact ready
-- device QA pass
-- sales page current and production
-- payment funnel pass
-- required SNS platforms live
-- public post playback pass
-- profile/post sales routes pass
-- measurement started
-- evidence committed/pushed
-
-Do not declare completion merely because files or drafts exist.
-
-## 21. Google Play reuse pipeline
-
-This runbook is intentionally structured so the same core can feed Google Play.
-
-Reuse:
-`GitHub canonical -> behavioral-science design -> build/test -> signed artifact -> SHA/evidence -> Pixel QA -> listing assets/copy -> privacy/legal/data declarations -> console upload -> test track -> review gates -> production publish -> post-release measurement`.
-
-Google Play-specific additions:
-- signed AAB
-- application ID/versionCode/versionName
-- Play Console app configuration
-- Store Listing assets/text
-- App Content/Data safety declarations
-- privacy policy URL
-- testing-track requirements
-- review/status handling
-- staged/production release
-
-Store listing copy and promotional assets follow the same evidence-based behavioral-science/claim rules as other marketing creatives.
-
-Owner-only gates remain limited to genuine Google identity/consent/money/publication actions that cannot be automated.
-
-## 22. Fast update rule
-
-When a reusable lesson is discovered:
-1. Update the smallest relevant section of this runbook.
-2. Update current-state files separately; do not turn this runbook into a giant progress log.
-3. Add a dated evidence record if the lesson came from an incident.
-4. Commit with a focused message.
-5. New tasks read the latest canonical files first.
-
-This structure is designed so future releases can be changed by editing the control block/current-state files rather than rewriting the whole process.
+Maintain a queue across product demo, WHY, problem,
