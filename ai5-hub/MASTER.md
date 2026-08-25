@@ -21,3 +21,5 @@ Required path: ZERO → AI5 HUB → ROUTER → CODEX / CLAUDE API / GEMINI API /
 Claude chat and Gemini chat are audit/fallback tools and are not required nodes for AI5_ZERO_ONLY_OPERATION_READY. The API nodes use the common ZERO Task/Result schemas. Current truth states are PASS, FAIL, NOT_WIRED, WAITING_OWNER_AUTH, WAITING_OWNER_MONEY, and BLOCKED; no internal substitute may promote an external node to PASS.
 
 Every execution uses an atomic persistent claim keyed by TASK_ID + CORRELATION_ID, a project Single Writer lease, a maximum of three attempts, crash lease recovery, and create-only Result acceptance.
+
+Artifact bytes return through Result Bus or private GitHub using ai5/schemas/artifact-manifest.schema.json. Chat-only completion reports do not establish delivery. See docs/ARTIFACT_RETURN.md.

@@ -27,3 +27,4 @@ $code=Get-Content -Raw -Encoding UTF8 (Join-Path $global:AI5TestRoot 'phase1.tes
 & (Join-Path $global:AI5TestRoot 'ZeroTaskSchema.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'ClosedLoopCore.Tests.ps1')
 & (Join-Path $global:AI5TestRoot 'ApiAdapters.Tests.ps1')
+& (Join-Path $global:AI5TestRoot 'ArtifactReturn.Tests.ps1')

@@ -11,3 +11,4 @@
 - Claude/Gemini closed-loop production nodes mean claude_api and gemini_api; chat sessions remain audit/fallback only.
 - Validate every dispatched task against ai5/schemas/zero-task.schema.json and every recovered result against ai5/schemas/zero-result.schema.json.
 - Do not enable unlimited auto-resume: atomic persistent claim, project writer lease, crash recovery, three-attempt ceiling and duplicate Result rejection are mandatory.
+- Code, ZIP, image, video and document outputs require an Artifact Manifest plus actual bytes in Result Bus/private GitHub. Never promote a text-only completion report to ARTIFACT_RECEIVED.

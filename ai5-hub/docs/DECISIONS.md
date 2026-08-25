@@ -34,3 +34,11 @@
 - TASK_ID + CORRELATION_ID のcreate-only永続claimとProject Single Writer leaseを使用する。lease失効時のみcrash recoveryし、3 attemptで停止する。
 - Resultは同一Task/Correlationにつきcreate-onlyで受理し、二重受信を破棄する。
 - credential値は検査・出力・保存せず、存在確認だけを行う。新規発行はOwner Auth、課金確定はOwner Money Gateとする。
+
+## 2026-08-25 — Artifact Return
+
+- ChatGPT/Claude chat本文だけではArtifact deliveryをPASSにしない。
+- Task ID、Correlation ID、Artifact ID、SHA-256、byte countを含むmanifestと実bytesをResult Bus/private GitHubへ返す。
+- composite identity + SHA-256のcreate-only receiptで同一Artifactの二重登録・二重施工を拒否する。
+- ZIPはhash固定後、path traversal、entry count、uncompressed size、compression ratioを検査し、clean extract後にCodexが独立testする。
+- 現在のClaude `ai5-p0.zip` はbytes未到達のため `CHAT_ARTIFACT_TRANSPORT = NOT_WIRED`、46/46は `UNVERIFIED`。
