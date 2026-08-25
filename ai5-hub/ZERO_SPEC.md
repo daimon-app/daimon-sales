@@ -56,6 +56,10 @@ Claudeを監査専用にせず、CodexとManusの両方を補助・代替でき�
 
 ## 2. AI5自動ルーティング
 
+Closed-loopの正式外部ノードは claude_api、gemini_api、MAIL_MANUS とする。Claude/Gemini chatは独立監査・Fallbackであり、AI5_ZERO_ONLY_OPERATION_READY の必須経路に含めない。API credential未設定は WAITING_OWNER_AUTH、credential存在・未配線は NOT_WIRED とし、内部agentでPASS代替しない。
+
+共通Taskは TASK_ID / PROJECT_ID / PURPOSE / PRIORITY / CANONICAL_REPO / CANONICAL_BRANCH / ALLOWED_ACTIONS / PROHIBITED_ACTIONS / OWNER_GATE_POLICY / ASSIGNEE / FALLBACK / EXPECTED_RESULT / CORRELATION_ID を必須とする。Auto Resumeには永続atomic claim、Project Single Writer lease、crash recovery、最大3 attempt、Result重複拒否を必須とする。
+
 |仕事|第一|第二・Fallback|最終統合|
 |---|---|---|---|
 |判断・設計|Zero|—|Zero|

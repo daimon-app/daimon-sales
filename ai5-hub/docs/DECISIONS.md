@@ -26,3 +26,11 @@
 - Gmail実ヘッダーがDAIMON公式Fromを採用しない場合は `UNSUPPORTED` とし、承認済みOwner Gmail fallbackを使用する。Primary化を停止しない。
 - 専用宛先、password、OTP、token、private key等はGitHub、Result Bus、Evidence、logへ保存しない。
 - APP/WEB GUI経路は削除せずrollback用Fallbackとして維持する。
+
+## 2026-08-25 — Claude/Gemini API nodes and durable auto-resume
+
+- Closed-loop必須ノードをClaude/Gemini chatから claude_api / gemini_apiへ変更する。chatは独立監査・Fallbackとして保持する。
+- 未配線、Owner認証待ち、Owner課金待ち、技術blockをそれぞれ NOT_WIRED / WAITING_OWNER_AUTH / WAITING_OWNER_MONEY / BLOCKED として分離する。
+- TASK_ID + CORRELATION_ID のcreate-only永続claimとProject Single Writer leaseを使用する。lease失効時のみcrash recoveryし、3 attemptで停止する。
+- Resultは同一Task/Correlationにつきcreate-onlyで受理し、二重受信を破棄する。
+- credential値は検査・出力・保存せず、存在確認だけを行う。新規発行はOwner Auth、課金確定はOwner Money Gateとする。

@@ -8,3 +8,6 @@
 - Preserve Manus APP/WEB as rollback-capable fallback and do not execute both routes for the same production task.
 - Owner Gate is limited to identity, money, publication, secrets and irreversible actions; only the affected task waits.
 - Do not place passwords, OTPs, tokens, private keys, dedicated mail addresses or personal authentication data in source, Result Bus, evidence or logs.
+- Claude/Gemini closed-loop production nodes mean claude_api and gemini_api; chat sessions remain audit/fallback only.
+- Validate every dispatched task against ai5/schemas/zero-task.schema.json and every recovered result against ai5/schemas/zero-result.schema.json.
+- Do not enable unlimited auto-resume: atomic persistent claim, project writer lease, crash recovery, three-attempt ceiling and duplicate Result rejection are mandatory.
