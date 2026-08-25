@@ -6,10 +6,18 @@
 > ただし、ユーザー（中山鉄兵）の最新の明示指示が最優先。
 
 - 正本化開始日: 2026-08-14
-- 最終同期: 2026-08-14 / v7 name-textpack
+- 最終同期: 2026-08-26 / approval-permission canonical
 - Repository: `daimon-app/daimon-sales`
 - Branch: `main`
 - Status: 販売版開発中
+
+## 0. 承認・許可の恒久正本
+
+AI5 / Codex の承認、許可、Command approval、Owner Gate、自動施工については、必ず [`APPROVAL_PERMISSION_MASTER.md`](./APPROVAL_PERMISSION_MASTER.md) を正本として読む。
+
+通常の可逆的な技術施工は原則として Owner approval / permission / continue confirmation 不要。本人確認、OTP/CAPTCHA/生体認証、新規金銭負担、未承認scopeの実公開、破壊的・不可逆操作、本人の法的同意、新規secret提供のみをOwner Gateの中心とする。
+
+重要：AI5 Approval Policy と Codex Desktop/runtime の `Command approval` は別レイヤ。GitHubへ `AUTO_APPROVED` と書くだけではCodex Desktopのpromptを消したことにならない。再発時は `APPROVAL_PERMISSION_MASTER.md` に従い、実runtimeのprompt sourceを特定して修正し、実測していないPASSを出さない。
 
 ## 1. 製品の目的
 
@@ -45,6 +53,7 @@ DAIMONの中核思想は「継続」より**戻ること**。
 ### ファイル配置
 
 - `MASTER.md`
+- `APPROVAL_PERMISSION_MASTER.md`
 - `index.html`
 - `assets/images.js`
 - `manifest.json`
@@ -110,14 +119,15 @@ DAIMONの中核思想は「継続」より**戻ること**。
 ## 7. 正本運用ルール
 
 1. 作業開始時に `MASTER.md` と現行 `main` を読む。
-2. 新しい仕様をユーザーが確定したらMASTERへ反映する。
-3. 仮説・提案・未承認案はMASTERへ確定事項として書かない。
-4. 古い仕様を復活させない。
-5. コード変更と仕様変更を混同しない。
-6. 完成判定前に、実装とMASTERの一致を確認する。
-7. ZIPを取り込む場合、正本mainとの差分を確認してから別ブランチへ取り込み、検証後にmainへ昇格する。
-8. mainへの反映は原則として履歴を壊さないfast-forwardまたは通常のレビュー済み変更とし、安易なforce updateを行わない。
-9. 大きな履歴は将来 `DECISIONS.md` 等へ分離し、MASTERは「現在の正解」を短く保つ。
+2. 承認・許可・Owner Gate・Command approvalを扱う場合は `APPROVAL_PERMISSION_MASTER.md` を必ず読む。
+3. 新しい仕様をユーザーが確定したらMASTERまたは該当する専用正本へ反映する。
+4. 仮説・提案・未承認案はMASTERへ確定事項として書かない。
+5. 古い仕様を復活させない。
+6. コード変更と仕様変更を混同しない。
+7. 完成判定前に、実装とMASTERの一致を確認する。
+8. ZIPを取り込む場合、正本mainとの差分を確認してから別ブランチへ取り込み、検証後にmainへ昇格する。
+9. mainへの反映は原則として履歴を壊さないfast-forwardまたは通常のレビュー済み変更とし、安易なforce updateを行わない。
+10. 大きな履歴は将来 `DECISIONS.md` 等へ分離し、MASTERは「現在の正解」を短く保つ。
 
 ## 8. AIチーム運用
 
@@ -135,7 +145,7 @@ DAIMONの中核思想は「継続」より**戻ること**。
 
 **最優先順位:**
 
-`ユーザーの最新明示指示 > MASTER最新記載 > 現行mainコード > 過去会話・旧ZIP・旧仕様`
+`ユーザーの最新明示指示 > APPROVAL_PERMISSION_MASTER等の専用正本 > MASTER最新記載 > 現行mainコード > 過去会話・旧ZIP・旧仕様`
 
 ## 10. v8 共通Engine＋3 Mode Pack（2026-08-15）
 
