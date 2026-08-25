@@ -17,3 +17,12 @@
 - 全AI Resultを共通Contractへ正規化し、LINEは本人向け短文、詳細証拠はTask/Result Busへ分離する。
 - 同一失敗3回・最大attempt/cycle・日次実行上限をLoop Guardとする。
 - 未完Loopはprivate Result Busから復元するが、実行前にZero Safety Layerで再評価する。
+
+## 2026-08-25 — Mail Manus Primary
+
+- 実測済みGmail→Mail Manus→private GitHub→reply回収をManus Primaryとする。
+- 状態は `CREATED → MAIL_QUEUED → MAIL_SENT → MANUS_RECEIVED → MANUS_TASK_CREATED → EXECUTING → RESULT_RETURNED → RESULT_VERIFIED → COMPLETED` の単調遷移とする。
+- `AI5_TASK_ID + CORRELATION_ID` が送信済みなら再送しない。API応答不明時もSent mailboxとResult Busを照合してからretryする。
+- Gmail実ヘッダーがDAIMON公式Fromを採用しない場合は `UNSUPPORTED` とし、承認済みOwner Gmail fallbackを使用する。Primary化を停止しない。
+- 専用宛先、password、OTP、token、private key等はGitHub、Result Bus、Evidence、logへ保存しない。
+- APP/WEB GUI経路は削除せずrollback用Fallbackとして維持する。

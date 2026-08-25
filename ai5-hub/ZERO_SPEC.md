@@ -26,6 +26,9 @@ DAIMON事業の商品開発・販売準備・SNS・Web実務・技術施工をAI
 
 - ブラウザ実務、SNSアカウント、Instagram、TikTok、YouTube、X、LP、販売ページ、Webサービス設定、販売導線、競合・SNS調査、公開ページQA、ストア情報、投稿・ショート動画企画を担当する。
 - 利用可能な無料枠・無料期間中は、適性のあるWeb実務へ積極投入する。
+- Primary routeは実証済みの `MAIL_MANUS`。Task ID・Correlation ID・Gmail message/thread ID・Manus Task IDを照合し、返信をResult Busへ回収する。送信済み照合前のtimeout再送は禁止する。
+- Secondaryは実在・認証・実測済みのdirect/APIだけ、Fallbackは既存Manus APP/WEB。GUI経路は削除せずrollback可能に維持する。
+- `MANUS ACTIVE` はdispatch、Manus Task生成、実行開始、result生成、result回収の全実測でのみPASSとする。
 
 ### CLAUDE / クロちゃん — 第二万能施工＋先生
 

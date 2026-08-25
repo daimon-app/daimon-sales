@@ -68,7 +68,7 @@ function Get-AI5CodexInstruction {
         "- Execution mode: $mode. Run independent read-only checks concurrently when supported.",
         '- Claude: use the connected official Claude Code CLI in read-only mode.',
         '- Gemini: use only the connected logged-in Chrome route; never extract cookies, tokens, or credentials.',
-        '- Manus: prefer the official Microsoft Store Windows app when health reports APP READY; use the connected logged-in Chrome route only as fallback. Dispatch exactly once per task ID and never extract cookies, tokens, or credentials.',
+        '- Manus: use MAIL_MANUS as Primary; use only a verified authenticated direct/API as Secondary, then the preserved APP/WEB GUI route as Fallback. Dispatch exactly once per Task ID + Correlation ID, reconcile sent mail and Result Bus before retry, and never extract addresses, cookies, tokens, or credentials.',
         '- NotebookLM: read-only source lookup only, require citations, then verify current technical truth in GitHub.',
         '- Do not fabricate a specialist result. If a route is unavailable, record it as UNVERIFIED and continue with safe available evidence.',
         '- Codex is the single writer. No specialist may edit repository files.',

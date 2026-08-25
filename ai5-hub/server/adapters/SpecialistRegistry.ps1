@@ -28,6 +28,17 @@ function Get-AI5SpecialistHealth {
             installSource = $record.install_source
             appAuthenticated = [bool]$record.app_authenticated
             webAuthenticated = [bool]$record.web_authenticated
+            mailState = $record.mail_state
+            mailSenderStatus = $record.mail_sender_status
+            directState = $record.direct_state
+            directVerified = [bool]$record.direct_verified
+            currentTask = $record.current_task
+            mailSent = [bool]$record.mail_sent
+            manusActive = [bool]$record.manus_active
+            resultReceived = [bool]$record.result_received
+            resultVerified = [bool]$record.result_verified
+            cost = $record.cost
+            ownerGate = [bool]$record.owner_gate
         }
     } catch {
         return [ordered]@{ available = $false; connection = 'error'; quota = 'unknown' }

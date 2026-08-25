@@ -47,12 +47,15 @@ function Get-AI5ManusHealth {
     $base=Get-AI5SpecialistHealth 'manus'
     $appState=if($base.appState){[string]$base.appState}elseif($base.connection-match'windows_app'){'READY'}else{'OFFLINE'}
     $webState=if($base.webState){[string]$base.webState}elseif($base.connection-match'chrome'){'READY'}else{'OFFLINE'}
+    $mailState=if($base.mailState){[string]$base.mailState}elseif($base.connection-match'mail_manus'){'READY'}else{'OFFLINE'}
     $health=[ordered]@{
-        available=[bool]($base.available-and($appState-eq'READY'-or$webState-eq'READY'))
+        available=[bool]($base.available-and($mailState-eq'READY'-or$appState-eq'READY'-or$webState-eq'READY'))
         connection=$base.connection
         quota=$base.quota
         checked_at=$base.checked_at
         preferredRoute=$base.preferredRoute
+        mail=[ordered]@{state=$mailState;sender=$base.mailSenderStatus;currentTask=$base.currentTask;sent=$base.mailSent;manusActive=$base.manusActive;resultReceived=$base.resultReceived;resultVerified=$base.resultVerified;cost=$base.cost;ownerGate=$base.ownerGate}
+        direct=[ordered]@{state=$base.directState;verified=[bool]$base.directVerified}
         app=[ordered]@{state=$appState;automation=$base.appAutomation;identity=$base.appIdentity;version=$base.appVersion;publisher=$base.publisher;source=$base.installSource;authenticated=[bool]$base.appAuthenticated}
         web=[ordered]@{state=$webState;authenticated=[bool]$base.webAuthenticated}
     }
