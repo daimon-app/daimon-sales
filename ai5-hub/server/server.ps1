@@ -210,7 +210,7 @@ function New-Task($body, [string]$idem) {
 
 function Submit-AI5TaskBody($body,[string]$idem) {
     if($body.attachmentId -and !(Get-AI5AttachmentPath ([string]$body.attachmentId))){throw'attachment_not_found'}
-    $problem=Test-AI5Instruction $body.message -Long:([bool]$body.longMessageId);if($problem){throw$problem}
+    $problem=Test-AI5Instruction $body.message -Long:([bool]$body.longMessageId);if($problem){throw $problem}
     if($body.taskId-and$body.taskId-notmatch'^task_[A-Za-z0-9_.-]{3,80}$'){throw'invalid_task_id'}
     if($body.taskId){$same=Get-AI5Task $body.taskId;if($same){return$same}}
     if($idem){$existing=Get-AI5Tasks|Where-Object{$_.idempotencyKey-eq$idem}|Select-Object -First 1;if($existing){return$existing}}
