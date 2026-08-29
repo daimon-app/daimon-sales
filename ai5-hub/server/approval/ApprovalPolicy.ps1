@@ -26,7 +26,10 @@ function Get-AI5ApprovalClassification {
     $money = '支払|課金|購入|送金|返金|資金移動|銀行|有料広告|有料契約|サブスクリプション|投資'
     $level1 = '新規公開|本番公開|sns投稿|外部送信|販売開始|新商品|新しい国|新価格|営業メール|affiliate申請.{0,12}(送信|提出)|外部サービス.{0,12}(登録|申込)|公開設定変更'
     $level0 = 'こんにちは|ありがとう|了解|おはよう|こんばんは|read.?only|読み取り|確認|調査|分析|監査|コード|実装|修正|test|テスト|lint|build|ビルド|commit|push|remote verify|result bus|evidence|decision log|task|retry|再試行|隔離|ログ|計測|utm|候補|比較|翻訳|日本語ui|landing|demo|private|非公開|rollback|ロールバック|git|github|windows|pc|資料'
-    if ($text -match $level2) {
+    $safeMainIntegration = $text-match'main' -and $text-match'(全回帰|回帰).{0,8}pass' -and $text-match'競合.{0,4}0' -and $text-match'非.?force' -and $text-match'rollback.{0,8}(ready|可能|あり)' -and $text-match'(外部公開なし|外部公開.{0,4}0)' -and $text-match'(金銭操作なし|金銭.{0,4}0|課金なし)' -and $text-match'(秘密情報なし|秘密情報.{0,4}0)' -and $text-match'(不可逆変更なし|重大な不可逆.{0,6}なし)'
+    if ($safeMainIntegration) {
+        $level = 0; $type = 'verified_main_integration'; $label = '検証済み通常統合'; $reason = '全回帰・競合・非force・Rollback・外部影響の安全条件を満たす通常main統合です。'; $recommendation = 'AI5自動承認で継続'
+    } elseif ($text -match $level2) {
         $level = 2; $type = $(if($text -match $money){'money_or_contract'}else{'owner_only'}); $label = $(if($type-eq'money_or_contract'){'支払い・契約の確認'}else{'本人操作が必要'}); $reason = '本人以外が代理できない重要操作を含みます。'; $recommendation = '内容確認後に本人が操作'
     } elseif ($text -match $level1) {
         $level = 1; $type = 'hub_approval'; $label = '鉄兵の確認が必要'; $reason = '重要な外部公開または外部送信です。'; $recommendation = '内容と公開範囲を確認'

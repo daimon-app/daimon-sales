@@ -13,6 +13,8 @@ try {
   $receipt=Approve-AI5ApprovalRequest 'level1' 'test-owner';if($receipt.status-ne'approved'-or!$receipt.receiptId){throw'approval receipt failed'}
   $reuse=Resolve-AI5TaskApprovalPolicy (New-PolicyTask 'level1-reuse' '新しいSNS投稿を公開')
   if($reuse.requiresApproval-or$reuse.approval.type-ne'existing_scope'){throw'exact scope reuse failed'}
+  $main=Resolve-AI5TaskApprovalPolicy (New-PolicyTask 'safe-main' 'main統合。全回帰PASS、競合0、非force、rollback READY、外部公開なし、金銭操作なし、秘密情報なし、重大な不可逆変更なし。')
+  if($main.requiresApproval-or$main.approval.type-ne'verified_main_integration'){throw 'verified safe main integration was not LEVEL 0'}
   $l2=Resolve-AI5TaskApprovalPolicy (New-PolicyTask 'level2' '4,980円の有料契約を購入')
   if(!$l2.approval.ownerOperationRequired-or!$l2.approvalPolicy.money){throw'LEVEL 2 money protection failed'}
   try{Approve-AI5ApprovalRequest 'level2' 'test-owner';throw'LEVEL 2 approval was allowed'}catch{if($_.Exception.Message-ne'owner_operation_required'){throw}}

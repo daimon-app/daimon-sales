@@ -24,7 +24,7 @@ Schema正本は [`task.schema.json`](../ai5/github-bus/schemas/task.schema.json)
 
 ## Approval and remote safety
 
-main merge、本番公開、販売開始、SNS公開、DM、課金、購入、契約、広告、OAuth、2FA、CAPTCHA、本人確認、不可逆操作、秘密情報外部送信は本人承認を維持する。実Task本文をPublic Repositoryへpushしない。Remote Busはprivate確認済み`daimon-app/ai5-github-result-bus`だけを使用し、同期直前にもvisibilityとsecretを再検査する。公開`daimon-app/daimon-sales`はコード正本として維持し、Task/Result保存先にはしない。
+安全条件未証明のmain統合、本番公開、販売開始、SNS公開、DM、課金、購入、契約、広告、OAuth、2FA、CAPTCHA、本人確認、不可逆操作、秘密情報外部送信は本人承認を維持する。全回帰PASS、競合0、非force、Rollback READY、外部公開・金銭・秘密情報・重大な不可逆変更なしを実証した通常main統合はLEVEL 0で継続する。実Task本文をPublic Repositoryへpushしない。Remote Busはprivate確認済み`daimon-app/ai5-github-result-bus`だけを使用し、同期直前にもvisibilityとsecretを再検査する。公開`daimon-app/daimon-sales`はコード正本として維持し、Task/Result保存先にはしない。
 
 ## Remote restore verification
 

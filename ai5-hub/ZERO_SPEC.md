@@ -8,7 +8,7 @@ Zeroは専門性、利用可能経路、実測された利用枠状態、Fallbac
 
 ## Owner承認・アカウント確認（恒久Policy）
 
-承認はLEVEL 0（AI5自動承認）、LEVEL 1（AI5 HUB承認）、LEVEL 2（本人専用重要操作）へ分類する。安全・可逆・非課金の通常施工でOwnerを停止させない。完全一致Scopeの既存承認は再質問せず使用し、LEVEL 1 Receipt後はTaskを自動再開する。金銭、契約、KYC、OTP、CAPTCHA、法的同意、秘密情報、不可逆操作はLEVEL 2として代理承認しない。
+承認はLEVEL 0（AI5自動承認）、LEVEL 1（AI5 HUB承認）、LEVEL 2（本人専用重要操作）へ分類する。安全・可逆・非課金の通常施工でOwnerを停止させない。全回帰PASS、競合0、非force、Rollback READY、外部公開・金銭操作・秘密情報・重大な不可逆変更なしを実証した通常main統合はLEVEL 0とし、mainという名前だけでOwner Gateを発行しない。完全一致Scopeの既存承認は再質問せず使用し、LEVEL 1 Receipt後はTaskを自動再開する。実支出、有料契約、購入・送金・返金、KYC、OTP、CAPTCHA、本人確認、法的・税務同意、秘密情報、重大な不可逆操作はLEVEL 2として代理承認しない。
 
 SNS・販売・配信アカウントはAccount ID / Channel IDとChannel Registry等のEvidenceでAI5が確認する。一致は `VERIFIED_BY_AI5` として続行、誤アカウントは投稿禁止、不明は対象媒体Taskだけ保留する。本人しかできない認証だけ日本語通知し、他TaskとGLOBAL PROFIT ENGINEを継続する。詳細正本は `docs/OWNER_APPROVAL_AND_ACCOUNT_POLICY.md`。
 
@@ -144,7 +144,7 @@ Claudeを監査専用にせず、CodexとManusの両方を補助・代替でき�
 - 課金、購入、契約、広告出稿
 - 2FA、CAPTCHA、本人確認、OAuth等の本人承認
 - 公開SNS投稿、DM送信
-- main merge、本番公開、Google Play公開、販売開始
+- 安全条件を実証できないmain統合、本番公開、Google Play公開、販売開始
 - 不可逆操作、秘密情報の外部送信
 
 ## 10. GitHub正本化
