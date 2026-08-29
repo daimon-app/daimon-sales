@@ -7,6 +7,7 @@ function Initialize-AI5CodexService {
     $script:CodexRuntime = Join-Path $ServerRoot 'runtime'
     $script:CodexSecretPath = Join-Path $script:CodexRuntime 'bridge.secret'
     $script:CodexWorkerLock = Join-Path $script:CodexRuntime 'codex-worker.lock'
+    $script:CodexReadOnlyWorkerLock = Join-Path $script:CodexRuntime 'codex-readonly-worker.lock'
     $script:CodexWorkerScript = Join-Path $AppRoot 'server\task-service\CodexWorker.ps1'
     @($script:CodexInbox, $script:CodexRuntime) | ForEach-Object { New-Item -ItemType Directory -Force $_ | Out-Null }
     if (!(Test-Path $script:CodexSecretPath)) {
@@ -48,6 +49,7 @@ function Get-AI5StoredCodexResult {
     if ($TaskId -notmatch '^AI5-[A-Za-z0-9_.-]+$') { return $null }
     try {
         $raw = & "$script:CodexBridgeRoot\bridge.ps1" show -TaskId $TaskId 2>$null
+        if(!$raw){$raw=& "$script:CodexBridgeRoot\bridge.ps1" show -TaskId $TaskId -Lane read-only 2>$null}
         if (!$raw) { return $null }
         return (($raw -join "`n") | ConvertFrom-Json)
     } catch { return $null }
@@ -57,7 +59,8 @@ function Get-AI5CodexInstruction {
     param($Task)
     $attachment=if($Task.attachment_id){Get-AI5AttachmentPath ([string]$Task.attachment_id)}else{$null}
     $agents = @($Task.assignedSecondary | Where-Object { $_ -and $_ -ne 'codex' } | Select-Object -Unique)
-    if ($agents.Count -eq 0) { return (([string]$Task.message)+$(if($attachment){"`nAttached screenshot (read-only): $attachment"}else{''})) }
+    $readOnlyRule=if($Task.execution_class-eq'READ_ONLY'){"`nREAD-ONLY CONTRACT: do not create, edit, delete, commit, push, publish, or change any file or setting. Return the requested response text with evidence."}else{''}
+    if ($agents.Count -eq 0) { return (([string]$Task.message)+$readOnlyRule+$(if($attachment){"`nAttached screenshot (read-only): $attachment"}else{''})) }
     $mode = if ($Task.execution_plan.mode) { [string]$Task.execution_plan.mode } else { 'sequential' }
     $specialists = $agents -join ', '
     $rules = @(
@@ -79,29 +82,32 @@ function Get-AI5CodexInstruction {
 }
 
 function Start-AI5CodexWorker {
+    param([switch]$ReadOnly)
     $health = Get-AI5CodexHealth
     if (!$health.available) { return $false }
-    if (Test-Path $script:CodexWorkerLock) {
-        $pidText = (Get-Content -Raw $script:CodexWorkerLock -ErrorAction SilentlyContinue).Trim()
+    $lockPath=if($ReadOnly){$script:CodexReadOnlyWorkerLock}else{$script:CodexWorkerLock}
+    if (Test-Path $lockPath) {
+        $pidText = (Get-Content -Raw $lockPath -ErrorAction SilentlyContinue).Trim()
         $process = $null
         if ($pidText -match '^\d+$') { $process = Get-Process -Id ([int]$pidText) -ErrorAction SilentlyContinue }
         if ($process) { return $true }
-        Remove-Item -LiteralPath $script:CodexWorkerLock -Force
+        Remove-Item -LiteralPath $lockPath -Force
     }
-    'launching' | Set-Content -LiteralPath $script:CodexWorkerLock -Encoding ASCII
+    'launching' | Set-Content -LiteralPath $lockPath -Encoding ASCII
     try {
         $psi = [Diagnostics.ProcessStartInfo]::new()
         $pwsh = Join-Path $PSHOME 'pwsh.exe'
         $psi.FileName = if (Test-Path $pwsh) { $pwsh } else { "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" }
-        $psi.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$script:CodexWorkerScript`" -ServerRoot `"$script:CodexServerRoot`" -AppRoot `"$script:CodexAppRoot`" -UserHome `"$env:USERPROFILE`""
+        $executionClass=if($ReadOnly){'READ_ONLY'}else{'WRITE'}
+        $psi.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$script:CodexWorkerScript`" -ServerRoot `"$script:CodexServerRoot`" -AppRoot `"$script:CodexAppRoot`" -UserHome `"$env:USERPROFILE`" -ExecutionClass $executionClass"
         $psi.UseShellExecute = $false
         $psi.CreateNoWindow = $true
         $psi.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
         $process = [Diagnostics.Process]::Start($psi)
-        $process.Id | Set-Content -LiteralPath $script:CodexWorkerLock -Encoding ASCII
+        $process.Id | Set-Content -LiteralPath $lockPath -Encoding ASCII
         return $true
     } catch {
-        Remove-Item -LiteralPath $script:CodexWorkerLock -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
         throw
     }
 }
@@ -123,14 +129,16 @@ function Submit-AI5CodexTask {
         risk_level = $Task.route.risk
         approval_required = $Task.requiresApproval
         status = 'queued'
+        execution_class = $(if($Task.execution_class-eq'READ_ONLY'){'READ_ONLY'}else{'WRITE'})
         signature_version = 2
         project_context = $context
     }
     $envelope.signature = Get-AI5CodexSignature $envelope.task_id $envelope.instruction $contextJson
     $path = Join-Path $script:CodexInbox ($Task.taskId + '.json')
-    if (Test-Path $path) { return [ordered]@{ accepted = $false; duplicate = $true; workerStarted = (Start-AI5CodexWorker) } }
+    $readOnly=$Task.execution_class-eq'READ_ONLY'
+    if (Test-Path $path) { return [ordered]@{ accepted = $false; duplicate = $true; workerStarted = (Start-AI5CodexWorker -ReadOnly:$readOnly) } }
     $temp = "$path.tmp"
     Write-AI5Utf8Json $envelope $temp 8
     Move-Item -LiteralPath $temp -Destination $path
-    return [ordered]@{ accepted = $true; duplicate = $false; workerStarted = (Start-AI5CodexWorker) }
+    return [ordered]@{ accepted = $true; duplicate = $false; workerStarted = (Start-AI5CodexWorker -ReadOnly:$readOnly) }
 }

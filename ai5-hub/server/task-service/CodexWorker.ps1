@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$ServerRoot,
     [Parameter(Mandatory = $true)][string]$AppRoot,
-    [string]$UserHome
+    [string]$UserHome,
+    [ValidateSet('WRITE','READ_ONLY')][string]$ExecutionClass='WRITE'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -12,7 +13,7 @@ if ($UserHome) {
 $bridge = Join-Path $AppRoot 'integrations\codex\zero-codex-bridge'
 $inbox = Join-Path $ServerRoot 'data\codex-inbox'
 $secretPath = Join-Path $ServerRoot 'runtime\bridge.secret'
-$workerLock = Join-Path $ServerRoot 'runtime\codex-worker.lock'
+$workerLock = Join-Path $ServerRoot $(if($ExecutionClass-eq'READ_ONLY'){'runtime\codex-readonly-worker.lock'}else{'runtime\codex-worker.lock'})
 $taskRoot = Join-Path $ServerRoot 'data\tasks'
 $logRoot = Join-Path $ServerRoot 'logs\tasks'
 New-Item -ItemType Directory -Force $logRoot | Out-Null
@@ -100,7 +101,7 @@ $currentEnvelopePath = $null
 try {
     $idlePasses = 0
     while ($idlePasses -lt 2) {
-        $file = Get-ChildItem $inbox -Filter '*.json' | Sort-Object CreationTime | Select-Object -First 1
+        $file = Get-ChildItem $inbox -Filter '*.json' | Sort-Object CreationTime | Where-Object {try{$candidate=Read-Utf8Json $_.FullName;$candidateClass=if($candidate.execution_class){[string]$candidate.execution_class}else{'WRITE'};$candidateClass-eq$ExecutionClass}catch{$false}} | Select-Object -First 1
         if (!$file) {
             $idlePasses++
             Start-Sleep -Milliseconds 350
@@ -148,6 +149,8 @@ try {
             continue
         }
 
+        $currentTask.timeline += , [ordered]@{status='CLAIMED';label="$ExecutionClass Codex worker claimed Task";at=[DateTime]::UtcNow.ToString('o')}
+        Save-Task $currentTask $currentTaskPath
         Set-TaskState $currentTask $currentTaskPath 'planning' 'Zero prepared a structured Codex instruction'
         Set-TaskState $currentTask $currentTaskPath 'running' 'Codex execution started'
 
@@ -155,10 +158,11 @@ try {
         Set-TaskProperty $currentTask 'worktree_preflight' ([ordered]@{projectId=$preflight.projectId;repository=$preflight.repository;expectedWorktree=[string]$envelope.project_context.worktreePath;actualCwd=$preflight.path;gitRoot=$preflight.gitRoot;branch=$preflight.branch;head=$preflight.head;gitStatus=@($preflight.status);trusted=$preflight.trusted;checkedAt=[DateTime]::UtcNow.ToString('o')})
         Save-Task $currentTask $currentTaskPath;Write-WorkerLog 'codex_worktree_preflight_passed' $currentTask.worktree_preflight
         $workspace = $preflight.path
-        & "$bridge\bridge.ps1" enqueue -TaskId $envelope.task_id -Instruction $envelope.instruction -Workspace $workspace | Out-Null
-        $result = & "$bridge\bridge.ps1" run-once | ConvertFrom-Json
+        $lane=if($ExecutionClass-eq'READ_ONLY'){'read-only'}else{'default'}
+        & "$bridge\bridge.ps1" enqueue -TaskId $envelope.task_id -Instruction $envelope.instruction -Workspace $workspace -Lane $lane | Out-Null
+        $result = & "$bridge\bridge.ps1" run-once -Lane $lane | ConvertFrom-Json
         if (!$result -or $result.task_id -ne $envelope.task_id) {
-            $result = & "$bridge\bridge.ps1" show -TaskId $envelope.task_id | ConvertFrom-Json
+            $result = & "$bridge\bridge.ps1" show -TaskId $envelope.task_id -Lane $lane | ConvertFrom-Json
         }
 
         Set-TaskProperty $currentTask 'bridge' ([ordered]@{
@@ -193,6 +197,7 @@ try {
         }
 
         if ($result.status -eq 'success') {
+            $currentTask.timeline += , [ordered]@{status='RESULT_RECEIVED';label='Codex実応答をBridgeが回収';at=[DateTime]::UtcNow.ToString('o')}
             Set-TaskState $currentTask $currentTaskPath 'reviewing' 'Bridge collected Codex evidence'
             Set-TaskProperty $currentTask 'validation' ([ordered]@{passed=$true;checks=[ordered]@{result_schema=$true;tests=(@($result.tests).Count-gt 0);bridge_success=$true};checked_at=[DateTime]::UtcNow.ToString('o')})
             $null=Initialize-AI5LoopTask $currentTask
@@ -212,7 +217,7 @@ try {
             $judge=Invoke-AI5DoubleJudge $currentTask
             if($judge.decision-eq'REWORK'){
                 Set-TaskState $currentTask $currentTaskPath 'retrying' "Zero + Codex REWORK cycle $($judge.cycle)"
-                & "$bridge\bridge.ps1" enqueue -TaskId $envelope.task_id -Instruction ($envelope.instruction+"`nREWORK: "+$judge.reason) -Workspace $workspace -Retry | Out-Null
+                & "$bridge\bridge.ps1" enqueue -TaskId $envelope.task_id -Instruction ($envelope.instruction+"`nREWORK: "+$judge.reason) -Workspace $workspace -Lane $lane -Retry | Out-Null
                 Save-Task $currentTask $currentTaskPath
                 Write-WorkerLog 'autonomous_rework_queued' @{task_id=$currentTask.taskId;cycle=$judge.cycle;reason=$judge.reason}
                 $currentTask=$null;$currentTaskPath=$null;$currentEnvelopePath=$null;continue
@@ -237,7 +242,7 @@ try {
             $canRetry = !$untrusted -and [bool]$result.retryable -and ![bool]$result.human_action_required -and [int]$currentTask.attempt -lt [int]$currentTask.max_attempts -and $repeatCount -lt 2
             if ($canRetry) {
                 Set-TaskState $currentTask $currentTaskPath 'retrying' 'Codex failure classified; safe retry queued'
-                & "$bridge\bridge.ps1" enqueue -TaskId $envelope.task_id -Instruction $envelope.instruction -Workspace $workspace -Retry | Out-Null
+                & "$bridge\bridge.ps1" enqueue -TaskId $envelope.task_id -Instruction $envelope.instruction -Workspace $workspace -Lane $lane -Retry | Out-Null
                 Write-WorkerLog 'codex_retry_queued' @{ task_id = $currentTask.taskId; attempt = $currentTask.attempt; fingerprint = $fingerprint }
                 $currentTask = $null
                 $currentTaskPath = $null

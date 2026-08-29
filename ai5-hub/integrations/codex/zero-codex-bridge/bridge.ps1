@@ -5,11 +5,13 @@ param(
   [string]$TaskId,
   [string]$Instruction,
   [string]$Workspace,
+  [ValidatePattern('^[A-Za-z0-9_.-]+$')][string]$Lane='default',
   [switch]$Retry
 )
 $ErrorActionPreference='Stop'
 $PSDefaultParameterValues['Get-Content:Encoding']='UTF8'
-$Root=$PSScriptRoot
+$Root=if($Lane-eq'default'){$PSScriptRoot}else{Join-Path $PSScriptRoot ('lanes\'+$Lane)}
+$AssetRoot=$PSScriptRoot
 $Queue=Join-Path $Root 'queue';$Results=Join-Path $Root 'results';$Logs=Join-Path $Root 'logs';$Runtime=Join-Path $Root 'runtime'
 @($Queue,$Results,$Logs,$Runtime,(Join-Path $Runtime 'workspace')) | ForEach-Object { New-Item -ItemType Directory -Force $_ | Out-Null }
 function Now { [DateTime]::UtcNow.ToString('o') }
@@ -18,7 +20,7 @@ function Safe([string]$Value) { $Value -replace '[^A-Za-z0-9_.-]','_' }
 function PathOf([string]$Id) { Join-Path $Queue ((Safe $Id)+'.json') }
 function WriteJ($Value,[string]$Path) { $Value|ConvertTo-Json -Depth 12|Set-Content -LiteralPath $Path -Encoding UTF8 }
 function Log([string]$Event,$Fields) { $item=[ordered]@{timestamp=Now;event=$Event};foreach($key in $Fields.Keys){$value=$Fields[$key];$item[$key]=if($value -is [string]){Redact $value}else{$value}};Add-Content (Join-Path $Logs 'bridge.jsonl') ($item|ConvertTo-Json -Compress -Depth 12) -Encoding UTF8 }
-function Config { $path=Join-Path $Root 'config.json';if(!(Test-Path $path)){$path=Join-Path $Root 'config.example.json'};Get-Content -Raw $path|ConvertFrom-Json }
+function Config { $path=Join-Path $AssetRoot 'config.json';if(!(Test-Path $path)){$path=Join-Path $AssetRoot 'config.example.json'};Get-Content -Raw $path|ConvertFrom-Json }
 function Resolve-CodexExecutable {
   $config=Config;$found=$env:CODEX_EXECUTABLE
   if(!$found){$cached=Join-Path $Runtime 'bin\codex.exe';if(Test-Path $cached){$found=$cached}}
@@ -50,7 +52,7 @@ function Execute([string]$Text,[string]$WorkspaceOverride) {
   }
   New-Item -ItemType Directory -Force $workspace|Out-Null
   $output=Join-Path $Runtime 'last.json';$events=Join-Path $Runtime 'events.jsonl';$errors=Join-Path $Runtime 'stderr.txt';Remove-Item -LiteralPath $output -Force -ErrorAction SilentlyContinue
-  $arguments=@('exec','--json','--color','never','--approve-for-me','--cd',$workspace,'--output-schema',(Join-Path $Root 'result.schema.json'),'--output-last-message',$output)
+  $arguments=@('exec','--json','--color','never','--approve-for-me','--cd',$workspace,'--output-schema',(Join-Path $AssetRoot 'result.schema.json'),'--output-last-message',$output)
   foreach($directory in $config.allowed_write_directories){$arguments+=@('--add-dir',[IO.Path]::GetFullPath($directory))}
   $prompt="Perform only the requested safe local task. Never modify unrelated files, credentials, system settings, remotes, or main. Verify completion. Return schema JSON with evidence. Use failed when impossible.`nTASK:`n$Text"
   $input=Join-Path $Runtime 'prompt.txt';[IO.File]::WriteAllText($input,$prompt,[Text.UTF8Encoding]::new($false));$arguments+='-'

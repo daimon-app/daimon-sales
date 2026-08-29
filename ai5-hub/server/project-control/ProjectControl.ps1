@@ -77,7 +77,7 @@ function Update-AI5ProjectWorkspaceMetadata($Project){
   $Project
 }
 function Get-AI5ProjectExecutionContext([string]$ProjectId){
-  if(!$ProjectId){return $null};$p=Get-AI5Project $ProjectId;if(!$p){throw'project_context_not_registered'};$p=Update-AI5ProjectWorkspaceMetadata $p;Save-AI5Project $p
+  if(!$ProjectId){return $null};$p=Get-AI5Project $ProjectId;if(!$p){throw 'project_context_not_registered'};$p=Update-AI5ProjectWorkspaceMetadata $p;Save-AI5Project $p
   [ordered]@{projectId=$p.projectId;repository=$p.repository.name;repositoryPath=$p.repository.repositoryPath;worktreePath=$p.repository.worktreePath;gitRoot=$p.repository.gitRoot;branch=$p.repository.activeBranch;head=$p.repository.latestCommit;requestedBy='AI5_HUB';autoExecution=$false}
 }
 function Get-AI5GitSnapshot($Project,[bool]$Fetch=$true){

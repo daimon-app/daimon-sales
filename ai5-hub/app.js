@@ -3,7 +3,7 @@ const AGENTS=[
   {id:"claude",name:"クロード",mark:"Cl",role:"品質監査・反証・安全確認"},{id:"manus",name:"マナス",mark:"M",role:"購入者視点・販売ページ・Web実査"},
   {id:"notebooklm",name:"資料検索",mark:"N",role:"過去資料・根拠検索（読み取り専用）"}
 ];
-const LABELS={queued:"受付済み",QUEUED:"次に実行",planning:"判断中",waiting_approval:"鉄兵の確認待ち",running:"作業中",reviewing:"検査中",retrying:"再試行中",completed:"正常",failed:"異常",cancelled:"中止",RUNNING:"作業中",READY:"実行待ち",WAITING:"待機中",BLOCKED:"停止中",PASS:"正常",FAIL:"異常",OFFLINE:"オフライン",ONLINE:"接続中",IDLE:"待機中",RETRY:"再試行中",STALE:"古い状態",UNCONNECTED:"未接続",READ_ONLY:"読み取り専用",SINGLE_WRITER:"書き込み担当"};
+const LABELS={queued:"受付済み",QUEUED:"作業待ち",CLAIMED:"担当AIが受付",planning:"判断中",waiting_approval:"鉄兵の確認待ち",running:"作業中",RUNNING:"作業中",RESULT_RECEIVED:"実応答を受信",reviewing:"検査中",retrying:"再試行中",completed:"正常",failed:"異常",cancelled:"中止",READY:"実行待ち",WAITING:"待機中",BLOCKED:"停止中",PASS:"正常",FAIL:"異常",FAILED:"異常",OFFLINE:"オフライン",ONLINE:"接続中",IDLE:"待機中",RETRY:"再試行中",STALE:"古い状態",UNCONNECTED:"未接続",READ_ONLY:"読み取り専用",SINGLE_WRITER:"書き込み担当"};
 const ownerLabel=value=>LABELS[value]||LABELS[String(value||'').toUpperCase()]||value||'未確認';
 const initial=[{role:"zero",text:"AI5 HUBへようこそ。私、ゼロにだけ指示してください。Local APIが目的を整理し、必要な兄弟だけに振り分けます。",at:new Date().toISOString(),routed:[]}];
 const load=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}};
