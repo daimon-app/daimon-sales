@@ -2,6 +2,10 @@
 
 **ZERO ALWAYS-ON / RESOURCE OPTIMIZED**
 
+## AI5 Resource Commander
+
+Zeroは専門性、利用可能経路、実測された利用枠状態、Fallbackを評価して担当を決める。取得不能な残量・使用量・回復時刻を推測しない。Claudeは節約・危険・制限状態で単純Taskから外し、Manusは販売直前など高価値な実Web Taskへ温存する。制限時はEvidenceを継承してCodex / Gemini / Zeroへ自動移管し、GLOBAL PROFIT ENGINEを停止しない。追加クレジット購入・プラン変更はLEVEL 2金銭Gateとする。
+
 ## Owner承認・アカウント確認（恒久Policy）
 
 承認はLEVEL 0（AI5自動承認）、LEVEL 1（AI5 HUB承認）、LEVEL 2（本人専用重要操作）へ分類する。安全・可逆・非課金の通常施工でOwnerを停止させない。完全一致Scopeの既存承認は再質問せず使用し、LEVEL 1 Receipt後はTaskを自動再開する。金銭、契約、KYC、OTP、CAPTCHA、法的同意、秘密情報、不可逆操作はLEVEL 2として代理承認しない。

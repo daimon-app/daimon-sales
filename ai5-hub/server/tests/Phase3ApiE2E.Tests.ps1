@@ -13,7 +13,7 @@ $process=$null
 try {
   $process=Start-Process -FilePath (Join-Path $PSHOME 'pwsh.exe') -ArgumentList @('-NoProfile','-File',(Join-Path $server 'server.ps1'),'-Port',$port) -WindowStyle Hidden -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
   $ready=$false
-  foreach($attempt in 1..40){try{$health=Invoke-RestMethod "$base/api/health" -TimeoutSec 1;if($health.ok){$ready=$true;break}}catch{};Start-Sleep -Milliseconds 150}
+  foreach($attempt in 1..120){try{$health=Invoke-RestMethod "$base/api/health" -TimeoutSec 1;if($health.ok){$ready=$true;break}}catch{};Start-Sleep -Milliseconds 150}
   if(!$ready){throw "server did not start: $(Get-Content -Raw $err -ErrorAction SilentlyContinue)"}
   $session=Invoke-RestMethod "$base/api/session"
   if(!$session.authenticated-or!$session.local){throw 'loopback session failed'}

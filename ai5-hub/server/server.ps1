@@ -5,7 +5,7 @@ $CodeServerRoot = if ($global:AI5CodeServerRoot) { $global:AI5CodeServerRoot } e
 $ServerRoot = if ($env:AI5_SERVER_DATA_ROOT) { [IO.Path]::GetFullPath($env:AI5_SERVER_DATA_ROOT) } elseif ($global:AI5ServerRoot) { $global:AI5ServerRoot } else { $PSScriptRoot }
 $AppRoot = Split-Path $CodeServerRoot
 
-foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1','storage\Attachments.ps1','storage\LongMessageIngestion.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'approval\ApprovalPolicy.ps1', 'notifications\PushNotification.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1','orchestrator\AutonomousLoop.ps1','orchestrator\TaskQueue.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\ManusAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'project-control\ProjectControl.ps1','command-center\CommandCenter.ps1','deployment\StableRuntime.ps1','github-bus\GitHubResultLoop.ps1')) {
+foreach ($module in @('router\Router.ps1', 'approval\ZeroApproval.ps1', 'adapters\MockAdapter.ps1', 'storage\Store.ps1','storage\Attachments.ps1','storage\LongMessageIngestion.ps1', 'security\Security.ps1', 'security\MobileSecurity.ps1', 'approval\ApprovalPolicy.ps1', 'notifications\PushNotification.ps1', 'task-service\CodexService.ps1', 'orchestrator\TaskEngine.ps1', 'orchestrator\ExecutionPolicy.ps1','orchestrator\AutonomousLoop.ps1','orchestrator\TaskQueue.ps1', 'adapters\ClaudeAdapter.ps1', 'adapters\SpecialistRegistry.ps1', 'adapters\BrowserSpecialistAdapter.ps1', 'adapters\ManusAdapter.ps1', 'adapters\NotebookLMAdapter.ps1', 'orchestrator\ResourceCommander.ps1', 'project-control\ProjectControl.ps1','command-center\CommandCenter.ps1','deployment\StableRuntime.ps1','github-bus\GitHubResultLoop.ps1')) {
     . ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $CodeServerRoot $module))))
 }
 Initialize-AI5Store $ServerRoot
@@ -16,6 +16,7 @@ Initialize-AI5ApprovalPolicy $ServerRoot
 Initialize-AI5PushNotifications $ServerRoot $AppRoot
 Initialize-AI5CodexService $ServerRoot $AppRoot
 Initialize-AI5SpecialistRegistry $ServerRoot
+Initialize-AI5ResourceCommander $ServerRoot
 Initialize-AI5ProjectControl $ServerRoot $AppRoot
 Initialize-AI5StableRuntime $ServerRoot $AppRoot
 Initialize-AI5GitHubResultLoop $ServerRoot
@@ -243,6 +244,7 @@ function Submit-AI5TaskBody($body,[string]$idem) {
     if($body.taskId){$same=Get-AI5Task $body.taskId;if($same){return$same}}
     if($idem){$existing=Get-AI5Tasks|Where-Object{$_.idempotencyKey-eq$idem}|Select-Object -First 1;if($existing){return$existing}}
     $task=New-Task $body $idem
+    $task=Resolve-AI5ResourceAssignment $task
     $task=Resolve-AI5TaskApprovalPolicy $task
     $decision=Get-AI5TaskQueueDecision $task @(Get-AI5Tasks 100) @(Get-AI5ActiveLocks)
     $task.execution_class=$(if($decision.readOnly){'READ_ONLY'}else{'WRITE'});if($decision.projectId){$task.project_id=$decision.projectId}
