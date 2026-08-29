@@ -14,7 +14,12 @@ function Test-AI5ReadOnlyTask($Task) {
 function Get-AI5TaskQueueDecision($Task,$Tasks,$Locks) {
     $project=Get-AI5TaskProjectId $Task;$readOnly=Test-AI5ReadOnlyTask $Task
     if(!$project){return [ordered]@{action='DISPATCH';reason='NO_PROJECT_CONFLICT';projectId=$null;readOnly=$readOnly}}
-    $active=@($Tasks|Where-Object{$_.taskId-ne$Task.taskId-and(Get-AI5TaskProjectId $_)-eq$project-and$_.status-in@('planning','running','reviewing','retrying')})
+    $freshAfter=[DateTime]::UtcNow.AddMinutes(-30)
+    $active=@($Tasks|Where-Object{
+        $fresh=$true
+        if($_.updatedAt){try{$fresh=([DateTime]::Parse([string]$_.updatedAt).ToUniversalTime()-ge$freshAfter)}catch{$fresh=$true}}
+        $_.taskId-ne$Task.taskId-and(Get-AI5TaskProjectId $_)-eq$project-and$_.status-in@('planning','running','reviewing','retrying')-and$fresh
+    })
     $locked=@($Locks|Where-Object{$_.projectId-eq$project}).Count-gt0
     if($readOnly){return [ordered]@{action='DISPATCH';reason='READ_ONLY_PARALLEL';projectId=$project;readOnly=$true}}
     if($active.Count-or$locked){return [ordered]@{action='QUEUE';reason='SINGLE_WRITER_BUSY';projectId=$project;readOnly=$false}}

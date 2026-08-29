@@ -7,4 +7,6 @@ if((Get-AI5TaskQueueDecision $read @($active) @()).reason-ne'READ_ONLY_PARALLEL'
 if((Get-AI5TaskQueueDecision $next @() @([pscustomobject]@{projectId='ai5-hub'})).action-ne'QUEUE'){throw'project lock ignored'}
 $negativeWrite=[pscustomobject]@{taskId='negative-write';project_id='ai5-hub';message='Git状態をread-onlyで確認し、変更せず結果だけ返してください';route=[pscustomobject]@{gitChange=$false;externalOperation=$false;workType='pc_task'}}
 if((Get-AI5TaskQueueDecision $negativeWrite @($active) @()).reason-ne'READ_ONLY_PARALLEL'){throw'negative write wording was treated as a write request'}
+$stale=[pscustomobject]@{taskId='stale';project_id='ai5-hub';message='old';status='running';updatedAt=[DateTime]::UtcNow.AddHours(-2).ToString('o');route=[pscustomobject]@{gitChange=$true;externalOperation=$false;workType='code'}}
+if((Get-AI5TaskQueueDecision $next @($stale) @()).action-ne'DISPATCH'){throw 'stale task retained writer ownership'}
 'TASK_QUEUE_TESTS_OK'
