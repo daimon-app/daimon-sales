@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AI5 GitHub Result", "type": "object",
+  "required": ["result_id", "result_version", "task_id", "ai", "status", "result", "summary", "approval_required", "finished_at"],
+  "properties": {
+    "result_id": {"type": "string"}, "result_version": {"type": "integer", "minimum": 1}, "task_id": {"type": "string"}, "ai": {"enum": ["codex", "claude", "gemini", "manus", "notebooklm"]}, "status": {"type": "string"},
+    "result": {"enum": ["PASS", "FAIL", "BLOCKED", "APPROVAL_REQUIRED", "CRITICAL_FAIL"]}, "summary": {"type": "string"}, "actions": {"type": "array"}, "evidence": {"type": "array"}, "changedFiles": {"type": "array"}, "files_changed": {"type": "array"}, "issues": {"type": "array"}, "recommendation": {"type": "string"}, "needsRework": {"type": "boolean"}, "needsApproval": {"type": "boolean"}, "repository": {"type": "string"}, "branch": {"type": "string"}, "commit": {"type": "string"},
+    "tests": {"type": "array"}, "qa": {"type": "array"}, "audit": {"type": "string"}, "blockers": {"type": "array"}, "approval_required": {"type": "boolean"}, "recommended_next_action": {"type": "string"}, "resource_status": {"enum": ["AVAILABLE", "LIMITED", "EXHAUSTED", "TIMEOUT", "UNKNOWN"]}, "finished_at": {"type": "string"}
+  }
+}

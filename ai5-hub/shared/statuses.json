@@ -1,0 +1,11 @@
+{
+  "queued": "受付",
+  "planning": "判断中",
+  "waiting_approval": "承認待ち",
+  "running": "施工中",
+  "reviewing": "検査中",
+  "completed": "完了",
+  "failed": "失敗",
+  "cancelled": "中止"
+}
+

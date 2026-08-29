@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07120f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AI5 HUB">
+  <title>AI5 HUB</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="icons/ai5-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css?v=56-ja">
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <div class="brand"><span class="brand-mark">五</span><div><strong>AI5 HUB</strong><small>施工司令室</small></div></div>
+      <button class="room active"><span class="avatar zero">0</span><span><b>ゼロ</b><small>総司令塔・本人窓口</small></span><i></i></button>
+      <div class="section-title">AI5兄弟</div>
+      <div id="agents" class="agents"></div>
+      <div class="security"><b>LOCAL FIRST</b><span>認証情報は保存しません</span></div>
+    </aside>
+
+    <main class="chat">
+      <header>
+        <div><h1>ゼロ</h1><p><span id="connectionDot" class="online-dot checking"></span><span id="connectionText">Local API確認中</span></p></div>
+        <div class="header-actions"><button id="diagnoseButton" class="ghost subtle">アプリ診断</button><button id="installButton" class="ghost subtle" hidden>インストール</button><button id="notifyButton" class="ghost subtle">通知</button><button id="logoutButton" class="ghost subtle">ログアウト</button><button id="flowButton" class="ghost">施工フロー</button></div>
+      </header>
+
+      <div id="chatFilters" class="chat-filters" aria-label="履歴フィルター"><button data-chat-filter="all" class="active">全員</button><button data-chat-filter="zero">ゼロ</button><button data-chat-filter="codex">コーデックス</button><button data-chat-filter="claude">クロード</button><button data-chat-filter="gemini">ジェミニ</button><button data-chat-filter="manus">マナス</button><button data-chat-filter="notebooklm">資料検索</button><select id="chatLevel" aria-label="表示レベル"><option>簡潔</option><option selected>標準</option><option>詳細</option></select></div>
+      <section id="messages" class="messages" aria-live="polite"></section>
+      <section id="ai5View" class="projects-view command-center" hidden>
+        <div class="command-title"><div><small>AI5 稼働状況</small><h2>AI5 現在の作業</h2></div><div id="commandHealth" class="command-health"></div></div>
+        <div id="ai5SiblingCards" class="ai5-cards" aria-live="polite"></div>
+        <h3>資料・過去仕様検索</h3><div id="knowledgeCard" class="ai5-cards knowledge"></div>
+        <h3>現在進行中</h3><div id="currentWork" class="task-list"></div>
+        <h3>鉄兵の確認が必要</h3><div id="commandApprovals" class="task-list"></div>
+        <h3>利益状況</h3><div id="profitSummary" class="project-stats"></div>
+        <h3>AI利用状況</h3><div id="creditSummary" class="live-ai5"></div>
+        <h3>各AIの接続と鮮度</h3><div id="liveAi5" class="live-ai5"></div>
+        <h3>AI間通信</h3><div id="aiFlows" class="ai-flows"></div>
+        <h3>書き込み担当</h3><div id="writeLocks" class="write-locks"></div>
+        <h3>最近の作業結果</h3><div id="recentResults" class="task-list"></div>
+      </section>
+      <section id="projectsView" class="projects-view" hidden>
+        <div class="projects-head"><div><small>PROJECT CONTROL</small><h2>全プロジェクト</h2></div><button id="addProjectButton">＋ 登録</button></div>
+        <div id="projectStats" class="project-stats"></div>
+        <div class="project-tools"><input id="projectSearch" type="search" placeholder="Project名 / Repository名"><select id="projectFilter"><option value="all">全件</option><option value="autoOn">自動実行ON</option><option value="autoOff">自動実行OFF</option><option value="TEPPEI">本人待ち</option><option value="error">異常停止</option><option value="running">施工中</option><option value="selling">販売中</option><option value="ARCHIVED">Archived</option></select></div>
+        <div id="projectList" class="project-list"></div>
+      </section>
+      <section id="systemView" class="projects-view" hidden><div class="projects-head"><div><small>プロジェクト管理</small><h2>システム</h2></div><div><button id="longMessageTestButton">長文受付テスト</button><button id="scanProjectsButton">今すぐ巡回</button></div></div><div id="systemStatus" class="system-status"></div></section>
+
+      <form id="composer" class="composer">
+        <label class="target-select">宛先：<select id="targetSelect" aria-label="指示先"><option value="auto">AUTO / Zero</option><option value="codex">Codex</option><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="manus">Manus</option><option value="notebooklm">NotebookLM</option><option value="all">ALL</option></select></label>
+        <label class="project-select">施工先：<select id="taskProjectSelect" aria-label="施工先Project"><option value="">Projectを選択</option></select></label>
+        <label class="attach-button" aria-label="スクリーンショットを添付">＋画像<input id="attachmentInput" type="file" accept="image/jpeg,image/png,image/webp" hidden></label><span id="attachmentStatus" class="attachment-status"></span>
+        <textarea id="prompt" rows="1" placeholder="ゼロに指示を入力…" aria-label="ゼロへの指示"></textarea>
+        <button type="submit" aria-label="送信">送信</button>
+        <div id="longMessageProgress" class="long-message-progress" hidden><span>長文指示を受付中</span><progress value="0" max="100"></progress><b>0%</b></div>
+        <p>ゼロが目的を整理し、必要な兄弟だけに施工を振り分けます。</p>
+      </form>
+    </main>
+
+    <aside id="activity" class="activity">
+      <div class="activity-head"><div><small>LIVE STATUS</small><h2>施工状況</h2></div><button id="closeFlow" aria-label="閉じる">×</button></div>
+      <div id="jobStatus" class="job-card idle"><span>現在</span><b>指示待ち</b><small>ゼロにメッセージを送ってください</small></div>
+      <div id="taskProgress" class="task-progress" aria-live="polite"></div>
+      <div id="resultDetails" class="result-details" hidden></div>
+      <h3>基本ルート</h3>
+      <ol class="route">
+        <li><b>本人 → ゼロ</b><span>目的と優先順位を整理</span></li>
+        <li><b>ゼロ → Codex</b><span>施工計画と安全確認</span></li>
+        <li><b>CodexがPC施工</b><span>Bridge経由で安全に実行</span></li>
+        <li><b>ゼロ → 本人</b><span>統合結果を最終報告</span></li>
+      </ol>
+      <h3>承認待ち</h3>
+      <div id="approvalArea" class="approval-empty">現在、本人確認が必要な操作はありません。</div>
+      <section id="taskLists" class="task-lists">
+        <h3>実行中</h3><div id="activeTasks" class="task-list"></div>
+        <h3>履歴</h3><div id="historyTasks" class="task-list"></div>
+      </section>
+    </aside>
+  </div>
+  <nav class="bottom-nav" aria-label="AI5 HUB ナビゲーション">
+    <button data-view="zero" class="active"><span>0</span>会話</button>
+    <button data-view="ai5"><span>五</span>AI5<b id="approvalBadge" hidden>0</b></button>
+    <button data-view="projects"><span>▦</span>案件</button>
+    <button data-view="system"><span>●</span>設定</button>
+  </nav>
+  <dialog id="projectDialog"><form method="dialog" class="project-dialog"><button class="dialog-close" value="cancel">×</button><div id="projectDetail"></div></form></dialog>
+  <dialog id="agentDialog"><form method="dialog" class="project-dialog"><button class="dialog-close" value="cancel">×</button><div id="agentDetail"></div></form></dialog>
+  <dialog id="projectCreateDialog"><form id="projectCreateForm" class="project-dialog"><button type="button" class="dialog-close" data-close-project>×</button><h2>Project登録</h2><label>Project Name<input name="name" required></label><label>Project ID<input name="projectId" required pattern="[a-z0-9][a-z0-9._-]{1,79}"></label><label>Repository（未確定なら空欄）<input name="repository"></label><p>AUTO EXECUTIONは安全のためOFFで登録されます。</p><button class="project-primary" type="submit">登録</button></form></dialog>
+  <div id="authGate" class="auth-gate" hidden><div><span class="brand-mark">五</span><h2>AI5 HUB</h2><p>本人認証が必要です。Tailscale接続を確認してログインしてください。</p><button id="loginButton">ログイン</button><small id="authError"></small></div></div>
+  <script src="app.js?v=56-ja"></script>
+</body>
+</html>

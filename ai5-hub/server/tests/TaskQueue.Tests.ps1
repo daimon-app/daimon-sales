@@ -1,0 +1,8 @@
+$ErrorActionPreference='Stop';$server=Split-Path $PSScriptRoot;. ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $server 'orchestrator\TaskQueue.ps1'))))
+function T($id,$project,$status,$type='code',$git=$true,$message='change'){[pscustomobject]@{taskId=$id;project_id=$project;status=$status;message=$message;route=[pscustomobject]@{workType=$type;gitChange=$git;externalOperation=$false}}}
+$active=T 'one' 'ai5-hub' 'running';$next=T 'two' 'ai5-hub' 'queued';$other=T 'three' 'other' 'queued';$read=T 'four' 'ai5-hub' 'queued' 'review' $false 'read-only review'
+if((Get-AI5TaskQueueDecision $next @($active) @()).action-ne'QUEUE'){throw'same project writer was not queued'}
+if((Get-AI5TaskQueueDecision $other @($active) @()).action-ne'DISPATCH'){throw'other project was blocked'}
+if((Get-AI5TaskQueueDecision $read @($active) @()).reason-ne'READ_ONLY_PARALLEL'){throw'read-only task was blocked'}
+if((Get-AI5TaskQueueDecision $next @() @([pscustomobject]@{projectId='ai5-hub'})).action-ne'QUEUE'){throw'project lock ignored'}
+'TASK_QUEUE_TESTS_OK'

@@ -1,0 +1,26 @@
+{
+  "name": "AI5 HUB",
+  "short_name": "AI5 HUB",
+  "id": "https://laptop-32d9hni7.tail11672d.ts.net/",
+  "description": "Zeroを窓口にAI5兄弟へ施工を依頼する専用ハブ",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#06100d",
+  "theme_color": "#07120f",
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "/manifest.webmanifest",
+      "id": "https://laptop-32d9hni7.tail11672d.ts.net/"
+    }
+  ],
+  "icons": [
+    {"src":"/icons/ai5-icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"/icons/ai5-icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"/icons/ai5-icon-192.png","sizes":"192x192","type":"image/png","purpose":"maskable"},
+    {"src":"/icons/ai5-icon-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+  ]
+}

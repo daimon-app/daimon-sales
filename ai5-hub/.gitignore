@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+secrets/
+server/data/
+server/logs/**/*.jsonl
+server/logs/**/*.log
+server/runtime/
+node_modules/
+

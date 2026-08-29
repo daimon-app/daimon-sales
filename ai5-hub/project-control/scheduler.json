@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "enabled": true,
+  "schedule": {"type": "interval", "intervalMinutes": 60, "timezone": "Asia/Tokyo"},
+  "maxParallel": 1,
+  "autoDispatch": true,
+  "note": "AUTO mode LIVEのProjectだけを直列投入する"
+}

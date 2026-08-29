@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.ai5/project-control/project.schema.json",
+  "title": "AI5 Project Control Project",
+  "type": "object",
+  "required": ["schemaVersion", "projectId", "name", "repository", "phase", "status", "blockedBy", "stopCode", "autoExecution", "executionPolicy", "timestamps", "aiState", "qualityGate", "history"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "projectId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,79}$"},
+    "name": {"type": "string", "minLength": 1},
+    "phase": {"enum": ["IDEA","RESEARCH","DESIGN","READY_FOR_BUILD","BUILDING","TESTING","REVIEW","FIELD_VALIDATION","RELEASE_READY","WAITING_FOR_APPROVAL","PUBLISHED","OPERATING","FIX_REQUIRED","ARCHIVED"]},
+    "status": {"enum": ["NOT_STARTED","READY","RUNNING","WAITING","BLOCKED","FAILED","REVIEW_REQUIRED","APPROVAL_REQUIRED","PAUSED","PUBLISHED","OPERATING","COMPLETED","ARCHIVED"]},
+    "blockedBy": {"enum": ["NONE","ZERO","CODEX","CLAUDE","GEMINI","MANUS","NOTEBOOKLM","TEPPEI","GITHUB","EXTERNAL","SYSTEM","CREDIT_LIMIT","UNKNOWN"]},
+    "stopCode": {"enum": ["NONE","ZERO_STOPPED","CODEX_STOPPED","CLAUDE_STOPPED","MANUS_STOPPED","GEMINI_STOPPED","TEPPEI_WAITING","GITHUB_SYNC_WAIT","CREDIT_PROTECTION_STOP","ERROR_LOOP_STOP","NEXT_STEP_MISSING","ALL_AI_DONE_BUT_IDLE","NORMAL_WAIT","EXTERNAL_WAIT","SYSTEM"]},
+    "autoExecution": {"type":"object","required":["enabled","mode"],"properties":{"enabled":{"type":"boolean"},"mode":{"enum":["OFF","DRY_RUN","LIVE"]}}},
+    "history": {"type":"array"}
+  },
+  "additionalProperties": true
+}
