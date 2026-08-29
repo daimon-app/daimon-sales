@@ -9,4 +9,8 @@ $negativeWrite=[pscustomobject]@{taskId='negative-write';project_id='ai5-hub';me
 if((Get-AI5TaskQueueDecision $negativeWrite @($active) @()).reason-ne'READ_ONLY_PARALLEL'){throw'negative write wording was treated as a write request'}
 $stale=[pscustomobject]@{taskId='stale';project_id='ai5-hub';message='old';status='running';updatedAt=[DateTime]::UtcNow.AddHours(-2).ToString('o');route=[pscustomobject]@{gitChange=$true;externalOperation=$false;workType='code'}}
 if((Get-AI5TaskQueueDecision $next @($stale) @()).action-ne'DISPATCH'){throw 'stale task retained writer ownership'}
+$explicit=[pscustomobject]@{taskId='live';project_id='ai5-hub';message='AI5 LIVE TEST。read-onlyで CODEX LIVE PASS と回答';requested_read_only=$true;status='queued';route=[pscustomobject]@{gitChange=$true;externalOperation=$false;workType='code'}}
+$explicitDecision=Get-AI5TaskQueueDecision $explicit @($active) @();if(!$explicitDecision.readOnly-or$explicitDecision.action-ne'DISPATCH'){throw 'explicit safe read-only task did not bypass writer queue'}
+$unsafe=[pscustomobject]@{taskId='unsafe';project_id='ai5-hub';message='read-onlyとして公開設定を変更';requested_read_only=$true;status='queued';route=[pscustomobject]@{gitChange=$true;externalOperation=$true;workType='code'}}
+if((Get-AI5TaskQueueDecision $unsafe @($active) @()).action-ne'QUEUE'){throw 'unsafe task abused read-only override'}
 'TASK_QUEUE_TESTS_OK'

@@ -5,6 +5,10 @@ function Get-AI5TaskProjectId($Task) {
     $null
 }
 function Test-AI5ReadOnlyTask($Task) {
+    if($Task.requested_read_only){
+      $explicit=([string]$Task.message)-replace'変更(せず|しない|禁止)',''-replace'一切変更せず',''
+      if($explicit-match'(?i)(read.?only|読み取り専用)' -and $explicit-notmatch'(修正|変更|実装|書込|削除|commit|push|公開|送信|購入|支払|契約)'){return $true}
+    }
     if($Task.route.gitChange-or$Task.route.externalOperation){return $false}
     if($Task.route.workType-in@('research','review','knowledge_lookup')){return $true}
     # A prohibition such as "変更せず" describes the safety boundary, not a write request.
