@@ -11,7 +11,7 @@ function New-AI5Children {
   if($Route.primary -eq 'notebooklm' -or $Route.secondary -contains 'notebooklm'){$steps+=,[ordered]@{title='出典確認';agent='notebooklm';phase='knowledge_validation'};$steps+=,[ordered]@{title='GitHub正本照合';agent='codex';phase='source_of_truth_validation'}}
   $i=0;@($steps|ForEach-Object{$i++;[ordered]@{task_id=('{0}-{1:D2}' -f $Task.task_id,$i);parent_task_id=$Task.task_id;title=$_.title;assigned_agent=$_.agent;phase=$_.phase;status='RECEIVED';created_at=$Task.created_at;updated_at=$Task.created_at;result=$null}})
 }
-function ConvertTo-AI5LegacyStatus([string]$Status){@{RECEIVED='queued';PLANNING='planning';ROUTING='planning';RUNNING='running';VALIDATING='reviewing';RETRYING='running';BLOCKED='failed';WAITING_APPROVAL='waiting_approval';COMPLETED='completed';FAILED='failed';CANCELLED='cancelled'}[$Status]}
+function ConvertTo-AI5LegacyStatus([string]$Status){@{RECEIVED='queued';QUEUED='queued';PLANNING='planning';ROUTING='planning';RUNNING='running';VALIDATING='reviewing';RETRYING='running';BLOCKED='failed';WAITING_APPROVAL='waiting_approval';COMPLETED='completed';FAILED='failed';CANCELLED='cancelled'}[$Status]}
 function Set-AI5TaskStatus {param($Task,[string]$Status,[string]$Label);$Task.canonical_status=$Status;$Task.status=ConvertTo-AI5LegacyStatus $Status;$Task.timeline+=,[ordered]@{status=$Status;label=$Label;at=[DateTime]::UtcNow.ToString('o')};Save-AI5Task $Task}
 function Test-AI5Completion {
   param($Task)
