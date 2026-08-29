@@ -8,4 +8,6 @@ $mr=ConvertTo-AI5SpecialistResult $m 'checked'
 $merged=Merge-AI5AgentResults @($gr,$mr)
 if($merged.status-ne'SUCCESS'-or$merged.agents.Count-ne2){throw'result merge failed'}
 try{New-AI5BrowserSpecialistRequest 'task_x' 'manus' 'publish' 'write';throw'write mode allowed'}catch{if($_.Exception.Message-eq'write mode allowed'){throw}}
+if(!(Test-AI5SpecialistLiveEvidence 'gemini' 'GEMINI LIVE PASS' @('Gemini exact live response PASS'))){throw 'live evidence missing'}
+if(Test-AI5SpecialistLiveEvidence 'gemini' 'GEMINI LIVE PASS' @('queued')){throw 'queued accepted'}
 'BROWSER_SPECIALIST_ADAPTER_TESTS_OK'

@@ -11,6 +11,14 @@ function ConvertTo-AI5SpecialistResult {
     [ordered]@{task_id=$Request.task_id;agent=$Request.agent;status='SUCCESS';summary=$Summary;findings=@($Summary);changes=@();artifacts=@($Sources);tests=@("$($Request.agent) read-only browser result collected");risks=@($Risks);next_action='VALIDATE';needs_human=$false;human_reason=$null}
 }
 
+function Test-AI5SpecialistLiveEvidence {
+    param([ValidateSet('gemini','manus')][string]$Agent,[string]$Summary,[array]$Tests=@())
+    $marker = $Agent.ToUpperInvariant() + ' LIVE PASS'
+    if ($Summary -notmatch ('(?im)^\s*' + [regex]::Escape($marker) + '\s*$')) { return $false }
+    $joined = @($Tests) -join ' | '
+    [bool]($joined -match ('(?i)' + [regex]::Escape($Agent) + '.*(?:live|exact|実応答).*PASS'))
+}
+
 function Merge-AI5AgentResults {
     param([array]$Results)
     $valid=@($Results|Where-Object{$_ -and $_.status -in @('SUCCESS','NEEDS_REVIEW')})

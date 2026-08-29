@@ -1,4 +1,6 @@
 $ErrorActionPreference='Stop';$server=Split-Path $PSScriptRoot;. ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $server 'orchestrator\AutonomousLoop.ps1'))))
+if(Test-AI5FailureEvidence 'Claude terminal_reason: completed; is_error: false; exit code: 0.'){throw 'explicit false error was treated as failure'}
+if(!(Test-AI5FailureEvidence 'Claude terminal_reason: failed; is_error: true')){throw 'real failure evidence was missed'}
 function New-LoopTask($tests){[pscustomobject]@{taskId='loop-test';route=[pscustomobject]@{workType='code'};requiresApproval=$false;result=[pscustomobject]@{status='success';summary='work completed';tests=@($tests);needs_human=$false;risks=@()}}}
 $ok=New-LoopTask -tests @('unit PASS');$decision=Invoke-AI5DoubleJudge $ok;if($decision.decision-ne'COMPLETE'-or$ok.agent_reports.Count-lt1-or$ok.line_messages.Count-lt2){throw 'double PASS completion failed'}
 $rework=New-LoopTask -tests @();$first=Invoke-AI5DoubleJudge $rework;if($first.decision-ne'REWORK'-or$rework.loop_state.cycle-ne1){throw 'automatic REWORK failed'}

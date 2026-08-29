@@ -205,6 +205,7 @@ try {
             foreach($specialist in @($currentTask.assignedSecondary|Where-Object{$_-and$_-ne'codex'})){
                 $found=@($currentTask.agent_results|Where-Object{$_.agent-eq$specialist}|Select-Object -First 1)
                 if($found.Count){Add-AI5AgentReport $currentTask $specialist ([string]$found[0].status) '専門領域を確認' ([string]$found[0].summary) (@($found[0].risks)-join' / ') 'Zero統合監査'}
+                elseif($specialist-in@('gemini','manus')-and(Test-AI5SpecialistLiveEvidence $specialist $summary @($result.tests))){Add-AI5AgentReport $currentTask $specialist 'COMPLETE' 'ログイン済み正式経路で実応答を回収' ($specialist.ToUpperInvariant()+' LIVE PASS') 'なし' 'Zero統合監査'}
                 elseif($summary-match("(?im)^-\s*"+[regex]::Escape($specialist)+"\s*:\s*(VERIFIED|PARTIALLY VERIFIED|PASS|SUCCESS|UNVERIFIED)")){$specialistState=if($Matches[1]-eq'UNVERIFIED'){'BLOCKED'}else{'COMPLETE'};Add-AI5AgentReport $currentTask $specialist $specialistState '専門経路を実行' $Matches[1] $(if($specialistState-eq'BLOCKED'){'UNVERIFIED'}else{'なし'}) 'Zero統合監査'}
                 else{Add-AI5AgentReport $currentTask $specialist 'BLOCKED' '専門経路へ依頼' '独立結果を回収できませんでした' 'UNVERIFIED' 'Zeroが利用可能な証拠で判定'}
             }
