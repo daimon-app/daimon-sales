@@ -55,11 +55,11 @@ function Get-AI5ApprovalContext {
         targetItem=$(if($Task.product){[string]$Task.product}elseif($Task.taskLabel){[string]$Task.taskLabel}elseif($Task.taskId){"Task $($Task.taskId)"}else{''})
         accountService=$(if($Task.accountService){[string]$Task.accountService}elseif($Task.service){[string]$Task.service}elseif($Task.account){[string]$Task.account}elseif($Task.channel){[string]$Task.channel}else{''})
         amount=$amount
-        externalImpact=$(if($Task.externalImpact){[string]$Task.externalImpact}elseif($Policy.level-eq1){'指定した外部公開または外部送信が実行されます'}elseif($Policy.level-eq2){'本人専用操作の対象サービスへ影響します'}else{'外部への影響なし'})
-        reversibility=$(if($null-ne$Task.reversible){if([bool]$Task.reversible){'可逆'}else{'不可逆'}}elseif($Policy.reversible){'可逆'}else{'不可逆'})
+        externalImpact=$(if($Task.externalImpact){[string]$Task.externalImpact}elseif($Policy.level-eq0){'外部への影響なし'}else{''})
+        reversibility=$(if($null-ne$Task.reversible){if([bool]$Task.reversible){'可逆'}else{'不可逆'}}elseif($Policy.level-eq0){'可逆'}else{''})
         specificReason=$(if($Task.approvalReason){[string]$Task.approvalReason}elseif($Policy.level-eq1){'指定した外部公開・送信を開始するため、対象と影響範囲の確認が必要です。'}elseif($Policy.level-eq2){'本人以外が代理できない金銭・認証・法的操作を含むためです。'}else{[string]$Policy.reason})
         zeroRecommendation=[string]$Policy.recommendation
-        afterApproval=$(if($Task.afterApproval){[string]$Task.afterApproval}elseif($Policy.level-eq1){"承認後、「$($Task.objective)」を開始し、Receiptを保存してTaskを自動再開します。"}elseif($Policy.level-eq2){'本人操作完了後にReceiptを照合し、待機Taskだけを自動再開します。'}else{'AI5が自動テストを実行します。'})
+        afterApproval=$(if($Task.afterApproval){[string]$Task.afterApproval}elseif($Policy.level-eq0){'AI5が自動テストを実行します。'}else{''})
     }
     $labels=[ordered]@{operationContent='操作内容';targetItem='対象商品/Task';accountService='対象アカウント/サービス';amount='金額';externalImpact='外部への影響';reversibility='可逆性';specificReason='本人承認が必要な具体的理由';zeroRecommendation='Zero推奨';afterApproval='承認後に実際に起こること'}
     $missing=@($labels.Keys|Where-Object{[string]::IsNullOrWhiteSpace([string]$context[$_])})
