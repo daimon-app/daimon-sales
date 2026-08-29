@@ -7,7 +7,9 @@ function Get-AI5TaskProjectId($Task) {
 function Test-AI5ReadOnlyTask($Task) {
     if($Task.route.gitChange-or$Task.route.externalOperation){return $false}
     if($Task.route.workType-in@('research','review','knowledge_lookup')){return $true}
-    ([string]$Task.message)-match'(?i)(status|履歴|確認だけ|read.?only|閲覧|検索|調査|レビュー)'-and([string]$Task.message)-notmatch'(修正|変更|実装|書込|直して)'
+    # A prohibition such as "変更せず" describes the safety boundary, not a write request.
+    $text=([string]$Task.message)-replace'変更(せず|しない|禁止)',''
+    $text-match'(?i)(status|履歴|確認だけ|read.?only|閲覧|検索|調査|レビュー)'-and$text-notmatch'(修正|変更|実装|書込|直して)'
 }
 function Get-AI5TaskQueueDecision($Task,$Tasks,$Locks) {
     $project=Get-AI5TaskProjectId $Task;$readOnly=Test-AI5ReadOnlyTask $Task
