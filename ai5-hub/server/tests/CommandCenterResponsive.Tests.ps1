@@ -9,4 +9,6 @@ if($html-notmatch'viewport-fit=cover'){throw 'safe-area viewport missing'}
 if($app-notmatch'function closeActivity\(\)' -or $app-notmatch'panel\.classList\.remove\("mobile-open"\)'){throw 'mobile activity close contract missing'}
 if($app-notmatch'Promise\.all\(\[refreshTaskLists\(\),refreshCommandCenter\(\)\]\)' -or $app-notmatch'closeActivity\(\);zeroMessage'){throw 'approval immediate refresh contract missing'}
 if($app-notmatch'button\.disabled=true' -or $app-notmatch'event\.target\.textContent=action'){throw 'approval duplicate-submit protection missing'}
+if($css-notmatch'\.approval-row\{display:grid;grid-template-columns:112px' -or $css-notmatch'grid-template-columns:96px minmax\(0,1fr\)'){throw '412x915 compact approval context contract missing'}
+if($css-notmatch'\.approval-card\{padding:10px\}' -or $css-notmatch'\.approval-card button\{min-height:44px'){throw 'mobile approval density contract missing'}
 'COMMAND_CENTER_RESPONSIVE_TESTS_OK widths=360,390,412,430 contract'

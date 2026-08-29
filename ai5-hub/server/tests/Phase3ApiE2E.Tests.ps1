@@ -19,12 +19,18 @@ try {
   if(!$session.authenticated-or!$session.local){throw 'loopback session failed'}
   $csrf=$health.csrfToken
   $headers=@{'X-AI5-CSRF'=$csrf;'Idempotency-Key'=[guid]::NewGuid().ToString('N')}
-  $danger=Invoke-RestMethod "$base/api/tasks" -Method Post -Headers $headers -ContentType 'application/json' -Body (@{message='新しいSNS投稿を公開する';source='phase3-e2e'}|ConvertTo-Json)
+  $danger=Invoke-RestMethod "$base/api/tasks" -Method Post -Headers $headers -ContentType 'application/json' -Body (@{message='新しいSNS投稿を公開する';source='phase3-e2e';product='Kumiko Manufacturing Starter';accountService='DAIMON公式SNS';amount='0円';externalImpact='DAIMON公式SNSへ1件公開';reversible=$true;approvalReason='新規公開の対象と影響を本人が確認するため';afterApproval='指定投稿を1件公開しReceiptを保存する'}|ConvertTo-Json)
   if($danger.status-ne'waiting_approval'-or$danger.approval.level-ne1){throw 'LEVEL 1 pre-approval gate failed'}
+  if(!$danger.approval.contextComplete-or@($danger.approval.context.psobject.Properties).Count-ne9){throw 'approval context contract failed'}
   if(!$danger.approvalToken){throw 'approval token missing'}
   $approved=Invoke-RestMethod "$base/api/tasks/$($danger.taskId)/approve" -Method Post -Headers @{'X-AI5-CSRF'=$csrf} -ContentType 'application/json' -Body (@{approvalToken=$danger.approvalToken}|ConvertTo-Json)
   if($approved.status-notin@('queued','completed')){throw 'HUB approval did not continue'}
-  $protected=Invoke-RestMethod "$base/api/tasks" -Method Post -Headers @{'X-AI5-CSRF'=$csrf;'Idempotency-Key'=[guid]::NewGuid().ToString('N')} -ContentType 'application/json' -Body (@{message='4,980円の有料契約を購入する';source='phase3-e2e'}|ConvertTo-Json)
+  $incomplete=Invoke-RestMethod "$base/api/tasks" -Method Post -Headers @{'X-AI5-CSRF'=$csrf;'Idempotency-Key'=[guid]::NewGuid().ToString('N')} -ContentType 'application/json' -Body (@{message='新しいSNS投稿を公開する';source='phase3-e2e'}|ConvertTo-Json)
+  if($incomplete.approval.contextComplete-or$incomplete.approvalToken){throw 'incomplete context exposed approval action'}
+  try{Invoke-RestMethod "$base/api/tasks/$($incomplete.taskId)/approve" -Method Post -Headers @{'X-AI5-CSRF'=$csrf} -ContentType 'application/json' -Body '{}';throw 'incomplete approval was allowed'}catch{if($_.Exception.Message-eq'incomplete approval was allowed'){throw}}
+  $mock=Invoke-RestMethod "$base/api/tasks" -Method Post -Headers @{'X-AI5-CSRF'=$csrf;'Idempotency-Key'=[guid]::NewGuid().ToString('N')} -ContentType 'application/json' -Body (@{message='模擬E2E TEST。外部操作0、金銭0。';source='phase3-e2e'}|ConvertTo-Json)
+  if($mock.requiresApproval-or$mock.approval.type-ne'safe_mock_test'){throw 'safe mock E2E raised Owner Gate'}
+  $protected=Invoke-RestMethod "$base/api/tasks" -Method Post -Headers @{'X-AI5-CSRF'=$csrf;'Idempotency-Key'=[guid]::NewGuid().ToString('N')} -ContentType 'application/json' -Body (@{message='4,980円の有料契約を購入する';source='phase3-e2e';product='AI5有料サービス';accountService='対象契約サービス';amount='4,980円';externalImpact='有料契約が開始される';reversible=$true;approvalReason='実支出と有料契約は本人しか承認できないため';afterApproval='本人操作完了後にReceiptを照合する'}|ConvertTo-Json)
   if($protected.approval.level-ne2-or!$protected.approval.ownerOperationRequired){throw 'LEVEL 2 protection missing'}
   try{Invoke-RestMethod "$base/api/tasks/$($protected.taskId)/approve" -Method Post -Headers @{'X-AI5-CSRF'=$csrf} -ContentType 'application/json' -Body (@{approvalToken=$protected.approvalToken}|ConvertTo-Json);throw 'LEVEL 2 proxy approval allowed'}catch{if($_.Exception.Message-eq'LEVEL 2 proxy approval allowed'){throw}}
   $safe=Invoke-RestMethod "$base/api/tasks" -Method Post -Headers @{'X-AI5-CSRF'=$csrf;'Idempotency-Key'=[guid]::NewGuid().ToString('N')} -ContentType 'application/json' -Body (@{message='過去の資料と現在の実装に矛盾がないか確認して';source='phase3-e2e'}|ConvertTo-Json)

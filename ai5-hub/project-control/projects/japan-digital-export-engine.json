@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "projectId": "japan-digital-export-engine",
+  "name": "組子 Manufacturing Starter｜48時間実市場テスト",
+  "repository": {
+    "owner": "daimon-app",
+    "name": "ai5-github-result-bus",
+    "defaultBranch": "main",
+    "activeBranch": "main",
+    "latestCommit": "9cfe173ce55edfad8c5a4cea8584ed6eedea82cf",
+    "linkState": "LINKED",
+    "sync": {"state":"SYNCED","localHead":"9cfe173ce55edfad8c5a4cea8584ed6eedea82cf","remoteHead":"9cfe173ce55edfad8c5a4cea8584ed6eedea82cf","defaultHead":"9cfe173ce55edfad8c5a4cea8584ed6eedea82cf","ahead":0,"behind":0,"dirty":false,"checkedAt":"2026-08-29T00:00:00+09:00","error":""}
+  },
+  "phase": "MARKET_TEST",
+  "status": "RUNNING",
+  "blockedBy": "NONE",
+  "stopCode": "NONE",
+  "autoExecution": {"enabled":false,"mode":"OFF"},
+  "executionPolicy": {"risk":"LOW","costClass":"NORMAL","maxRetry":2,"dailyAutoRuns":0,"requireApprovalAbove":"HIGH","retryCount":0,"runsToday":0,"autoRunsToday":0,"autoRunsDate":"","failureFingerprint":"","consecutiveFailures":0},
+  "execution": {"taskId":"","lockId":"","submittedAt":"","resultRecoveredAt":"","lastResult":"","recoveryRequired":false},
+  "timestamps": {"createdAt":"2026-08-29T00:00:00+09:00","updatedAt":"2026-08-29T00:00:00+09:00","stoppedAt":"","resumedAt":"","workStartedAt":"","workCompletedAt":"","lastGitHubSyncAt":"2026-08-29T00:00:00+09:00","lastZeroActionAt":"","lastCodexActionAt":"","lastClaudeActionAt":"","lastGeminiActionAt":"","lastManusActionAt":"","lastTeppeiActionAt":"","publishedAt":"","lastMaintenanceAt":"","heartbeatAt":""},
+  "currentTask": "Kumiko Manufacturing Starter｜CONDITIONAL GO・48時間実市場テスト",
+  "lastCompletedTask": "generation 202608290006 正本同期",
+  "nextAction": "$19 / $39 / $99 の実市場テスト（$299は保留）",
+  "stopReason": "",
+  "aiState": {"zero":"RUNNING","codex":"READ_ONLY","claude":"NOT_REQUIRED","gemini":"STALE","manus":"NOT_REQUIRED","notebooklm":"NOT_REQUIRED"},
+  "qualityGate": {"tests":"UNKNOWN","review":"UNKNOWN","fieldValidation":"CONDITIONAL_GO","release":"HOLD_299"},
+  "canonical": {
+    "decisionVersion": "2026-08-29.7",
+    "stateGeneration": 202608290006,
+    "decisionId": "JAPAN-DIGITAL-KUMIKO-P0-20260829",
+    "singleWriter": "codex@main-fmv-laptop-32d9hni7",
+    "thisConsumerRole": "SYNC_ALLOCATION_EVIDENCE_ONLY",
+    "stale": ["JAPAN_DESK_AS_P0", "GEMINI_MASTER_JOINERY_CAD_AS_CURRENT_TOP1"],
+    "pricesUsd": [19, 39, 99],
+    "price299": "HOLD",
+    "ownerManualHandoff": 0,
+    "githubCanonicalNonstopRule": "REQUIRED"
+  },
+  "versions": [],
+  "history": [{"at":"2026-08-29T00:00:00+09:00","type":"CANONICAL_SYNC","actor":"CODEX","detail":"Result Bus generation 202608290006を読み取り専用配分正本として同期。実装writerはFMV 1件のみ。"}]
+}
