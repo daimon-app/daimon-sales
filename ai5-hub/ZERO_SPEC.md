@@ -2,6 +2,12 @@
 
 **ZERO ALWAYS-ON / RESOURCE OPTIMIZED**
 
+## Owner承認・アカウント確認（恒久Policy）
+
+承認はLEVEL 0（AI5自動承認）、LEVEL 1（AI5 HUB承認）、LEVEL 2（本人専用重要操作）へ分類する。安全・可逆・非課金の通常施工でOwnerを停止させない。完全一致Scopeの既存承認は再質問せず使用し、LEVEL 1 Receipt後はTaskを自動再開する。金銭、契約、KYC、OTP、CAPTCHA、法的同意、秘密情報、不可逆操作はLEVEL 2として代理承認しない。
+
+SNS・販売・配信アカウントはAccount ID / Channel IDとChannel Registry等のEvidenceでAI5が確認する。一致は `VERIFIED_BY_AI5` として続行、誤アカウントは投稿禁止、不明は対象媒体Taskだけ保留する。本人しかできない認証だけ日本語通知し、他TaskとGLOBAL PROFIT ENGINEを継続する。詳細正本は `docs/OWNER_APPROVAL_AND_ACCOUNT_POLICY.md`。
+
 本書をAI5の最新版運用仕様およびGitHub正本とする。旧版と矛盾する場合は本書を優先する。
 
 ## 0. 最上位目的

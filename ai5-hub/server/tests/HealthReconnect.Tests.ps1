@@ -15,5 +15,5 @@ Assert-HR ($server -match 'function Get-AI5MachineIdentity' -and $server -match 
 Assert-HR ($command -match 'machine=\$mobileHealth.machine' -and $command -match 'components=\$mobileHealth') 'command-center health model missing'
 Assert-HR ($launcher -match '\[switch\]\$Watch' -and $launcher -match 'watchdog restarting runtime') 'runtime watchdog missing'
 Assert-HR ($install -match ' -Watch') 'autostart does not enable watchdog'
-Assert-HR ($sw -match 'ai5-hub-v55-trusted-worktree' -and $sw -match 'if\(response.ok\)') 'failed response cache protection missing'
+Assert-HR ($sw -match 'ai5-hub-v56-ja-owner-command-center' -and $sw -match 'if\(response.ok\)') 'failed response cache protection missing'
 'HEALTH_RECONNECT_TESTS_OK'

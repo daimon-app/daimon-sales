@@ -5,7 +5,10 @@ $base="http://127.0.0.1:$port"
 $out=Join-Path ([IO.Path]::GetTempPath()) 'ai5-phase3-e2e.out'
 $err=Join-Path ([IO.Path]::GetTempPath()) 'ai5-phase3-e2e.err'
 $previousMock=$env:AI5_MOCK
+$previousDataRoot=$env:AI5_SERVER_DATA_ROOT
+$testDataRoot=Join-Path ([IO.Path]::GetTempPath()) ('ai5-phase3-'+[guid]::NewGuid().ToString('N'))
 $env:AI5_MOCK='true'
+$env:AI5_SERVER_DATA_ROOT=$testDataRoot
 $process=$null
 try {
   $process=Start-Process -FilePath (Join-Path $PSHOME 'pwsh.exe') -ArgumentList @('-NoProfile','-File',(Join-Path $server 'server.ps1'),'-Port',$port) -WindowStyle Hidden -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
@@ -16,11 +19,14 @@ try {
   if(!$session.authenticated-or!$session.local){throw 'loopback session failed'}
   $csrf=$health.csrfToken
   $headers=@{'X-AI5-CSRF'=$csrf;'Idempotency-Key'=[guid]::NewGuid().ToString('N')}
-  $danger=Invoke-RestMethod "$base/api/tasks" -Method Post -Headers $headers -ContentType 'application/json' -Body (@{message='本番公開して購入する';source='phase3-e2e'}|ConvertTo-Json)
-  if($danger.status-ne'waiting_approval'-or$danger.approval.zero_review.verdict-ne'NOT_RECOMMENDED'){throw 'Zero pre-approval gate failed'}
+  $danger=Invoke-RestMethod "$base/api/tasks" -Method Post -Headers $headers -ContentType 'application/json' -Body (@{message='新しいSNS投稿を公開する';source='phase3-e2e'}|ConvertTo-Json)
+  if($danger.status-ne'waiting_approval'-or$danger.approval.level-ne1){throw 'LEVEL 1 pre-approval gate failed'}
   if(!$danger.approvalToken){throw 'approval token missing'}
   $approved=Invoke-RestMethod "$base/api/tasks/$($danger.taskId)/approve" -Method Post -Headers @{'X-AI5-CSRF'=$csrf} -ContentType 'application/json' -Body (@{approvalToken=$danger.approvalToken}|ConvertTo-Json)
   if($approved.status-notin@('queued','completed')){throw 'HUB approval did not continue'}
+  $protected=Invoke-RestMethod "$base/api/tasks" -Method Post -Headers @{'X-AI5-CSRF'=$csrf;'Idempotency-Key'=[guid]::NewGuid().ToString('N')} -ContentType 'application/json' -Body (@{message='4,980円の有料契約を購入する';source='phase3-e2e'}|ConvertTo-Json)
+  if($protected.approval.level-ne2-or!$protected.approval.ownerOperationRequired){throw 'LEVEL 2 protection missing'}
+  try{Invoke-RestMethod "$base/api/tasks/$($protected.taskId)/approve" -Method Post -Headers @{'X-AI5-CSRF'=$csrf} -ContentType 'application/json' -Body (@{approvalToken=$protected.approvalToken}|ConvertTo-Json);throw 'LEVEL 2 proxy approval allowed'}catch{if($_.Exception.Message-eq'LEVEL 2 proxy approval allowed'){throw}}
   $safe=Invoke-RestMethod "$base/api/tasks" -Method Post -Headers @{'X-AI5-CSRF'=$csrf;'Idempotency-Key'=[guid]::NewGuid().ToString('N')} -ContentType 'application/json' -Body (@{message='過去の資料と現在の実装に矛盾がないか確認して';source='phase3-e2e'}|ConvertTo-Json)
   if(!$safe.field_mode-or$safe.field_decision.action-ne'AUTO_CONTINUE'){throw 'Field Mode auto continue failed'}
   if($safe.execution_plan.single_writer-ne'codex'){throw 'Single Writer plan missing'}
@@ -46,5 +52,7 @@ try {
 } finally {
   if($process-and!$process.HasExited){Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue;$process.WaitForExit()}
   if($null-eq$previousMock){Remove-Item Env:AI5_MOCK -ErrorAction SilentlyContinue}else{$env:AI5_MOCK=$previousMock}
+  if($null-eq$previousDataRoot){Remove-Item Env:AI5_SERVER_DATA_ROOT -ErrorAction SilentlyContinue}else{$env:AI5_SERVER_DATA_ROOT=$previousDataRoot}
+  Remove-Item -LiteralPath $testDataRoot -Recurse -Force -ErrorAction SilentlyContinue
   Remove-Item -LiteralPath $out,$err -Force -ErrorAction SilentlyContinue
 }
