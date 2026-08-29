@@ -1,0 +1,33 @@
+﻿Applied: 2026-08-18T21:07:06.3569570+09:00
+Adapter settings:
+
+DisplayName               DisplayValue  RegistryKeyword      RegistryValue
+-----------               ------------  ---------------      -------------
+Energy-Efficient Ethernet Disabled      *EEE                 {0}
+Wake on Magic Packet      Enabled       *WakeOnMagicPacket   {1}
+Wake on pattern match     Disabled      *WakeOnPattern       {0}
+Green Ethernet            Disabled      EnableGreenEthernet  {0}
+Power Saving Mode         Disabled      PowerSavingMode      {0}
+Shutdown Wake-On-Lan      Enabled       S5WakeOnLan          {1}
+WOL & Shutdown Link Speed 10 Mbps First WolShutdownLinkSpeed {0}
+
+
+
+HiberbootEnabled: 0
+wake_armed:
+HID キーボード デバイス
+Realtek PCIe GbE Family Controller
+HID 準拠マウス
+
+
+Adapter:
+
+
+Status     : Up
+LinkSpeed  : 1 Gbps
+MacAddress : 68-84-7E-5E-34-D1
+
+
+
+
+RESULT=PASS
