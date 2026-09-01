@@ -222,3 +222,6 @@ Next Action:
 ## 15. GitHub Result Loop
 
 Realtime HUBの障害時は`GITHUB_DEGRADED`へ移行し、ZeroがTask Busへ発行、各AIがResult Busへ返却、CollectorがZero Inboxへ一度だけ投入する。ZeroはPASSなら次工程、FAILなら上限内retry、BLOCKEDなら適性AIへFallback、APPROVAL_REQUIREDなら本人へ停止する。remoteはprivate確認済みの場合だけ有効化し、承認ゲートを迂回しない。
+# Approval routing
+
+Zero normalizes `APPROVAL_REQUIRED`, `OWNER_CONFIRMATION`, `PERMISSION_REQUIRED`, `PUBLICATION_CONFIRM`, and `MONEY_GATE` to `AI5_HUB_APPROVAL_TASK`. It normalizes OTP, CAPTCHA, KYC, biometric, identity and equivalent human-only gates to `OWNER_ACTION_REQUIRED`. It must preserve `GLOBAL_STATE = EXECUTING`, claim another unblocked task, and auto-resume an approved task from its Result Bus receipt without a second confirmation. See `../GLOBAL_AI5_HUB_APPROVAL_ROUTING_POLICY.md`.

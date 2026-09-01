@@ -15,6 +15,8 @@
 
 AI5 / Codex の承認、許可、Command approval、Owner Gate、自動施工については、必ず [`APPROVAL_PERMISSION_MASTER.md`](./APPROVAL_PERMISSION_MASTER.md) を正本として読む。
 
+Owner判断が必要な場合の全Codex共通経路は [`GLOBAL_AI5_HUB_APPROVAL_ROUTING_POLICY.md`](./GLOBAL_AI5_HUB_APPROVAL_ROUTING_POLICY.md) を正本とする。Chatで承認待ち停止せず、AI5 HUBへTaskを配送し、Result BusのDecision Receipt受領後に自動再開する。承認待ちは当該Taskだけに隔離し、他Taskを継続する。
+
 販売開始・CM配信・販売導線・公開E2E・計測・Google Play再利用工程については、必ず [`SALES_RELEASE_RUNBOOK.md`](./SALES_RELEASE_RUNBOOK.md) を再利用可能な施工正本として読む。
 
 通常の可逆的な技術施工は原則として Owner approval / permission / continue confirmation 不要。本人確認、OTP/CAPTCHA/生体認証、新規金銭負担、未承認scopeの実公開、破壊的・不可逆操作、本人の法的同意、新規secret提供のみをOwner Gateの中心とする。
@@ -165,5 +167,5 @@ DAIMONの中核思想は「継続」より**戻ること**。
 
 - GitHub Result LoopをAI5の常設Fallbackとする。
 - ZeroがTask Busを発行し、各AIのResultをCollectorがZero Inboxへ集約する。
-- Result receiptで二重処理を防止し、PASSは次工程、FAILは上限内再施工、BLOCKEDはFallback、APPROVAL_REQUIREDは本人停止とする。
+- Result receiptで二重処理を防止し、PASSは次工程、FAILは上限内再施工、BLOCKEDはFallback、APPROVAL_REQUIREDはAI5 HUBへ正規化する。本人判断待ちは当該Taskだけを待機させ、承認後は自動再開する。
 - 実Task/Resultのremote保存はprivate Repository確認済みの場合だけ許可する。

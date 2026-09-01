@@ -105,6 +105,10 @@ Owner interruption is reserved for operations where the Owner's identity, money,
 - A `WAITING_OWNER` task blocks only its own lineage; unrelated tasks continue.
 - Do not use “念のため”, technical uncertainty, or routine privilege boundaries as reasons to create an Owner Gate. First use safe alternatives, existing authorization, trusted workspace, allowlists/reusable permissions, or another automated route.
 
+### Official routing
+
+Any genuine Owner decision is routed as `AI5_HUB_APPROVAL_TASK` under `GLOBAL_AI5_HUB_APPROVAL_ROUTING_POLICY.md`. Codex must not use a final Chat approval question as the workflow. AI5 HUB records Approve/Reject, Result Bus returns the idempotent decision receipt, and Codex auto-resumes without asking again. Human-only identity, secret, legal, or real-spend actions use `OWNER_ACTION_REQUIRED`. Both states block only their own task lineage.
+
 ## 6. Critical distinction: AI5 policy vs Codex Desktop Command approval
 
 AI5 Owner Gate policy and Codex Desktop/runtime `Command approval` are separate layers.

@@ -1,16 +1,16 @@
 $ErrorActionPreference='Stop'
-. (Join-Path $PSScriptRoot '..\security\MobileSecurity.ps1')
-. (Join-Path $PSScriptRoot '..\approval\ZeroApproval.ps1')
-. (Join-Path $PSScriptRoot '..\approval\ApprovalPolicy.ps1')
+$server=Split-Path $PSScriptRoot
+foreach($module in @('security\MobileSecurity.ps1','approval\ZeroApproval.ps1','approval\ApprovalRouting.ps1','approval\ApprovalPolicy.ps1')){. ([ScriptBlock]::Create((Get-Content -Raw -Encoding UTF8 (Join-Path $server $module))))}
 $root=Join-Path ([IO.Path]::GetTempPath()) ('ai5-approval-'+[guid]::NewGuid().ToString('N'))
 try {
-  Initialize-AI5MobileSecurity $root;Initialize-AI5ApprovalPolicy $root
-  function New-PolicyTask([string]$id,[string]$message){[pscustomobject]@{taskId=$id;project_id='ai5-hub';message=$message;objective=$message;product=$null;taskLabel=$null;accountService=$null;service=$null;account=$null;channel=$null;amount=$null;externalImpact=$null;reversible=$null;approvalReason=$null;afterApproval=$null;route=[pscustomobject]@{approvalType=$null};status='queued';canonical_status='RECEIVED';requiresApproval=$false;approval_level='GREEN'}}
+  Initialize-AI5MobileSecurity $root;Initialize-AI5ApprovalPolicy $root;Initialize-AI5ApprovalRouting $root
+  function New-PolicyTask([string]$id,[string]$message){[pscustomobject]@{taskId=$id;project_id='ai5-hub';message=$message;objective=$message;product=$null;taskLabel=$null;accountService=$null;service=$null;account=$null;channel=$null;amount=$null;externalImpact=$null;reversible=$null;approvalReason=$null;afterApproval=$null;whatDoesNotChange=@();ownerAction=$null;expiresAt=$null;idempotencyKey=$id;route=[pscustomobject]@{approvalType=$null};status='queued';canonical_status='RECEIVED';requiresApproval=$false;approval_level='GREEN'}}
   $l0=Resolve-AI5TaskApprovalPolicy (New-PolicyTask 'level0' 'read-only監査とtestを実行')
   if($l0.requiresApproval-or$l0.approvalPolicy.level-ne0){throw'LEVEL 0 failed'}
   $l1Task=New-PolicyTask 'level1' '新しいSNS投稿を公開';$l1Task.product='Kumiko Manufacturing Starter';$l1Task.accountService='DAIMON公式SNS';$l1Task.amount='0円';$l1Task.externalImpact='DAIMON公式SNSへ1件公開';$l1Task.reversible=$true;$l1Task.approvalReason='新規公開の対象と影響を本人が確認するため';$l1Task.afterApproval='指定投稿を1件公開しReceiptを保存する'
   $l1=Resolve-AI5TaskApprovalPolicy $l1Task
   if(!$l1.requiresApproval-or$l1.approvalPolicy.level-ne1-or$l1.approval.ownerOperationRequired-or!$l1.approval.contextComplete){throw'LEVEL 1 failed'}
+  if($l1.approvalTask.type-ne'AI5_HUB_APPROVAL_TASK'-or$l1.approvalTask.blocked_scope-ne'THIS_TASK_ONLY'-or$l1.approvalTask.global_state-ne'EXECUTING'){throw'approval routing payload failed'}
   $receipt=Approve-AI5ApprovalRequest 'level1' 'test-owner';if($receipt.status-ne'approved'-or!$receipt.receiptId){throw'approval receipt failed'}
   $reuseTask=New-PolicyTask 'level1-reuse' '新しいSNS投稿を公開';$reuseTask.product='Kumiko Manufacturing Starter';$reuseTask.accountService='DAIMON公式SNS';$reuseTask.amount='0円';$reuseTask.externalImpact='DAIMON公式SNSへ1件公開';$reuseTask.reversible=$true;$reuseTask.approvalReason='新規公開の対象と影響を本人が確認するため';$reuseTask.afterApproval='指定投稿を1件公開しReceiptを保存する'
   $reuse=Resolve-AI5TaskApprovalPolicy $reuseTask

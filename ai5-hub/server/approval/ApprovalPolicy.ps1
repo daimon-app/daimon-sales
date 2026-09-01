@@ -114,8 +114,18 @@ function Resolve-AI5TaskApprovalPolicy {
     $Task.canonical_status=if($Task.requiresApproval){'WAITING_APPROVAL'}else{'RECEIVED'}
     $context=Get-AI5ApprovalContext $Task $policy
     $Task|Add-Member -NotePropertyName approval -NotePropertyValue ([pscustomobject][ordered]@{type=$policy.type;level=$policy.level;summary=$policy.label;reason=$policy.reason;recommendation=$policy.recommendation;status=$(if($Task.requiresApproval){'pending'}else{'approved'});ownerOperationRequired=$policy.ownerOperationRequired;scopeHash=$policy.scopeHash;reusedApprovalId=$policy.reusedApprovalId;contextStatus=$context.status;contextComplete=$context.complete;missingContext=@($context.missing);context=$context.values;contextLabels=$context.labels;zero_review=(Get-AI5ZeroApprovalReview ([pscustomobject]@{approvalType=$policy.type}))}) -Force
+    $Task|Add-Member -NotePropertyName approvalTask -NotePropertyValue ([pscustomobject](New-AI5HubApprovalPayload $Task $policy $context)) -Force
     Register-AI5ApprovalRequest $Task $policy|Out-Null
     $Task
+}
+
+function Reject-AI5ApprovalRequest {
+    param([string]$TaskId,[string]$Actor='teppei')
+    $record=Get-AI5ApprovalRegistryRecords|Where-Object{$_.taskId-eq$TaskId}|Sort-Object createdAt|Select-Object -Last 1
+    if(!$record){throw'approval_request_not_found'}
+    if($record.status-eq'rejected'){return$record}
+    $record.status='rejected';$record|Add-Member rejectedAt ([DateTimeOffset]::Now.ToString('o')) -Force;$record|Add-Member rejectedBy $Actor -Force;$record.receiptId='receipt-reject-'+$TaskId
+    Save-AI5ApprovalRegistryRecord $record
 }
 
 function Test-AI5AccountEvidence {
