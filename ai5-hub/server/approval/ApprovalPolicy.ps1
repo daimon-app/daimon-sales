@@ -21,6 +21,7 @@ function Get-AI5ApprovalScopeHash {
 function Get-AI5ApprovalClassification {
     param($Task)
     $text = (([string]$Task.message) + ' ' + ([string]$Task.objective)).ToLowerInvariant()
+    $routeApprovalType = [string]$Task.route.approvalType
     $level = 0; $type = 'safe_operation'; $label = 'AI5自動承認'; $reason = '安全で可逆な通常作業です。'; $recommendation = '承認推奨'
     $level2 = '支払|課金|購入|送金|返金|資金移動|銀行|有料契約|サブスクリプション|投資|税務|法的|宣誓|署名|kyc|otp|captcha|本人確認|パスワード|秘密鍵|private key|アカウント削除|不可逆|force push|reset --hard|大量削除'
     $money = '支払|課金|購入|送金|返金|資金移動|銀行|有料広告|有料契約|サブスクリプション|投資'
@@ -34,7 +35,7 @@ function Get-AI5ApprovalClassification {
         $level = 0; $type = 'verified_main_integration'; $label = '検証済み通常統合'; $reason = '全回帰・競合・非force・Rollback・外部影響の安全条件を満たす通常main統合です。'; $recommendation = 'AI5自動承認で継続'
     } elseif ($text -match $level2) {
         $level = 2; $type = $(if($text -match $money){'money_or_contract'}else{'owner_only'}); $label = $(if($type-eq'money_or_contract'){'支払い・契約の確認'}else{'本人操作が必要'}); $reason = '本人以外が代理できない重要操作を含みます。'; $recommendation = '内容確認後に本人が操作'
-    } elseif ($text -match $level1) {
+    } elseif ($routeApprovalType -in @('external_publish','external_send','publication') -or $text -match $level1) {
         $level = 1; $type = 'hub_approval'; $label = '鉄兵の確認が必要'; $reason = '重要な外部公開または外部送信です。'; $recommendation = '内容と公開範囲を確認'
     } elseif ($text -notmatch $level0) {
         $level = 1; $type = 'unclassified'; $label = '鉄兵の確認が必要'; $reason = '操作分類を安全に確定できません。'; $recommendation = '操作範囲を確認'

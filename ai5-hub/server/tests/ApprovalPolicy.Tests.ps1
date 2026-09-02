@@ -21,6 +21,8 @@ try {
   if($mock.requiresApproval-or$mock.approval.type-ne'safe_mock_test'){throw 'safe mock test was not LEVEL 0'}
   $incomplete=Resolve-AI5TaskApprovalPolicy (New-PolicyTask 'incomplete' '新しいSNS投稿を公開')
   if(!$incomplete.requiresApproval-or$incomplete.approval.contextComplete-or$incomplete.approval.contextStatus-ne'APPROVAL_CONTEXT_INCOMPLETE'){throw 'incomplete approval context guard failed'}
+  $routePublish=New-PolicyTask 'route-publish' 'Pinterest Organic Pinを設定し、UTMと計測を確認する';$routePublish.route=[pscustomobject]@{approvalType='external_publish'};$routePublish.product='OMIKUJI / FUKU';$routePublish.channel='Pinterest Organic';$routePublish.accountService='Pinterest';$routePublish.amount='0円';$routePublish.externalImpact='Public Pinを1件公開';$routePublish.reversible=$true;$routePublish.approvalReason='第三者向け公開';$routePublish.afterApproval='公開してLive検証';$routePublish=Resolve-AI5TaskApprovalPolicy $routePublish
+  if(!$routePublish.requiresApproval-or$routePublish.approvalPolicy.level-ne1-or!$routePublish.approvalPolicy.sound){throw 'router external_publish must remain Level 1 with sound'}
   $l2=Resolve-AI5TaskApprovalPolicy (New-PolicyTask 'level2' '4,980円の有料契約を購入')
   if(!$l2.approval.ownerOperationRequired-or!$l2.approvalPolicy.money){throw'LEVEL 2 money protection failed'}
   try{Approve-AI5ApprovalRequest 'level2' 'test-owner';throw'LEVEL 2 approval was allowed'}catch{if($_.Exception.Message-ne'owner_operation_required'){throw}}
