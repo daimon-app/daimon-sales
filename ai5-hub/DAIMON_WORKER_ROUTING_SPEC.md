@@ -188,6 +188,61 @@ LOCAL_ROUTERが unloaded / failed / resource-blocked / model-corrupt / 一時的
 
 LOCAL_ROUTERを単一障害点にしない。
 
+## 13.5. Owner向け言語ポリシー（2026-09-30追加、2026-09-30改訂）
+
+**Owner（中山鉄兵）向けの通常の返答・進捗報告・質問・承認依頼・説明・警告・ブロッカー報告・選択肢・要約・FINAL report・OWNER_ACTION・NEXT・復旧手順は全て日本語で行う。** これはDAIMON完成後だけでなく即座に適用される、本セッション（FUJITSU Claude Code）の恒久ルールである。
+
+技術成果物（ソースコード、変数名・関数名・ファイル名、スキーマ、機械可読JSON、Git識別子、制御不能な外部ツールの生出力）は技術的に適切な場合、英語のままでよい。Claude Code自体の生の英語permission promptや外部ツールの英語出力をOwnerに見せる必要がある場合、DAIMONが仲介可能な範囲で日本語の意味説明を先に行ってから選択を求める。Owner側に英語の理解を要求しない。
+
+通常のDAIMONポリシーで安全と判定済みの操作は、本人に確認しない（自動実行する）。TRUE_OWNER_GATEに該当する操作のみ、以下のテンプレートで日本語に翻訳して提示する。翻訳時にリスクを隠さない。
+
+### テンプレート（2026-09-30改訂版）
+
+```
+【本人承認が必要】
+
+操作：{何をしようとしているか}
+理由：{なぜ本人承認が必要なのか（TRUE_OWNER_GATE該当理由）}
+対象：{変更される対象}
+変更内容：{具体的な変更内容}
+外部公開：{あり／なし}
+削除：{あり／なし}
+危険性：{具体的なリスク。ないなら「低い」と明記し、消さない}
+推奨：{承認／中止のどちらを推奨するか}
+
+1. 承認して進める
+2. 中止する
+```
+
+Claude Code自体が要求する生の英語permission promptを、DAIMONが安全に仲介できる場合はOwnerにそのまま見せない（本テンプレートに翻訳してから提示する）。実装は [Invoke-DaimonOwnerGate.ps1](./tools/Invoke-DaimonOwnerGate.ps1)。
+
+### 実測例（2026-09-30、非TRUE_OWNER_GATE操作での動作確認）
+
+本Task Queue実装を`daimon-sales`のfeatureブランチへcommit・pushした操作（実際には通常のGit操作でありTRUE_OWNER_GATEではない）を例に、テンプレート出力を検証した：
+
+```
+【本人承認が必要】
+
+操作：DAIMON routing実装をGitへcommit
+理由：本人確認呈示フォーマットの動作検証（本操作自体はTRUE_OWNER_GATEに該当しない通常のGit操作）
+対象：DAIMON Node関連ファイルのみ（ai5-hub/tools/, ai5-hub/*.md, .claude/settings.json）
+変更内容：ローカルGit履歴へcommitを追加、featureブランチへpush
+外部公開：なし（feature branch、main未マージ）
+削除：なし
+危険性：低い（他レーンのファイルは含まれておらず、mainへの直接変更もない）
+推奨：承認
+
+1. 承認して進める
+2. 中止する
+```
+
+**結果**: **PASS**（2回のバグ発見・修正を経て確認）。
+
+1. 1回目: Windows PowerShell 5.1はBOMなしUTF-8の.ps1ソース内の日本語リテラルを正しくパースできず、パラメータのデフォルト値（`'なし'`等）が文字化けし構文エラーになった。BOM付きUTF-8で保存し直して解決。
+2. 2回目: パース後は正常動作したが、標準出力がコンソールのOEMコードページ経由で文字化けした。`[Console]::OutputEncoding = [Text.Encoding]::UTF8` をスクリプト冒頭に追加して解決。
+
+修正後、テンプレート通りの正しい日本語出力を確認。RISK必須ガード（空文字列を渡すと`RISK_FIELD_REQUIRED`で明示的に拒否）も動作確認済み。Owner Gate E2Eとしては、実際のTRUE_OWNER_GATE（支払い・MFA等）でのテストは別途必要（本人確認操作そのものを人工的に発生させるのは避けた）。
+
 ## 14. Owner Gates
 
 通常のルーティングはOwner Gateではない。Owner Gateが必要なのは：本人確認/MFA/生体認証、支払い/購入、有償reset/クレジット、法的同意、既存承認範囲外の公開、不可逆な破壊的操作、価値あるデータの削除、秘密情報開示、セキュリティ制御の解除、本人でなければ不可能な物理操作。
