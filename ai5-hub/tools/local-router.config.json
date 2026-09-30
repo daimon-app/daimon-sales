@@ -1,0 +1,10 @@
+{
+  "model_name": "Qwen2.5-7B-Instruct",
+  "model_path": "C:\\Users\\teppe\\.local\\daimon\\local-router\\models\\qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf",
+  "runtime_binary": "C:\\Users\\teppe\\.local\\daimon\\local-router\\runtime-b10536\\llama-cli.exe",
+  "runtime_build": "b10536",
+  "threads": 4,
+  "n_predict": 400,
+  "temperature": 0,
+  "bus_root": "C:\\Users\\teppe\\.local\\daimon\\bus"
+}

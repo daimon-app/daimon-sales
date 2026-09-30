@@ -171,7 +171,13 @@ AI5の施工状況をGitHubから復元可能にし、最低限次を記録す�
 
 Zeroは止まらない。残り4兄弟は残量と適性で入れ替える。空いているAIへ仕事を移し、利用制限待ちでプロジェクト全体を止めない。GitHub正本とSingle-Writerを守り、AI5全体で常に次の一手を進める。
 
-## 14. 完了報告テンプレート
+## 14. 対象端末ルーティング
+
+鉄兵 dynabook（dynabook V83/HS、AI5第2施工端末）を対象とする施工では、リポジトリルートの [TARGET_DEVICE_ROUTING_DYNABOOK.md](../TARGET_DEVICE_ROUTING_DYNABOOK.md) を正式な端末分離・遠隔施工仕様として適用する。家PC Codexを司令塔、dynabook側Codexを実機施工担当とし、端末識別、WRONG-PC PROTECTION、Single Writer、Result / Receipt回収を必須とする。
+
+本人の実機操作が必要な場合、完成済みの `スマホ → Google Chrome Remote Desktop → 鉄兵 dynabook` を正式アクセス経路として先に判定する。Remoteで完了可能ならPC本体前での操作を要求しない。既存Chrome Remote Desktop設定とメインPCのRemote登録は変更しない。UAC Secure Desktop、BIOS、起動前画面、Remote停止、Remoteで操作不能な本人確認は例外とする。
+
+## 15. 完了報告テンプレート
 
 ```text
 DAIMON AI5 MULTI-EXECUTION REPORT
@@ -210,3 +216,44 @@ Blockers:
 総合判定:
 Next Action:
 ```
+
+## 16. FUJITSU DAIMON NODE 初期化（並行イニシアチブ、2026-09-29開始）
+
+AI5 SALES FACTORY（本書1〜15章）と並行して、FUJITSU（LAPTOP-32D9HNI7）を新規DAIMON Nodeとして立ち上げる作業を開始した。既存のAI5 SALES FACTORY運用・ルーティング・承認ゲートを置き換えるものではない。矛盾する場合、本人の明示指示を優先する。
+
+現在地とNode実測状態は [NODE_REGISTRY.md](./NODE_REGISTRY.md) を正本とする。Worker/Nodeルーティングは [DAIMON_WORKER_ROUTING_SPEC.md](./DAIMON_WORKER_ROUTING_SPEC.md) を正本とする。
+
+### 役割（本イニシアチブ限定）
+
+- Claude Code CLI = Primary Builder / Integrator
+- Codex = Secondary Builder / Independent Reviewer / Failover
+- 既存のAI5兄弟ルーティング（1〜6章）は本イニシアチブの技術施工判断には適用されるが、指揮系統自体を変更しない。
+
+### スコープ
+
+- DAIMON Node Task Queue / Router / Worker Registry / Result / Receipt / Evidence
+- FUJITSU用execution adapter（profit-engine用general-consumer-runtimeとは別系統、新規実装）
+- DAIMON Remote（Owner端末からのPC画面/入力リモート操作）
+- LOCAL_ROUTER_7B（ルーティング専用ローカルモデル、on-demand load）
+- FUJITSU ⇔ dynabook Node間通信、双方向救援経路
+- 再起動後自動復旧（既存 `install-autostart.ps1` パターンを流用）
+
+### 本人承認ゲート（本イニシアチブ）
+
+以下は本人承認なしに実行しない：ログイン/MFA/PIN/生体認証、課金・購入・サブスクリプション変更・有償クレジット/リセット使用、法的同意、本番公開、不可逆な破壊的操作、価値あるデータの削除、秘密情報開示、セキュリティ保護の解除、本人でなければ不可能な物理操作。
+
+### Claude Code 権限アーキテクチャ（2026-09-29）
+
+FUJITSU上のClaude Code権限を実測分類した。目的は「安全な定型エンジニアリングで本人がボタンを押す必要をなくす」ことであり、セキュリティの全面無効化ではない。
+
+- **SAFE_AUTO_ALLOWED**（本人操作不要、既にClaude Code組込みで自動許可 or 今回追加）: `Read/Glob/Grep`、`git status/diff/log`等の読み取り専用git、`ls/cd/find/hostname/which/pwd`等（Claude Code組込みのread-only allowlistで対応済み、追加設定不要）。今回新規追加: `ai5-hub/tools/` 配下の固定スクリプト3本（`Invoke-DaimonSystemDiagnostics.ps1`、`Invoke-DaimonLocalhostHealth.ps1`、`Invoke-DaimonLocalRouter.ps1`）を exact path で `.claude/settings.json` に登録。固定・レビュー済みスクリプトのpathを許可することは、任意文字列の `-Command` を許可することと異なり、実行内容が呼び出し側で変更できないため安全。
+- **PRODUCT_FORCED_INTERACTIVE**（Claude Code自体が要承認、回避しない）: `git commit/push/merge/reset/clean/checkout/switch`、`rm/rmdir/Remove-Item` は `~/.claude/settings.json` の `ask` に既存設定済み。任意の `-Command "<文字列>"` 形式のPowerShell一撃コマンド（今回の調査で分かった通り、内容が毎回変わるため安全な固定patternに畳み込めない）。
+- **TRUE_OWNER_GATE**（DAIMON側の本人承認ゲート、変更禁止）: 本ファイル冒頭および各章に記載の通り。`~/.claude/settings.json` の `deny`（`netsh/bcdedit/reg add|delete/New-NetFirewallRule`等）は既に設定済みで今回変更していない。
+- **DAIMON_TOOL_EXECUTOR**: `ai5-hub/tools/` を正本ディレクトリとする。各スクリプトはヘッダーコメントに「許可された操作・入力スキーマ・path/scope制限・timeout・exit-code・Result/Receipt/Evidence出力先」を明記する規約とする。
+- **WORKER_FALLBACK**: Claude Code自体が要承認のまま自動化できない操作（例: `git push`）は、承認済みdeterministic runbookで代替できない場合、Claudeが検知した時点でTask Queueへcheckpointし、本人へ提示する。無理に迂回しない。
+
+**検証**: `git status/diff/log`、localhost health（新規`Invoke-DaimonLocalhostHealth.ps1`）、system diagnostics（新規`Invoke-DaimonSystemDiagnostics.ps1`）、LOCAL_ROUTER実行（`Invoke-DaimonLocalRouter.ps1`）を実行し、いずれも本人操作なしで完了・Result記録まで到達した。破壊的操作側（`ask`/`deny`リスト）は本セッションでは意図的に発火させていない（既存設定の目視確認による検証であり、実発火テストは未実施）。
+
+### 現在地（2026-09-29）
+
+READY ではなく CONDITIONAL。Codex CLIはFUJITSU上でインストール・認証済みだが、DAIMON Node用の実行経路は未実装。DAIMON AI / DAIMON Remote / LOCAL_ROUTER_7Bはいずれも未着手。詳細は NODE_REGISTRY.md の「既知の未着手項目」を参照。
