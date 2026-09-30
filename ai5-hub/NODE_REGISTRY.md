@@ -18,7 +18,7 @@
 | CODEX_CLI | インストール済み・認証済み（"Logged in using ChatGPT"、codex-cli 0.155.0-alpha.16） |
 | CODEX_EXECUTION_WORKER | **UNVERIFIED** — general-consumer-runtimeはNO_EXECUTION_PRODUCERでfail-closed。この経路はGLOBAL_PROFIT_ENGINE/JAPAN_DIGITAL_EXPORT_ENGINE専用の別系統（profit-engine task bus）であり、DAIMON Node用の汎用実行経路ではない。DAIMON Node用のTask実行経路は未実装。 |
 | DAIMON_AI | **NOT_DEPLOYED** — 本仕様に対応する実装はまだ存在しない |
-| DAIMON_REMOTE | **PASS** — 既存Chrome Remote Desktopを再利用（新規ソフト導入なし）。Galaxy→FUJITSU実接続、Owner本人により2026-09-30にLIVE確認済み。 |
+| DAIMON_REMOTE | **PASS（FUJITSU側）+ 調査継続中（正本探索）** — Galaxy→FUJITSU実接続はOwner本人により2026-09-30にLIVE確認済み（既存Chrome Remote Desktop、新規ソフト導入なし）。RustDesk正本については、FUJITSU側・dynabook側（`ai5-github-result-bus`全21ブランチ・全コミット履歴のpickaxe検索、dynabook自身が生成した`TAILSCALE_POST_REBOOT_FINAL_20260912.json`実証拠）のいずれからも**発見できず**。dynabook側の実際のRemoteスタックはTailscale+Chrome Remote Desktop（2026-09-12時点`PARTIAL`判定、Tailscaleは`FAIL_NOSTATE`）。**現時点でChrome Remote DesktopをEMERGENCY_FALLBACKとして現状維持**し、新規Remote実装はOwnerの追加情報待ち。READ-ONLY調査Task `DAIMON-REMOTE-READONLY-AUDIT-20260930-01` をdynabookへ配車済み（未claim）。 |
 | LOCAL_ROUTER | **PARTIAL** — ランタイム(llama.cpp b10536)+モデル(Qwen2.5-7B-Instruct Q4_K_M)配置・smoke test PASS済み。DAIMON adapter/ルーティング統合は未実装。詳細は [DAIMON_WORKER_ROUTING_SPEC.md](./DAIMON_WORKER_ROUTING_SPEC.md) §11-12。 |
 | GIT_PROCESS_ANOMALY | 2026-09-29調査時点で再現せず。ベースライン: git.exe 2プロセス（Claude Code自身のstatus polling由来）、空きRAM約3.64GiB。過去の約851プロセス／約7.49GiB異常は再現不可、原因は既知の30秒ポーリング2系統（general-consumer, zero-bridge）のgit呼び出しにタイムアウト保護がないことによる一過性の可能性が高いが未確定。 |
 | LAST_VERIFIED | 2026-09-29 (Claude Code session) |
@@ -32,7 +32,7 @@
 | ROLE | SECONDARY / MOBILE / FAILOVER |
 | CODEX_EXECUTION_WORKER | PROVEN（Owner確認済み。詳細な実測ログはFUJITSU側から未取得） |
 | TAILSCALE | **未確認** — 2026-09-29時点でFUJITSU側から見えるtailnet（teppei.tn.nt@）に本ノードは出現しなかった。FUJITSU⇔dynabook連携を組む前に要確認。 |
-| GITHUB_BUS_CHANNEL | `daimon-app/ai5-github-result-bus`（`device_id: teppei-dynabook-v83hs`, `AI5_SECONDARY_EXECUTION_DEVICE`, controller=`main-fmv-laptop-32d9hni7`=本FUJITSU機）に2026-08-28時点で実証済みのdevice-to-device failoverが存在。ただし`bus/tasks/`の最終更新は2026-08-31で、以後約1ヶ月間活動なし（休眠状態）。dynabook側に現在アクティブなpollerが存在するか、FUJITSU側からは確認不能。 |
+| GITHUB_BUS_CHANNEL | `daimon-app/ai5-github-result-bus`（`device_id: teppei-dynabook-v83hs`, `AI5_SECONDARY_EXECUTION_DEVICE`, controller=`main-fmv-laptop-32d9hni7`=本FUJITSU機）に2026-08-28時点で実証済みのdevice-to-device failoverが存在。**休眠の根本原因を特定（2026-09-30）**: dynabook自身が生成した`TAILSCALE_POST_REBOOT_FINAL_20260912.json`により、`AI5 Device Worker - teppei-dynabook-v83hs`予定タスクが**`Disabled`（無効化）状態**（2026-08-28以降）であることを確認。これがtask bus不応答の直接原因。 |
 | LAST_VERIFIED | 未取得（FUJITSU側からの直接調査不可、Owner/dynabook側報告に基づく） |
 
 ## Tailnet 実測（2026-09-29, FUJITSU視点）
