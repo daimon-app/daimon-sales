@@ -325,6 +325,45 @@ remoting_host.exe (PID 6488) のネットワーク接続:
 
 **未実施**: Galaxy→FUJITSU DAIMON AI経由のTask投入E2E（現在のダッシュボードは読み取り専用で、Galaxy側からTaskを投入するUI/APIは未実装）。これは別途開発が必要な新機能であり、既存のRemote経路確認とは別課題として記録する。
 
+### DYNABOOK Remote構成 訂正（2026-09-30、重要）
+
+以前「RustDeskはFUJITSU・dynabook双方に見つからない」と報告したが、**これは誤り**。GitHub履歴（コミット・ファイル内容）のみを検索した結果であり、dynabook実機に直接インストールされたソフトウェアはGit履歴には残らないため検出できなかった。dynabookへ配車したREAD-ONLY調査Task（`DAIMON-REMOTE-READONLY-AUDIT-20260930-01`）の実行結果により訂正する：
+
+```
+rustdesk: installed=true, service_state=Running, start_type=Auto, process_count=4,
+          port_21118_listening=true, direct_server=Y, verification_method=use-permanent-password
+tailscale: service_state=Running（ただしdynabookは daimon.sales.jp@ テナント、
+          FUJITSUは teppei.tn.nt@ テナント — 別tailnetのため相互に見えなかった）
+chrome_remote_desktop: service_state=Running, process_count=2
+scheduled_worker(AI5 Device Worker): state=Running, enabled=true, last_run=2026-09-30T18:08:27
+```
+
+**正本の所在確定**: dynabook側に実際にRustDesk（ポート21118、Auto起動、永続パスワード認証）が稼働中。DAIMON Remoteの本命はこの既存RustDesk構成を基準に、FUJITSU側を同一tailnet（`daimon.sales.jp@`）へ接続する形で統合する（新規のRemote方式を発明しない）。Chrome Remote DesktopはEMERGENCY_FALLBACKとして両機で現状維持。
+
+また、dynabook側`AI5 Device Worker`予定タスクは現在**Enabled・Running**（2026-09-12時点でDisabledだった状態から、Owner側で復旧済み）。
+
+### FUJITSU⇄DYNABOOK 実dispatch E2E — 最終検証（2026-09-30）
+
+FUJITSU側から独立に、GitHub Result Bus上の実データを検証した（dynabook側の自己申告のみに依存しない）。
+
+| 確認項目 | 結果 |
+|---|---|
+| Task ID一致 | PASS（`DAIMON-DYNABOOK-DISPATCH-TEST-20260930-01`, `DAIMON-REMOTE-READONLY-AUDIT-20260930-01`） |
+| dynabook Worker identity | PASS（device_id=teppei-dynabook-v83hs, computer_name=DESKTOP-P3Q429H） |
+| claim記録 | PASS（claimed_by_device_id/claimed_computer_name記録済み） |
+| 実行結果 | PASS（両task共にresult="PASS"） |
+| Result内容 | PASS（`DYNABOOK_ECHO_OK`等、期待文字列を含む実データ） |
+| Receipt（SHA-256） | PASS（task_sha256/result_sha256とも記録済み） |
+| Evidence | PASS（evidence配列に具体的な実測値） |
+| lease release | PASS（`bus/state/locks/`に残存なし） |
+| GitHub remote反映 | PASS（fetch/pullで実際に取得・確認） |
+| duplicate execution | PASS（各task_idにつきresultファイル1件のみ） |
+| stale/FAILED旧Taskの誤成功扱い | PASS（該当なし、正しくCOMPLETED/PASS） |
+
+**DYNABOOK_DISPATCH = PASS**、**FUJITSU_DYNABOOK_E2E = PASS**（実機、simulationではない）。
+
+追加でzero-touch（完全無人）再現テスト用に`DAIMON-ZEROTOUCH-VERIFY-20260930-01`を発行済み（結果待ち）。
+
 ### Failover / Failback 実機検証（まとめ、2026-09-30）
 
 **FUJITSU内Worker failover: PASS（実機、simulationではない）**。DAIMON-TEST-010/011で発生した実インシデント（FUJITSU_CODEXの実行プロセスが外部要因で2回kill、うち1回はオーケストレーション側のWaitForExitバグでラッパーが約15分ハング）から、実際に：
