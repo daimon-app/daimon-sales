@@ -310,6 +310,31 @@ Claude Code自体が要求する生の英語permission promptを、DAIMONが安�
 | low-confidence escalation PASS | コードパス実装・レビュー済み、実シナリオでの発火は未確認 |
 | Result/Receipt/Evidence PASS | **PASS** — 全テストで生成・検証済み |
 
+### Galaxy E2E — DAIMON Remote経路（2026-09-30、実機LIVE証拠）
+
+Owner本人が実際にGalaxyからFUJITSUをChrome Remote Desktop経由でリモート操作中（Claude Code画面をGalaxy上で確認・操作）である状況を、FUJITSU側から技術的に検証した。
+
+```
+remoting_desktop.exe (PID 81728) 起動時刻: 2026-09-30 12:36:40（本セッション中に新規生成）
+remoting_host.exe (PID 6488) のネットワーク接続:
+  - 複数のIPv6アドレスからGoogle STUN/TURNサーバー(2001:4860:4864:4:8000::, ポート3478)へEstablished
+  - 192.168.0.16からGoogle STUN/TURNサーバー(74.125.247.128:3478)へEstablished
+```
+
+**結果: PASS**（実機、simulationではない）。`remoting_desktop.exe`の起動タイムスタンプが実際の接続確立時刻と一致し、`remoting_host.exe`がWebRTC接続確立に使うSTUN/TURNサーバーと現在進行形でEstablished接続を維持していることを確認。入力経路（Owner操作でこのセッションが進行していること自体）・画面表示（Galaxy上でClaude Code画面を確認できている旨のOwner申告）・継続性（プロセスが生存し続けている）を総合してPASSと判定する。
+
+**未実施**: Galaxy→FUJITSU DAIMON AI経由のTask投入E2E（現在のダッシュボードは読み取り専用で、Galaxy側からTaskを投入するUI/APIは未実装）。これは別途開発が必要な新機能であり、既存のRemote経路確認とは別課題として記録する。
+
+### Failover / Failback 実機検証（まとめ、2026-09-30）
+
+**FUJITSU内Worker failover: PASS（実機、simulationではない）**。DAIMON-TEST-010/011で発生した実インシデント（FUJITSU_CODEXの実行プロセスが外部要因で2回kill、うち1回はオーケストレーション側のWaitForExitバグでラッパーが約15分ハング）から、実際に：
+- stale-lease検知・自動回収（生きていないPIDのlease解放）
+- 実際の成果物（ディスク上のファイル）からの正直な事後reconcile
+- WaitForExitバグの根本修正
+まで実機で完了・検証済み。
+
+**DYNABOOK failover/failback: BLOCKED（外部要因）**。2026-08-28に歴史的に実発生・実復旧した記録（`ai5-github-result-bus`内）はあるが、今回のDAIMON Node文脈での実機再検証は、dynabook側のチャンネルが休眠中のため実施不可。`DAIMON-DYNABOOK-DISPATCH-TEST-20260930-01`は本レポート時点でも`QUEUED`のまま未claim。
+
 **総合判定: CONDITIONAL**（ローカル完結する経路は実測PASS。dynabookを跨ぐ実dispatchのみ、既存チャンネルの休眠状態により未検証・ブロック）
 
 ## 17. Canonical Precedence
