@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>DAIMON Node ダッシュボード</title>
+<style>
+  body { font-family: "Yu Gothic UI", "Meiryo", sans-serif; background:#0f1117; color:#e6e6e6; margin:0; padding:24px; }
+  h1 { font-size:20px; margin-bottom:4px; }
+  .updated { color:#888; font-size:12px; margin-bottom:20px; }
+  h2 { font-size:15px; border-bottom:1px solid #333; padding-bottom:6px; margin-top:32px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  th, td { text-align:left; padding:6px 10px; border-bottom:1px solid #23262f; }
+  th { color:#9aa; font-weight:600; }
+  .idle { color:#6bcB77; } .busy { color:#ffcc66; } .unknown { color:#888; }
+  .st-READY, .st-COMPLETED { color:#6bcB77; }
+  .st-RUNNING, .st-CLAIMED { color:#66b2ff; }
+  .st-REVIEW_WAIT, .st-WAITING_OWNER, .st-WAITING_PROVIDER { color:#ffcc66; }
+  .st-FAILED_RECOVERABLE, .st-BLOCKED { color:#ff6b6b; }
+  .empty { color:#666; font-style:italic; }
+  .err { color:#ff6b6b; }
+</style>
+</head>
+<body>
+<h1>DAIMON Node ダッシュボード（FUJITSU）</h1>
+<div class="updated" id="updated">読み込み中…</div>
+
+<h2>Worker Registry（実状態）</h2>
+<table id="workers"><thead><tr><th>Worker</th><th>Node</th><th>状態</th><th>busy/idle</th><th>lease</th><th>現在のTask</th><th>備考</th></tr></thead><tbody></tbody></table>
+
+<h2>Task Queue（実状態）</h2>
+<table id="tasks"><thead><tr><th>Task ID</th><th>状態</th><th>選択Worker</th><th>ブロッカー</th><th>出力</th></tr></thead><tbody></tbody></table>
+
+<h2>アクティブLease</h2>
+<table id="leases"><thead><tr><th>Lease</th></tr></thead><tbody></tbody></table>
+
+<script>
+async function refresh() {
+  const updatedEl = document.getElementById('updated');
+  try {
+    const res = await fetch('/api/status');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    updatedEl.textContent = '最終更新: ' + new Date(data.generated_at).toLocaleString('ja-JP') + '（実データ、自動更新5秒間隔）';
+
+    const wBody = document.querySelector('#workers tbody');
+    wBody.innerHTML = '';
+    const workers = (data.worker_registry && data.worker_registry.workers) || {};
+    for (const [name, w] of Object.entries(workers)) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${name}</td><td>${w.node ?? '-'}</td><td>${w.health ?? '-'}</td>` +
+        `<td class="${w.busy_state==='busy'?'busy':(w.busy_state==='idle'?'idle':'unknown')}">${w.busy_state ?? 'UNKNOWN'}</td>` +
+        `<td>${w.lease ?? '-'}</td><td>${w.current_task ?? '-'}</td><td>${w.notes ?? ''}</td>`;
+      wBody.appendChild(tr);
+    }
+
+    const tBody = document.querySelector('#tasks tbody');
+    tBody.innerHTML = '';
+    const tasks = data.tasks || [];
+    if (tasks.length === 0) {
+      tBody.innerHTML = '<tr><td colspan="5" class="empty">現在Taskなし</td></tr>';
+    }
+    for (const t of tasks) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${t.task_id}</td><td class="st-${t.status}">${t.status}</td>` +
+        `<td>${t.selected_worker ?? '-'}</td><td>${t.blocker ?? '-'}</td><td>${t.output ?? '-'}</td>`;
+      tBody.appendChild(tr);
+    }
+
+    const lBody = document.querySelector('#leases tbody');
+    lBody.innerHTML = '';
+    const leases = data.active_leases || [];
+    if (leases.length === 0) {
+      lBody.innerHTML = '<tr><td class="empty">アクティブなleaseなし</td></tr>';
+    }
+    for (const l of leases) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${l}</td>`;
+      lBody.appendChild(tr);
+    }
+  } catch (e) {
+    updatedEl.textContent = '取得失敗: ' + e.message;
+    updatedEl.className = 'err';
+  }
+}
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

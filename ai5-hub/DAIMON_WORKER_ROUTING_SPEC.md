@@ -263,7 +263,8 @@ Claude Code自体が要求する生の英語permission promptを、DAIMONが安�
 | Deterministic Router PASS | PASS — `Invoke-DaimonRuleRouter.ps1`、read_only_inspection即決・emergency即ESCALATE・fallthrough確認済み |
 | LOCAL_ROUTER PASS | PARTIAL — classification/JA指示/軽量コーディング/JSON準拠は実測PASS。quota/heartbeat/node-failureシナリオ未実施 |
 | Local self-execution PASS | **PASS** — DAIMON-TEST-003/005/006/008で実タスクを実行し正解出力、Result/Receipt生成確認 |
-| DAIMON_TOOL_EXECUTOR（固定スクリプト化） | PASS — 5スクリプト（SystemDiagnostics/LocalhostHealth/LocalRouter/RuleRouter/Dispatch）実装・`.claude/settings.json`登録済み |
+| DAIMON_TOOL_EXECUTOR（固定スクリプト化） | PASS — 8スクリプト（SystemDiagnostics/LocalhostHealth/LocalRouter/RuleRouter/Dispatch/BusStatus/OwnerGate/Dashboard）実装・`.claude/settings.json`登録済み |
+| DAIMON AI 可視化UI | **PASS** — `Start-DaimonDashboard.ps1`（独自ポート43126、AI5HUB/profit-engineとは完全分離、読み取り専用）+ `dashboard.html`（日本語UI）。`/api/status`が`bus_root`の実データ（Task Queue・Worker Registry・Lease）を返すことを実測確認。テストTask片付け後、空Queueが正しく空表示されることも確認（架空データなし、5秒間隔自動更新）。 |
 | Task Queue（READY/CLAIMED/RUNNING/REVIEW_WAIT/WAITING_PROVIDER/WAITING_OWNER/COMPLETED/FAILED_RECOVERABLE） | PASS — 全状態を実タスクで到達確認 |
 | Worker Registry | PASS（雛形）— `bus/worker-registry.json`、実行のたびに実状態で更新される。DYNABOOK系はUNKNOWN/未検証のまま正直に記録 |
 | Lease / 重複実行防止 | **PASS** — atomic lease file、完了済みTask再実行を正しく拒否（exit 2） |

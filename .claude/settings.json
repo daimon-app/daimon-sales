@@ -9,7 +9,9 @@
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonDispatch.ps1\" *)",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonBusStatus.ps1\" *)",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonBusStatus.ps1\")",
-      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonOwnerGate.ps1\" *)"
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonOwnerGate.ps1\" *)",
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Start-DaimonDashboard.ps1\" *)",
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Start-DaimonDashboard.ps1\")"
     ]
   }
 }
