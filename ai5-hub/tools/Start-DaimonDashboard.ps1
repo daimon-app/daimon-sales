@@ -16,7 +16,8 @@ Result/Receipt/Evidence : this tool itself has none (read-only view); the underl
 #>
 param(
   [int]$Port = 43126,
-  [string]$BusRoot = 'C:\Users\teppe\.local\daimon\bus'
+  [string]$BusRoot = 'C:\Users\teppe\.local\daimon\bus',
+  [string]$TailscaleIP = '100.72.31.31'
 )
 $ErrorActionPreference = 'Stop'
 $htmlPath = Join-Path $PSScriptRoot 'dashboard.html'
@@ -49,8 +50,14 @@ function Get-StatusJson {
 
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://127.0.0.1:$Port/")
+# Also bind the Tailscale interface so Owner devices already on the private tailnet (Galaxy, etc.)
+# can view this read-only dashboard - never binds 0.0.0.0/public, only the authenticated private
+# mesh network already relied on elsewhere in this stack (e.g. AI5HUB's own login flow).
+if ($TailscaleIP) {
+  try { $listener.Prefixes.Add("http://${TailscaleIP}:$Port/") } catch { Write-Output "Tailscale bind skipped: $($_.Exception.Message)" }
+}
 $listener.Start()
-Write-Output "DAIMON dashboard listening on http://127.0.0.1:$Port/ (Ctrl+C to stop; read-only, safe to kill anytime)"
+Write-Output "DAIMON dashboard listening on http://127.0.0.1:$Port/ and http://${TailscaleIP}:$Port/ (Ctrl+C to stop; read-only, safe to kill anytime)"
 
 try {
   while ($listener.IsListening) {

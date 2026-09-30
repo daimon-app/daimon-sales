@@ -18,7 +18,7 @@
 | CODEX_CLI | インストール済み・認証済み（"Logged in using ChatGPT"、codex-cli 0.155.0-alpha.16） |
 | CODEX_EXECUTION_WORKER | **UNVERIFIED** — general-consumer-runtimeはNO_EXECUTION_PRODUCERでfail-closed。この経路はGLOBAL_PROFIT_ENGINE/JAPAN_DIGITAL_EXPORT_ENGINE専用の別系統（profit-engine task bus）であり、DAIMON Node用の汎用実行経路ではない。DAIMON Node用のTask実行経路は未実装。 |
 | DAIMON_AI | **NOT_DEPLOYED** — 本仕様に対応する実装はまだ存在しない |
-| DAIMON_REMOTE | **NOT_DEPLOYED** |
+| DAIMON_REMOTE | **既存資産発見・再利用方針（PARTIAL）** — `C:\Program Files (x86)\Google\Chrome Remote Desktop` インストール済み、`remoting_desktop`/`remoting_host`プロセス稼働中を確認（2026-09-30）。新規リモートソフト導入は不要と判断（AGENTS.mdの既存Chrome Remote Desktop非改変方針に準拠）。Galaxy側からの実接続テストは本人操作が必要なため未実施。 |
 | LOCAL_ROUTER | **PARTIAL** — ランタイム(llama.cpp b10536)+モデル(Qwen2.5-7B-Instruct Q4_K_M)配置・smoke test PASS済み。DAIMON adapter/ルーティング統合は未実装。詳細は [DAIMON_WORKER_ROUTING_SPEC.md](./DAIMON_WORKER_ROUTING_SPEC.md) §11-12。 |
 | GIT_PROCESS_ANOMALY | 2026-09-29調査時点で再現せず。ベースライン: git.exe 2プロセス（Claude Code自身のstatus polling由来）、空きRAM約3.64GiB。過去の約851プロセス／約7.49GiB異常は再現不可、原因は既知の30秒ポーリング2系統（general-consumer, zero-bridge）のgit呼び出しにタイムアウト保護がないことによる一過性の可能性が高いが未確定。 |
 | LAST_VERIFIED | 2026-09-29 (Claude Code session) |

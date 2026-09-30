@@ -25,7 +25,7 @@
 <div class="updated" id="updated">読み込み中…</div>
 
 <h2>Worker Registry（実状態）</h2>
-<table id="workers"><thead><tr><th>Worker</th><th>Node</th><th>状態</th><th>busy/idle</th><th>lease</th><th>現在のTask</th><th>備考</th></tr></thead><tbody></tbody></table>
+<table id="workers"><thead><tr><th>Worker</th><th>Node</th><th>状態</th><th>稼働状況</th><th>占有中Lease</th><th>現在のTask</th><th>備考</th></tr></thead><tbody></tbody></table>
 
 <h2>Task Queue（実状態）</h2>
 <table id="tasks"><thead><tr><th>Task ID</th><th>状態</th><th>選択Worker</th><th>ブロッカー</th><th>出力</th></tr></thead><tbody></tbody></table>
@@ -34,23 +34,40 @@
 <table id="leases"><thead><tr><th>Lease</th></tr></thead><tbody></tbody></table>
 
 <script>
+// Owner向け表示専用の日本語訳。内部データ（英語のstatus/health等）はそのまま保持し、
+// 画面表示だけを翻訳する（DAIMON_WORKER_ROUTING_SPEC.md「Owner向け言語ポリシー」準拠）。
+const STATUS_JA = {
+  READY: '準備完了', CLAIMED: '受付済み', RUNNING: '実行中',
+  REVIEW_WAIT: 'レビュー待ち', BLOCKED: 'ブロック中',
+  WAITING_PROVIDER: '外部要因待ち', WAITING_OWNER: '本人判断待ち',
+  COMPLETED: '完了', FAILED_RECOVERABLE: '失敗（回復可能）'
+};
+const BUSY_JA = { busy: '稼働中', idle: '待機中' };
+const HEALTH_JA = {
+  healthy: '正常', not_connected: '未接続', UNKNOWN: '不明',
+  verified_execution_worker: '実行検証済み',
+  infrastructure_present_execution_unverified: '基盤あり・実行未検証'
+};
+function ja(map, value) { return map[value] ?? (value ?? '不明'); }
+
 async function refresh() {
   const updatedEl = document.getElementById('updated');
   try {
     const res = await fetch('/api/status');
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!res.ok) throw new Error('HTTP ' + res.status + '（取得失敗）');
     const data = await res.json();
 
-    updatedEl.textContent = '最終更新: ' + new Date(data.generated_at).toLocaleString('ja-JP') + '（実データ、自動更新5秒間隔）';
+    updatedEl.textContent = '最終更新: ' + new Date(data.generated_at).toLocaleString('ja-JP') + '（実データ、5秒間隔で自動更新）';
+    updatedEl.className = 'updated';
 
     const wBody = document.querySelector('#workers tbody');
     wBody.innerHTML = '';
     const workers = (data.worker_registry && data.worker_registry.workers) || {};
     for (const [name, w] of Object.entries(workers)) {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${name}</td><td>${w.node ?? '-'}</td><td>${w.health ?? '-'}</td>` +
-        `<td class="${w.busy_state==='busy'?'busy':(w.busy_state==='idle'?'idle':'unknown')}">${w.busy_state ?? 'UNKNOWN'}</td>` +
-        `<td>${w.lease ?? '-'}</td><td>${w.current_task ?? '-'}</td><td>${w.notes ?? ''}</td>`;
+      tr.innerHTML = `<td>${name}</td><td>${w.node ?? '-'}</td><td>${ja(HEALTH_JA, w.health)}</td>` +
+        `<td class="${w.busy_state==='busy'?'busy':(w.busy_state==='idle'?'idle':'unknown')}">${ja(BUSY_JA, w.busy_state)}</td>` +
+        `<td>${w.lease ?? 'なし'}</td><td>${w.current_task ?? 'なし'}</td><td>${w.notes ?? ''}</td>`;
       wBody.appendChild(tr);
     }
 
@@ -62,8 +79,8 @@ async function refresh() {
     }
     for (const t of tasks) {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${t.task_id}</td><td class="st-${t.status}">${t.status}</td>` +
-        `<td>${t.selected_worker ?? '-'}</td><td>${t.blocker ?? '-'}</td><td>${t.output ?? '-'}</td>`;
+      tr.innerHTML = `<td>${t.task_id}</td><td class="st-${t.status}">${ja(STATUS_JA, t.status)}</td>` +
+        `<td>${t.selected_worker ?? 'なし'}</td><td>${t.blocker ?? 'なし'}</td><td>${t.output ?? 'なし'}</td>`;
       tBody.appendChild(tr);
     }
 
@@ -71,7 +88,7 @@ async function refresh() {
     lBody.innerHTML = '';
     const leases = data.active_leases || [];
     if (leases.length === 0) {
-      lBody.innerHTML = '<tr><td class="empty">アクティブなleaseなし</td></tr>';
+      lBody.innerHTML = '<tr><td class="empty">占有中のLeaseなし</td></tr>';
     }
     for (const l of leases) {
       const tr = document.createElement('tr');
@@ -79,7 +96,7 @@ async function refresh() {
       lBody.appendChild(tr);
     }
   } catch (e) {
-    updatedEl.textContent = '取得失敗: ' + e.message;
+    updatedEl.textContent = '取得に失敗しました： ' + e.message;
     updatedEl.className = 'err';
   }
 }
