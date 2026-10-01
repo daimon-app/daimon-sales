@@ -36,7 +36,10 @@
 | CHROME_REMOTE_DESKTOP | RUNNING（EMERGENCY_FALLBACK扱い、process_count=2） |
 | AI5_DEVICE_WORKER | **Enabled・Running**（2026-09-30実測、last_run=18:08:27）。2026-09-12時点でDisabledだった状態からOwner側で復旧済み。 |
 | GITHUB_BUS_CHANNEL | `daimon-app/ai5-github-result-bus`（`device_id: teppei-dynabook-v83hs`）。2026-09-30時点で**稼働確認済み**（休眠状態は解消）。 |
-| LAST_VERIFIED | 2026-09-30（FUJITSU側からGitHub Result Bus経由で実データ独立検証済み） |
+| ZERO_TOUCH_REBOOT_RECOVERY | **PASS（2026-10-01実測）** — dynabook再起動後、保留中だった3件のTask（ZEROTOUCH-VERIFY/DISCONNECT-BUG-AUDIT/GET-ID）が本人操作なしで自動claim→実行→Result/Receipt返却、lease解放まで完了。原因はdynabook側コミット`48ed0e7`（Codexではなく既存Windows Device Worker自体を、ログオン時トリガー＋1分毎の自己回復トリガーでタスクスケジューラ登録し直したもの）。`AI5DeviceWorker.ps1`本体・`Invoke-AI5DynabookReadOnlyTask.ps1`は変更されておらず、FUJITSU側の既存修正と衝突なし。 |
+| RUSTDESK_ID | **`64992794`（2026-10-02 06:41実測、PASS）** — `DAIMON-REMOTE-GET-ID-VERIFY-20261001-02`で独立検証済み。原因だった`--get-id`出力取得バグ（commit `68fd7f0`）を修正し、再発行。 |
+| ZERO_TOUCH_TASK_DISPATCH_E2E | **PASS（2026-10-02実測）** — FUJITSUがREAD-ONLY Taskを発行→dynabook Worker(PID 5396, 稼働継続中)がOwner操作なしで自動claim（`134d2f2`）→実行（`48b0c1d`）→Result/Receipt返却（`505ef9c`）→lease解放、まで本人操作なしで完結。task/result/receiptのSHA-256・lease解放を個別ファイルから独立確認済み。 |
+| LAST_VERIFIED | 2026-10-02（FUJITSU側からGitHub Result Bus経由で実データ独立検証済み） |
 
 ## Tailnet 実測（2026-09-30、両視点）
 
