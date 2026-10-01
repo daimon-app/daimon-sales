@@ -15,6 +15,8 @@
 
 AI5 / Codex の承認、許可、Command approval、Owner Gate、自動施工については、必ず [`APPROVAL_PERMISSION_MASTER.md`](./APPROVAL_PERMISSION_MASTER.md) を正本として読む。
 
+Ownerへ表示する質問・承認・警告・進捗・完了報告は、Claude Code（クロちゃん）・Codex CLI / Codexとも必ず [`OWNER_COMMUNICATION_POLICY.md`](./OWNER_COMMUNICATION_POLICY.md) を読み、単なる日本語訳ではなく、技術知識なしで「何の話か・どれを押すか・押すと何が起きるか」がすぐ分かる日本語で説明する。
+
 Owner判断が必要な場合の全Codex共通経路は [`GLOBAL_AI5_HUB_APPROVAL_ROUTING_POLICY.md`](./GLOBAL_AI5_HUB_APPROVAL_ROUTING_POLICY.md) を正本とする。Chatで承認待ち停止せず、AI5 HUBへTaskを配送し、Result BusのDecision Receipt受領後に自動再開する。承認待ちは当該Taskだけに隔離し、他Taskを継続する。
 
 販売開始・CM配信・販売導線・公開E2E・計測・Google Play再利用工程については、必ず [`SALES_RELEASE_RUNBOOK.md`](./SALES_RELEASE_RUNBOOK.md) を再利用可能な施工正本として読む。
@@ -123,7 +125,7 @@ DAIMONの中核思想は「継続」より**戻ること**。
 
 ## 7. 正本運用ルール
 
-1. 作業開始時に `MASTER.md` と現行 `main` を読む。
+1. 作業開始時に `MASTER.md` と現行 `main` を読み、Ownerへ直接表示するAIは `OWNER_COMMUNICATION_POLICY.md` も読む。
 2. 承認・許可・Owner Gate・Command approvalを扱う場合は `APPROVAL_PERMISSION_MASTER.md` を必ず読む。
 3. 販売・CM・SNS・販売導線・公開・計測・Google Play転用を扱う場合は `SALES_RELEASE_RUNBOOK.md` を必ず読む。
 4. 新しい仕様をユーザーが確定したらMASTERまたは該当する専用正本へ反映する。
