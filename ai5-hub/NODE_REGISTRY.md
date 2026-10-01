@@ -18,7 +18,7 @@
 | CODEX_CLI | インストール済み・認証済み（"Logged in using ChatGPT"、codex-cli 0.155.0-alpha.16） |
 | CODEX_EXECUTION_WORKER | **UNVERIFIED** — general-consumer-runtimeはNO_EXECUTION_PRODUCERでfail-closed。この経路はGLOBAL_PROFIT_ENGINE/JAPAN_DIGITAL_EXPORT_ENGINE専用の別系統（profit-engine task bus）であり、DAIMON Node用の汎用実行経路ではない。DAIMON Node用のTask実行経路は未実装。 |
 | DAIMON_AI | **NOT_DEPLOYED** — 本仕様に対応する実装はまだ存在しない |
-| DAIMON_REMOTE | **PASS（Galaxy→FUJITSU）+ 正本確定（dynabook側にRustDesk稼働中）** — Galaxy→FUJITSU実接続はOwner本人により2026-09-30にLIVE確認済み（既存Chrome Remote Desktop使用）。**訂正**: 以前「RustDesk不在」と報告したのはGit履歴のみの検索結果によるもので誤り。dynabookへのREAD-ONLY調査Task実行結果により、dynabook側にRustDeskが実際に稼働中と判明（service_state=Running, port 21118 listening, 永続パスワード認証）。正本はRustDesk（dynabook側構成）+ Tailscale。FUJITSU側にはRustDesk未導入（新規統合はOwner指示待ち、推測で導入しない）。Chrome Remote DesktopはEMERGENCY_FALLBACKとして両機で現状維持。 |
+| DAIMON_REMOTE | **PASS（Galaxy→FUJITSU, Chrome Remote Desktop）+ RustDesk Host構築完了（2026-10-01）** — FUJITSU側にRustDesk 1.4.9+67を公式配布元からインストール、Owner承認のUAC昇格経由で`direct-server=Y`/`direct-access-port=21118`/permanent password設定完了。RustDesk ID=`509490385`、port 21118 Listen確認済み、service Running/Automatic。dynabook側（既存稼働中）との対称構成。Chrome Remote DesktopはEMERGENCY_FALLBACKとして現状維持。次段階: FUJITSU⇄dynabook RustDesk実接続E2E。 |
 | LOCAL_ROUTER | **PARTIAL** — ランタイム(llama.cpp b10536)+モデル(Qwen2.5-7B-Instruct Q4_K_M)配置・smoke test PASS済み。DAIMON adapter/ルーティング統合は未実装。詳細は [DAIMON_WORKER_ROUTING_SPEC.md](./DAIMON_WORKER_ROUTING_SPEC.md) §11-12。 |
 | GIT_PROCESS_ANOMALY | 2026-09-29調査時点で再現せず。ベースライン: git.exe 2プロセス（Claude Code自身のstatus polling由来）、空きRAM約3.64GiB。過去の約851プロセス／約7.49GiB異常は再現不可、原因は既知の30秒ポーリング2系統（general-consumer, zero-bridge）のgit呼び出しにタイムアウト保護がないことによる一過性の可能性が高いが未確定。 |
 | LAST_VERIFIED | 2026-09-29 (Claude Code session) |
