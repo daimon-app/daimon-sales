@@ -48,16 +48,35 @@ function Get-StatusJson {
   } | ConvertTo-Json -Depth 12
 }
 
-$listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add("http://127.0.0.1:$Port/")
-# Also bind the Tailscale interface so Owner devices already on the private tailnet (Galaxy, etc.)
-# can view this read-only dashboard - never binds 0.0.0.0/public, only the authenticated private
-# mesh network already relied on elsewhere in this stack (e.g. AI5HUB's own login flow).
+# Also try the Tailscale interface so Owner devices already on the private tailnet (Galaxy, etc.)
+# can view this read-only dashboard - never binds 0.0.0.0/public. Binding a specific non-localhost
+# IP needs a urlacl reservation (HttpListener.Start() throws AccessDenied without one, even though
+# Prefixes.Add() itself succeeds, and a failed Start() leaves the listener instance unusable -
+# so build a fresh instance for the fallback rather than reuse the failed one).
+$boundTailscale = $false
+$listener = $null
 if ($TailscaleIP) {
-  try { $listener.Prefixes.Add("http://${TailscaleIP}:$Port/") } catch { Write-Output "Tailscale bind skipped: $($_.Exception.Message)" }
+  $tryListener = New-Object System.Net.HttpListener
+  $tryListener.Prefixes.Add("http://127.0.0.1:$Port/")
+  $tryListener.Prefixes.Add("http://${TailscaleIP}:$Port/")
+  try {
+    $tryListener.Start()
+    $listener = $tryListener
+    $boundTailscale = $true
+  } catch {
+    Write-Output "Tailscale bind failed (needs 'netsh http add urlacl', not done automatically): $($_.Exception.Message)"
+  }
 }
-$listener.Start()
-Write-Output "DAIMON dashboard listening on http://127.0.0.1:$Port/ and http://${TailscaleIP}:$Port/ (Ctrl+C to stop; read-only, safe to kill anytime)"
+if (-not $listener) {
+  $listener = New-Object System.Net.HttpListener
+  $listener.Prefixes.Add("http://127.0.0.1:$Port/")
+  $listener.Start()
+}
+if ($boundTailscale) {
+  Write-Output "DAIMON dashboard listening on http://127.0.0.1:$Port/ and http://${TailscaleIP}:$Port/ (Ctrl+C to stop; read-only, safe to kill anytime)"
+} else {
+  Write-Output "DAIMON dashboard listening on http://127.0.0.1:$Port/ only (Tailscale bind unavailable; localhost still works) - Ctrl+C to stop, safe to kill anytime"
+}
 
 try {
   while ($listener.IsListening) {
