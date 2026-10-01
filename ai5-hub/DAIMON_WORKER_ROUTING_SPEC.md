@@ -338,7 +338,25 @@ chrome_remote_desktop: service_state=Running, process_count=2
 scheduled_worker(AI5 Device Worker): state=Running, enabled=true, last_run=2026-09-30T18:08:27
 ```
 
-**正本の所在確定**: dynabook側に実際にRustDesk（ポート21118、Auto起動、永続パスワード認証）が稼働中。DAIMON Remoteの本命はこの既存RustDesk構成を基準に、FUJITSU側を同一tailnet（`daimon.sales.jp@`）へ接続する形で統合する（新規のRemote方式を発明しない）。Chrome Remote DesktopはEMERGENCY_FALLBACKとして両機で現状維持。
+**正本の所在確定**: dynabook側に実際にRustDesk（ポート21118、Auto起動、永続パスワード認証）が稼働中。DAIMON Remoteの本命はこの既存RustDesk構成を基準に、FUJITSU側を同一構成へ揃える形で統合する（新規のRemote方式を発明しない）。Chrome Remote DesktopはEMERGENCY_FALLBACKとして両機で現状維持。
+
+### FUJITSU RustDesk Host構築（2026-10-01）
+
+dynabook側構成（上記）と対称になるよう、FUJITSU側にもRustDeskを導入した。
+
+```
+配布元: https://github.com/rustdesk/rustdesk/releases （公式、1.4.9、x86_64）
+インストール: rustdesk-1.4.9-x86_64.exe --silent-install （公式ドキュメント化された正規引数）
+設定: rustdesk.exe --option direct-server Y
+      rustdesk.exe --option direct-access-port 21118
+      rustdesk.exe --option verification-method use-permanent-password
+      rustdesk.exe --password <生成した16文字ランダムパスワード>
+結果: service=Running/Automatic, port 21118=Listen, RustDesk ID=509490385
+```
+
+**UAC昇格について**: 上記の`--option`/`--password`コマンドはRustDesk側の実装で管理者権限（`is_root()`）を要求する（ソースコード`src/core_main.rs`で確認）。非管理者権限での実行は明示的に拒否される。既存の正規管理者実行経路（Scheduled Task等）を事前にREAD-ONLYで調査したが、転用可能なものは存在しなかった（既存のHighest権限タスクは全てOS標準の固定タスクでユーザーコマンドを受け付けない。AI5/DAIMON関連タスクは全て`RunLevel: Limited`）。このため、Owner本人がFUJITSU実機の前にいるタイミングで、`Start-Process -Verb RunAs`によるUAC昇格を1回使用し、Owner承認（「はい」）を得て設定を適用した。新しい常設の管理者経路・UAC回避策は作成していない。
+
+**結果: PASS**（FUJITSU RustDesk Host構築完了、実測）。次段階: dynabook側RustDesk IDを取得し（`DAIMON-REMOTE-GET-ID-20261001-01`配車済み、結果待ち）、FUJITSU→dynabook実接続E2Eへ進む。
 
 また、dynabook側`AI5 Device Worker`予定タスクは現在**Enabled・Running**（2026-09-12時点でDisabledだった状態から、Owner側で復旧済み）。
 
