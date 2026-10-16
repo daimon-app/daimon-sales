@@ -21,7 +21,26 @@
       "Bash(git merge-base*)",
       "Bash(git branch --show-current*)",
       "Bash(git remote -v*)",
-      "Bash(git pull --ff-only*)"
+      "Bash(git pull --ff-only*)",
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonRemoteStatus.ps1\")",
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonSessionRestore.ps1\")",
+      "Bash(git worktree list*)",
+      "Bash(git branch -a*)",
+      "Bash(git branch --list*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonSessionRestore.ps1\"",
+            "timeout": 30
+          }
+        ]
+      }
     ]
   }
 }

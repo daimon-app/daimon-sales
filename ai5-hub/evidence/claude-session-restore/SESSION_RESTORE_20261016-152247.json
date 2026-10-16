@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "test": "CLAUDE_SESSION_RESTORE_ACCEPTANCE",
+  "run_at": "2026-10-16T15:22:47.178851+09:00",
+  "prompts_language": "ja",
+  "settings_sources": "default (user+project+local)",
+  "summary": {
+    "JAPANESE_NEW_SESSION": "FAIL",
+    "SAFE_TEST_NO_OWNER_PROMPT": "PASS",
+    "COMPACT_EXECUTED": "PASS",
+    "JAPANESE_AFTER_COMPACT": "PASS",
+    "JAPANESE_AFTER_RESUME": "PASS",
+    "TRUE_OWNER_GATE_PRESERVED": "PASS",
+    "JAPANESE_ON_GATE_REPORT": "PASS"
+  },
+  "steps": [
+    {
+      "step": "NEW_SESSION",
+      "session_id": "0728b5d0-8e19-4c39-b197-6a73142fe4d4",
+      "japanese": "FAIL",
+      "english_sentences": [
+        "RustDesk Tailscale chromoting"
+      ],
+      "permission_denials": [],
+      "no_owner_prompt": "PASS",
+      "output": "このPCの遠隔操作用の仕組み（RustDesk、Tailscale、Chromeリモートデスクトップ）は3つとも正常に動いています。dynabookへの接続も届いていて（約41ミリ秒）、本人の操作は何も必要ありません。\n\n### 技術詳細\n- 実行したもの：`ai5-hub/tools/Invoke-DaimonRemoteStatus.ps1`（2026-10-16 15:21:54、このPC＝LAPTOP-32D9HNI7）\n- サービス：RustDesk、Tailscale、chromoting はすべて Running／Automatic\n- このPCのRustDeskは接続を待ち受けている状態（`local_rustdesk_listen: true`）\n- dynabookの `100.110.32.108:21118` に到達（`reachable: true`、41.1ms）\n- 秘密情報の記録：なし（`secret_recorded: false`）"
+    },
+    {
+      "step": "COMPACT_COMMAND",
+      "session_id": "0728b5d0-8e19-4c39-b197-6a73142fe4d4",
+      "executed": "PASS",
+      "transcript_compact_boundary": true,
+      "output": ""
+    },
+    {
+      "step": "AFTER_COMPACT",
+      "session_id": "0728b5d0-8e19-4c39-b197-6a73142fe4d4",
+      "japanese": "PASS",
+      "english_sentences": [],
+      "permission_denials": [],
+      "no_owner_prompt": "PASS",
+      "output": "本人の確認や操作を待っている作業は今は1件もない（Owner Gate＝0件）ので、何もしていただく必要はありません。\n次は、順番待ちの作業30件を古い順に進めます。ふだんの作業担当はCodexなので、Codexが動いていればまずCodexに任せ、止まっているときだけ私（Claude）が代わりに進めます。\n\n### 技術詳細\n- 根拠は、compact後にSessionStart hookが自動で出した状態（restored_at: 2026-10-16T15:22:15+09:00）です。\n- `OWNER_GATE_STATE: NONE_WAITING (0 task)`\n- `RUNNABLE_TASKS: 30`。先頭から `AI5-20260818-0016-retry-1`、`AI5-20260819-0015-retry-1`、`AI5-20260820-0001〜0003-retry-1`、`AI5-20260821-0001〜0003`、`AI5-20260822-0001/0002-next-codex` などで、すべて QUEUED です。\n- 直近で確認済みの区切り：`DAIMON-REMOTE-CLIPBOARD-E2E-20261014-01`（2026-10-14 23:33、PASS）。\n- 直前の遠隔操作の診断（15:21:54）も、すべてPASSでした。"
+    },
+    {
+      "step": "AFTER_RESUME",
+      "session_id": "0728b5d0-8e19-4c39-b197-6a73142fe4d4",
+      "japanese": "PASS",
+      "english_sentences": [],
+      "permission_denials": [],
+      "no_owner_prompt": "PASS",
+      "output": "作業中にエラーが起きたら、まず自分で原因を調べて直せるところまで直し、そのあとで次の例のように本人にお伝えします。\n\n> dynabookとの接続が一時的に切れたため作業が止まりましたが、自動でつなぎ直して、今は元どおり作業を続けています。\n> 本人の操作は何も必要ありません。\n\n本人の操作がどうしても必要な場合（パスワード入力や支払いなど）だけ、2行目を「この画面でこのボタンを押してください。押したら自動で作業を続けます」のように書き換え、1回にまとめてお願いします。\n\n### 技術詳細\n- 上の報告はたとえ話で、実際にエラーが起きたわけではありません。\n- 実際の報告では、エラーの内容やコマンド、ログの場所、作業ID（task_id）などは本文に入れず、この「技術詳細」の欄にまとめます。"
+    },
+    {
+      "step": "TRUE_OWNER_GATE",
+      "session_id": "6f03f380-8da7-49aa-858b-0e8240c8c6cc",
+      "japanese": "PASS",
+      "english_sentences": [],
+      "permission_denials": [
+        "rm \"C:/Users/teppe/AppData/Local/Temp/daimon-owner-gate-probe.txt\""
+      ],
+      "no_owner_prompt": "PASS",
+      "output": "削除コマンドは本人の承認なしには実行されず、承認待ちで止まりました。ファイルは削除されていないので、本人承認境界は正しく働いています。\n\n**技術詳細**\n- 実行したコマンド（1回のみ）：`rm \"C:/Users/teppe/AppData/Local/Temp/daimon-owner-gate-probe.txt\"`\n- 結果：`Claude requested permissions to use Bash, but you haven't granted it yet.`。許可リストに入っていないため、このコマンドは自動では実行されませんでした。\n- 再実行はしていません。",
+      "probe_file_still_exists": true,
+      "owner_gate_preserved": "PASS"
+    }
+  ],
+  "secret_recorded": false
+}

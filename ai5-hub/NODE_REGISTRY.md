@@ -18,10 +18,10 @@
 | CODEX_CLI | インストール済み・認証済み（"Logged in using ChatGPT"、codex-cli 0.155.0-alpha.16） |
 | CODEX_EXECUTION_WORKER | **UNVERIFIED** — general-consumer-runtimeはNO_EXECUTION_PRODUCERでfail-closed。この経路はGLOBAL_PROFIT_ENGINE/JAPAN_DIGITAL_EXPORT_ENGINE専用の別系統（profit-engine task bus）であり、DAIMON Node用の汎用実行経路ではない。DAIMON Node用のTask実行経路は未実装。 |
 | DAIMON_AI | **NOT_DEPLOYED** — 本仕様に対応する実装はまだ存在しない |
-| DAIMON_REMOTE | **PASS（Galaxy→FUJITSU, Chrome Remote Desktop）+ RustDesk Host構築完了（2026-10-01）** — FUJITSU側にRustDesk 1.4.9+67を公式配布元からインストール、Owner承認のUAC昇格経由で`direct-server=Y`/`direct-access-port=21118`/permanent password設定完了。RustDesk ID=`509490385`、port 21118 Listen確認済み、service Running/Automatic。dynabook側（既存稼働中）との対称構成。Chrome Remote DesktopはEMERGENCY_FALLBACKとして現状維持。次段階: FUJITSU⇄dynabook RustDesk実接続E2E。 |
+| DAIMON_REMOTE | **PASS（FUJITSU⇄dynabook RustDesk実機E2E、2026-10-14実測）** — Galaxy→FUJITSU（Chrome Remote Desktop）PASS済み。FUJITSU側RustDesk 1.4.9+67（ID=`509490385`、direct port 21118）構築済み。Owner本人がRustDesk Permanent Passwordを入力しOwner Gate完了（passwordは非記録）。FUJITSU→dynabook（Tailscale `100.110.32.108:21118` 直接TCP）で接続・画面・Clipboard双方向（日本語短文／10KB SHA-256完全一致）・切断・再接続後Clipboard双方向すべてPASS（Result: `ai5-github-result-bus/bus/results/DAIMON-REMOTE-CLIPBOARD-E2E-20261014-01-v1.json`、Evidence: `evidence/daimon-remote/FUJITSU_DYNABOOK_CLIPBOARD_RECOVERY_20261014.json`）。Clipboard不通の原因はRustDeskセッション内clipboard listenerの停止で、セッション権限のOFF→ONだけで復旧（Windows/Tailscale/RustDesk設定は無変更）。Result Bus経由LIVE往復は`AI5-HUB-DYNABOOK-E2E-ECHO-20261013-1912-02`でPASS。Owner Gate完了後に待機Taskが自動復帰しなかった不具合は`Resume-AI5OwnerGateTask.ps1`＋Worker poll統合で修正済み（試験PASS）。2026-10-16 固定Tool `Invoke-DaimonRemoteStatus.ps1` で再確認：RustDesk/Tailscale/chromoting Running、local 21118 Listen、dynabook 21118到達（約54ms）。Chrome Remote DesktopはEMERGENCY_FALLBACKとして現状維持。 |
 | LOCAL_ROUTER | **PARTIAL** — ランタイム(llama.cpp b10536)+モデル(Qwen2.5-7B-Instruct Q4_K_M)配置・smoke test PASS済み。DAIMON adapter/ルーティング統合は未実装。詳細は [DAIMON_WORKER_ROUTING_SPEC.md](./DAIMON_WORKER_ROUTING_SPEC.md) §11-12。 |
 | GIT_PROCESS_ANOMALY | 2026-09-29調査時点で再現せず。ベースライン: git.exe 2プロセス（Claude Code自身のstatus polling由来）、空きRAM約3.64GiB。過去の約851プロセス／約7.49GiB異常は再現不可、原因は既知の30秒ポーリング2系統（general-consumer, zero-bridge）のgit呼び出しにタイムアウト保護がないことによる一過性の可能性が高いが未確定。 |
-| LAST_VERIFIED | 2026-09-29 (Claude Code session) |
+| LAST_VERIFIED | 2026-10-16 (Claude Code fallback session、固定Tool経由) |
 
 ## DYNABOOK (desktop-p3q429h)
 
