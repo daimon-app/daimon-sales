@@ -20,6 +20,8 @@
   - localhost health：`...\ai5-hub\tools\Invoke-DaimonLocalhostHealth.ps1`
   - Bus状態：`...\ai5-hub\tools\Invoke-DaimonBusStatus.ps1`
   - Galaxy実機PRE-FLIGHT（USB ADB、読み取り専用）：`...\ai5-hub\tools\Invoke-DaimonGalaxyPreflight.ps1`（`-GateTaskId GALAXY-LOCAL-AI-20261016-01` を付けると、接続検知時に待機Taskを自動RESUMEする。SessionStart hookも自動で実行する）
+- GALAXY_LOCAL_AI の通常施工は、固定Tool `python ai5-hub/tools/galaxy_local_ai.py <サブコマンド>` だけで行う（作業ディレクトリはリポジトリ直下、文字列は完全一致）。サブコマンドは `status` / `bench-next` / `select` / `deploy` / `e2e` / `stop` / `logs` / `cleanup-losers` のみ。ad-hoc の adb / python / bash は生成しない。長時間かかる `bench-next` と `e2e` は Bash tool の `timeout` を 600000 にする。
+- 夜間無人施工（NIGHT_ZERO_TOUCH）：本物の Owner Gate 以外で Permission を発生させない。固定Toolで足りない処理が出たら、承認を求めず、固定Toolを拡張するまでその処理を保留して次の Task へ進む。
 - Git 読み取りは作業ディレクトリ（リポジトリ直下）から `git status` / `git log` / `git diff` / `git show` 等を `cd` なしで直接実行する。別リポジトリは `git -C` ではなく固定Tool または Read / Glob / Grep ツールで確認する。
 - ファイル内容・ログ・Evidence の読み取りは Bash ではなく Read / Glob / Grep ツールを使う（承認不要）。
 - 新しい定型診断が必要になったら、承認を求める前に固定Toolとして `ai5-hub/tools/` に追加し、完全一致パスで `.claude/settings.json` に登録する。

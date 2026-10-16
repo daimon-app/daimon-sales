@@ -1,0 +1,406 @@
+{
+  "schema_version": 1,
+  "test": "GALAXY_LOCAL_AI_BENCH",
+  "runtime": "llama.cpp b10536 android-arm64 CPU, 6 threads",
+  "device": {
+    "model": "SCG39",
+    "soc": "SM8850"
+  },
+  "results": {
+    "gemma-3-1b-it-Q4_K_M.gguf": {
+      "model": "gemma-3-1b-it-Q4_K_M.gguf",
+      "bytes": 806058272,
+      "state_before": {
+        "battery_level": 98,
+        "battery_temp_c": 26.9,
+        "thermal_status": 0,
+        "mem_available_gib": 6.07
+      },
+      "cooldown_wait_s": 0,
+      "load_time_s": 1.7,
+      "peak_rss_gib": 1.4,
+      "state_after": {
+        "battery_level": 98,
+        "battery_temp_c": 26.7,
+        "thermal_status": 0,
+        "mem_available_gib": 5.35
+      },
+      "gen_tokens_per_s_median": 59.8,
+      "prompt_tokens_per_s_median": 158.5,
+      "tests": [
+        {
+          "test": "japanese_summary",
+          "pass": true,
+          "latency_s": 1.31,
+          "output": "富士通のPCとdynabookがRustDeskを通じてクリップボードを共有し、設定ミスにより一時的に共有が停止していた問題を解決するために、設定を再確認することで改善した。"
+        },
+        {
+          "test": "json_schema",
+          "pass": true,
+          "latency_s": 1.26,
+          "output": "{\n  \"category\": \"diagnostic\",\n  \"risk\": \"low\",\n  \"needs_owner\": false\n}"
+        },
+        {
+          "test": "task_classification",
+          "pass": true,
+          "latency_s": 0.29,
+          "output": "はい。"
+        },
+        {
+          "test": "task_classification_safe",
+          "pass": false,
+          "latency_s": 0.29,
+          "output": "はい。"
+        },
+        {
+          "test": "log_analysis",
+          "pass": false,
+          "latency_s": 1.72,
+          "output": "git pull failed due to a DNS resolution error, likely caused by an issue with the hostname of GitHub.com."
+        },
+        {
+          "test": "light_judgement",
+          "pass": true,
+          "latency_s": 0.76,
+          "output": "バッテリー残量が低い状況では、重いAI処理を実行するとバッテリーがさらに消耗しやすいため、今は充電してから待つ方が良いでしょう。"
+        },
+        {
+          "test": "kana_order",
+          "pass": false,
+          "error": "HTTP Error 500: Internal Server Error"
+        },
+        {
+          "test": "faithful_summary",
+          "pass": true,
+          "latency_s": 0.87,
+          "output": "富士通とDynabookの遠隔接続は問題なく行われており、GalaxyのローカルAI導入に向けた準備段階を進めているという報告です。"
+        },
+        {
+          "test": "light_code",
+          "pass": false,
+          "latency_s": 0.29,
+          "output": "16"
+        }
+      ],
+      "quality_score": "5/9",
+      "measured_at": "2026-10-17T05:25:47.224835+09:00"
+    },
+    "Qwen3-1.7B-Q4_K_M.gguf": {
+      "model": "Qwen3-1.7B-Q4_K_M.gguf",
+      "bytes": 1107409472,
+      "state_before": {
+        "battery_level": 98,
+        "battery_temp_c": 26.7,
+        "thermal_status": 0,
+        "mem_available_gib": 5.99
+      },
+      "cooldown_wait_s": 0,
+      "load_time_s": 2.18,
+      "peak_rss_gib": 2.66,
+      "state_after": {
+        "battery_level": 98,
+        "battery_temp_c": 27.4,
+        "thermal_status": 1,
+        "mem_available_gib": 4.35
+      },
+      "gen_tokens_per_s_median": 44.7,
+      "prompt_tokens_per_s_median": 219.8,
+      "tests": [
+        {
+          "test": "japanese_summary",
+          "pass": true,
+          "latency_s": 1.72,
+          "output": "富士通のPCとdynabookでRustDeskを使用し、クリップボードの双方向共有および切断後の再接続が確認され、原因はセッション内のクリップボード機能が停止していたことだった。"
+        },
+        {
+          "test": "json_schema",
+          "pass": false,
+          "latency_s": 1.09,
+          "output": "{\"category\": \"diagnostic\", \"risk\": \"low\", \"needs_owner\": true}"
+        },
+        {
+          "test": "task_classification",
+          "pass": false,
+          "latency_s": 0.41,
+          "output": "いいえ"
+        },
+        {
+          "test": "task_classification_safe",
+          "pass": true,
+          "latency_s": 0.23,
+          "output": "いいえ"
+        },
+        {
+          "test": "log_analysis",
+          "pass": true,
+          "latency_s": 1.59,
+          "output": "作業が失敗した根本原因は、「git pull timeout」によるホストの解決不能。"
+        },
+        {
+          "test": "light_judgement",
+          "pass": false,
+          "latency_s": 1.08,
+          "output": "残量15%で充電していない状態では、スマホの性能が低下し、電力不足によりアプリや機能に影響が出る可能性があります。"
+        },
+        {
+          "test": "kana_order",
+          "pass": false,
+          "latency_s": 1.85,
+          "output": "りんご、バナナ、みかん  \n→ ひなわら、はるま、みかん  \n\n（※「りんご」という漢字の発音は「にんご」ですが、「りんご」を五十音順で並べると「ひなわら」になります。）"
+        },
+        {
+          "test": "faithful_summary",
+          "pass": true,
+          "latency_s": 1.11,
+          "output": "FUJITSUとdynabookの遠隔接続は正常であり、GalaxyのローカルAIの導入準備が進められている。"
+        },
+        {
+          "test": "light_code",
+          "pass": false,
+          "latency_s": 5.99,
+          "output": "このコードは、`range(4)` を使って 0 到 3 の整数を生成し、それぞれの平方（x²）を求めた後、それらの和を計算するものです。\n\n```python\nprint(sum(x*x for x in range(4)))\n```\n\n出力結果は：\n\n```\n30\n```\n\n理由：\n- `range(4)` は 0, 1, 2, 3 の値を生成します。\n- 各値の平方を求めると：0²=0、1²=1、2²=4、3²=9\n- 和は 0 + 1 + 4 + 9 = **14** → が計算結果ではありません。\n\nWait, 結果を再確認します：\n\n```\nx*x for x in range(4"
+        }
+      ],
+      "quality_score": "4/9",
+      "measured_at": "2026-10-17T05:26:37.105165+09:00"
+    },
+    "Qwen3-4B-Instruct-2507-Q4_K_M.gguf": {
+      "model": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+      "bytes": 2497281120,
+      "state_before": {
+        "battery_level": 98,
+        "battery_temp_c": 28.4,
+        "thermal_status": 0,
+        "mem_available_gib": 5.98
+      },
+      "cooldown_wait_s": 30,
+      "load_time_s": 3.78,
+      "peak_rss_gib": 5.24,
+      "state_after": {
+        "battery_level": 97,
+        "battery_temp_c": 29.2,
+        "thermal_status": 2,
+        "mem_available_gib": 3.79
+      },
+      "gen_tokens_per_s_median": 17.1,
+      "prompt_tokens_per_s_median": 75.3,
+      "tests": [
+        {
+          "test": "japanese_summary",
+          "pass": true,
+          "latency_s": 4.32,
+          "output": "富士通のPCとdynabookがRustDeskで接続され、クリップボードの双方向共有と再接続が確認されたが、セッション内のクリップボード機能の停止により問題が発生し、設定を一時的に切ってから戻すことで解決した。"
+        },
+        {
+          "test": "json_schema",
+          "pass": false,
+          "latency_s": 2.2,
+          "output": "{\n  \"category\": \"delete\",\n  \"risk\": \"low\",\n  \"needs_owner\": false\n}"
+        },
+        {
+          "test": "task_classification",
+          "pass": true,
+          "latency_s": 0.68,
+          "output": "はい"
+        },
+        {
+          "test": "task_classification_safe",
+          "pass": true,
+          "latency_s": 0.33,
+          "output": "いいえ"
+        },
+        {
+          "test": "log_analysis",
+          "pass": true,
+          "latency_s": 3.75,
+          "output": "GitHubのホスト名が解決できないため、Gitプルが失敗した。"
+        },
+        {
+          "test": "light_judgement",
+          "pass": true,
+          "latency_s": 31.6,
+          "output": "いいえ、電池残量15%で充電していないスマホでは、重いAI処理を実行するべきではありません。電池が枯渇すると端末が突然シャットダウンし、データ損失や処理の中断につながるためです。"
+        },
+        {
+          "test": "kana_order",
+          "pass": false,
+          "latency_s": 21.66,
+          "output": "まず、「りんご、バナナ、みかん」という果物の名前を**五十音順**に並びます。\n\n### ステップ1：それぞれの文字列を確認  \n- りんご → 「り」  \n- バナナ → 「ば」  \n- みかん → 「み」\n\n### ステップ2：五十音順で並べる  \n五十音順は、ひらがな順に従います。  \n\n- あ  \n- い  \n-う  \n-え  \n-お  \n→ ば（バ）  \n→ り（リ）  \n→ み（ミ）\n\n順番を確認：  \n**ば → み → り**\n\nつまり、五十音順は：\n\n👉 **バナナ、みかん、りんご**\n\n### 答え：\n**バナナ、みかん、りんご**"
+        },
+        {
+          "test": "faithful_summary",
+          "pass": true,
+          "latency_s": 3.1,
+          "output": "富士通とdynabookの遠隔接続は正常であり、GalaxyにおけるローカルAIの導入準備が進行中である。"
+        },
+        {
+          "test": "light_code",
+          "pass": false,
+          "latency_s": 0.7,
+          "output": "20"
+        }
+      ],
+      "quality_score": "6/9",
+      "measured_at": "2026-10-17T05:29:29.130456+09:00"
+    },
+    "gemma-3-4b-it-Q4_K_M.gguf": {
+      "model": "gemma-3-4b-it-Q4_K_M.gguf",
+      "bytes": 2489894016,
+      "state_before": {
+        "battery_level": 97,
+        "battery_temp_c": 30.4,
+        "thermal_status": 1,
+        "mem_available_gib": 6.06
+      },
+      "cooldown_wait_s": 30,
+      "load_time_s": 4.18,
+      "peak_rss_gib": 5.25,
+      "state_after": {
+        "battery_level": 97,
+        "battery_temp_c": 31.1,
+        "thermal_status": 1,
+        "mem_available_gib": 3.12
+      },
+      "gen_tokens_per_s_median": 14.9,
+      "prompt_tokens_per_s_median": 53.5,
+      "tests": [
+        {
+          "test": "japanese_summary",
+          "pass": true,
+          "latency_s": 2.63,
+          "output": "富士通のPCとdynabookにおいて、RustDeskのクリップボード機能停止により接続に問題が生じたものの、設定をリセットすることで解決した。"
+        },
+        {
+          "test": "json_schema",
+          "pass": true,
+          "latency_s": 3.81,
+          "output": "{\n  \"category\": \"diagnostic\",\n  \"risk\": \"low\",\n  \"needs_owner\": false\n}"
+        },
+        {
+          "test": "task_classification",
+          "pass": true,
+          "latency_s": 0.92,
+          "output": "はい。"
+        },
+        {
+          "test": "task_classification_safe",
+          "pass": false,
+          "latency_s": 0.76,
+          "output": "はい。"
+        },
+        {
+          "test": "log_analysis",
+          "pass": true,
+          "latency_s": 5.02,
+          "output": "GitHubホストの解決に失敗したため、git pull操作がタイムアウトし、タスク処理が失敗しました。"
+        },
+        {
+          "test": "light_judgement",
+          "pass": true,
+          "latency_s": 31.94,
+          "output": "バッテリー残量が極端に少ない状況では、AI処理による電力消費がバッテリーの消耗を加速させ、急激な電圧低下や動作不安定を引き起こす可能性があるため、避けるべきです。"
+        },
+        {
+          "test": "kana_order",
+          "pass": true,
+          "latency_s": 10.67,
+          "output": "*   **バナナ**\n*   **みかん**\n*   **りんご**\n\n以上です。"
+        },
+        {
+          "test": "faithful_summary",
+          "pass": true,
+          "latency_s": 50.16,
+          "output": "富士通とダイナブックとのリモート接続は安定しており、ギャラクシーのローカルAI導入に向けた準備が進行中である。"
+        },
+        {
+          "test": "light_code",
+          "pass": false,
+          "latency_s": 0.7,
+          "output": "30"
+        }
+      ],
+      "quality_score": "7/9",
+      "measured_at": "2026-10-17T05:33:00.226142+09:00"
+    },
+    "Phi-4-mini-instruct-Q4_K_M.gguf": {
+      "model": "Phi-4-mini-instruct-Q4_K_M.gguf",
+      "bytes": 2491874272,
+      "state_before": {
+        "battery_level": 97,
+        "battery_temp_c": 31.1,
+        "thermal_status": 1,
+        "mem_available_gib": 5.83
+      },
+      "cooldown_wait_s": 0,
+      "load_time_s": 3.7,
+      "peak_rss_gib": 5.27,
+      "state_after": {
+        "battery_level": 97,
+        "battery_temp_c": 31.4,
+        "thermal_status": 2,
+        "mem_available_gib": 3.61
+      },
+      "gen_tokens_per_s_median": 16.4,
+      "prompt_tokens_per_s_median": 72.2,
+      "tests": [
+        {
+          "test": "japanese_summary",
+          "pass": true,
+          "latency_s": 4.09,
+          "output": "富士通PCとdynabookでRustDeskにてクリップボード双方向共有及び再接続テスト実施し、一時的なセッション中の障害による機能停止が原因であること判明、設定変更を行い正常化した。(1文要約)"
+        },
+        {
+          "test": "json_schema",
+          "pass": true,
+          "latency_s": 2.45,
+          "output": "{\n\n  \"category\": \"diagnostic\",\n\n  \"risk\": \"low\",\n\n  \"needs_owner\": false\n\n}"
+        },
+        {
+          "test": "task_classification",
+          "pass": true,
+          "latency_s": 0.75,
+          "output": "はい"
+        },
+        {
+          "test": "task_classification_safe",
+          "pass": false,
+          "latency_s": 0.33,
+          "output": "はい"
+        },
+        {
+          "test": "log_analysis",
+          "pass": true,
+          "latency_s": 3.72,
+          "output": "Gitリポジトリのホスト URLが解決できなかった。"
+        },
+        {
+          "test": "light_judgement",
+          "pass": false,
+          "latency_s": 6.23,
+          "output": "いいえ、そのような状況では不適切だと思います。使用されているエネルギーが不足し、不必要に電池の残量を減らしてしまう可能性があります。また、重いAI処理は充電状態でも実行することには問題ありません。ただし、スマホやタブレットで長時間使われるとバッテリー寿命が短くなるため注意してください。"
+        },
+        {
+          "test": "kana_order",
+          "pass": false,
+          "latency_s": 9.42,
+          "output": "日本語のアルファベットはアラビア文字を使用しているため、「リスト」のような英単語や数字ではなく、実際には漢字とカタカナが混在する言葉です。しかしながら、ご依頼に従い五十音順で並べる場合の例として以下の通りになります。\n\n\n1. みかん\n\n2. リンゴ（リンゴ）\n\n3. バナナ\n\n\n「リスト」のような英単語や数字を含むことはできませんが、与えられたフレーズに基づいて五十音順で並べると上記の通りです。"
+        },
+        {
+          "test": "faithful_summary",
+          "pass": false,
+          "latency_s": 3.38,
+          "output": "Fujitsuとのダイナブックへのリモート接続は正常であり、ガジェット向けAI機能を実装する作業も順調に進行中です。"
+        },
+        {
+          "test": "light_code",
+          "pass": false,
+          "latency_s": 0.46,
+          "output": "16"
+        }
+      ],
+      "quality_score": "4/9",
+      "measured_at": "2026-10-17T05:34:46.123032+09:00"
+    }
+  },
+  "secret_recorded": false
+}

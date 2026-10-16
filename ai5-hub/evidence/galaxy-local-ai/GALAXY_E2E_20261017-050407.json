@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "test": "GALAXY_LOCAL_AI_E2E",
+  "run_id": "20261017-050407",
+  "started_at": "2026-10-17T05:04:07.622329+09:00",
+  "steps": {
+    "A_LOCAL_JAPANESE_TASK": {
+      "pass": true,
+      "result": {
+        "schema_version": 1,
+        "result_id": "GALAXY-LOCAL-AI-E2E-20261017-050407-A-v1",
+        "task_id": "GALAXY-LOCAL-AI-E2E-20261017-050407-A",
+        "worker": "GALAXY_LOCAL_AI",
+        "device_id": "galaxy",
+        "status": "COMPLETED",
+        "reason": null,
+        "output": "FUJITSUとdynabookの遠隔接続は問題なく機能しており、GalaxyのローカルAI導入に向けた準備段階を進めているという報告です。",
+        "started_at": "2026-10-17T05:04:07+0900",
+        "finished_at": "2026-10-17T05:04:10+0900",
+        "model_sha256": "8270790f3ab69fdfe860b7b64008d9a19986d8df7e407bb018184caa08798ebd",
+        "resource": {
+          "thermal_status": "0 battery_temp_c10=286 battery_level=99 powered=1 mem_available_kb=5918908",
+          "battery_temp_c10": null,
+          "battery_level": null,
+          "powered": null,
+          "mem_available_kb": null
+        },
+        "synced_at": "2026-10-17T05:04:10.958858+09:00",
+        "secret_recorded": false
+      }
+    },
+    "B_OFFLINE_LOCAL_TASK": {
+      "net_before": {
+        "wifi_on": "0",
+        "mobile_data": "1",
+        "online": true
+      },
+      "net_during": {
+        "wifi_on": "0",
+        "mobile_data": "0",
+        "online": false
+      },
+      "phone_status_while_offline": "COMPLETED",
+      "synced_while_offline": false,
+      "net_after": {
+        "wifi_on": "0",
+        "mobile_data": "1",
+        "online": true
+      },
+      "pass": true
+    },
+    "D_SYNC_AFTER_RECONNECT": {
+      "pass": true,
+      "first_sync": [
+        "GALAXY-LOCAL-AI-E2E-20261017-050407-B"
+      ],
+      "second_sync_new": 0,
+      "duplicates": 0,
+      "result": {
+        "schema_version": 1,
+        "result_id": "GALAXY-LOCAL-AI-E2E-20261017-050407-B-v1",
+        "task_id": "GALAXY-LOCAL-AI-E2E-20261017-050407-B",
+        "worker": "GALAXY_LOCAL_AI",
+        "device_id": "galaxy",
+        "status": "COMPLETED",
+        "reason": null,
+        "output": "はい、承知いたしました。\n\nりんご、バナナ、みかん\n",
+        "started_at": "2026-10-17T05:04:16+0900",
+        "finished_at": "2026-10-17T05:04:17+0900",
+        "model_sha256": "8270790f3ab69fdfe860b7b64008d9a19986d8df7e407bb018184caa08798ebd",
+        "resource": {
+          "thermal_status": "0 battery_temp_c10=286 battery_level=99 powered=1 mem_available_kb=5720864",
+          "battery_temp_c10": null,
+          "battery_level": null,
+          "powered": null,
+          "mem_available_kb": null
+        },
+        "synced_at": "2026-10-17T05:04:21.581771+09:00",
+        "secret_recorded": false
+      }
+    },
+    "C_ESCALATION": {
+      "pass": false,
+      "capability_escalation": {
+        "exit_code": 1,
+        "decision": {
+          "raw": ""
+        },
+        "result_file": "C:\\Users\\teppe\\.local\\daimon\\bus\\results\\GALAXY-LOCAL-AI-E2E-20261017-050407-C-v1.json",
+        "receipt_file": "C:\\Users\\teppe\\.local\\daimon\\bus\\receipts\\GALAXY-LOCAL-AI-E2E-20261017-050407-C.json"
+      },
+      "secret_task": {
+        "schema_version": 1,
+        "result_id": "GALAXY-LOCAL-AI-E2E-20261017-050407-C2-v1",
+        "task_id": "GALAXY-LOCAL-AI-E2E-20261017-050407-C2",
+        "worker": "GALAXY_LOCAL_AI",
+        "device_id": "galaxy",
+        "status": "ESCALATE",
+        "reason": "SECRET_REFUSED",
+        "output": null,
+        "started_at": "2026-10-17T05:04:22+0900",
+        "finished_at": "2026-10-17T05:04:22+0900",
+        "model_sha256": "8270790f3ab69fdfe860b7b64008d9a19986d8df7e407bb018184caa08798ebd",
+        "resource": {
+          "thermal_status": "0 battery_temp_c10=286 battery_level=99 powered=1 mem_available_kb=5690948",
+          "battery_temp_c10": null,
+          "battery_level": null,
+          "powered": null,
+          "mem_available_kb": null
+        },
+        "synced_at": "2026-10-17T05:04:23.098768+09:00",
+        "secret_recorded": false
+      },
+      "secret_task_route": "WAITING_OWNER (secret tasks are never sent to any AI)"
+    },
+    "E_RESOURCE_GUARD": {
+      "pass": true,
+      "result": {
+        "schema_version": 1,
+        "result_id": "GALAXY-LOCAL-AI-E2E-20261017-050407-E-v1",
+        "task_id": "GALAXY-LOCAL-AI-E2E-20261017-050407-E",
+        "worker": "GALAXY_LOCAL_AI",
+        "device_id": "galaxy",
+        "status": "ESCALATE",
+        "reason": "RESOURCE_GUARD_THERMAL",
+        "output": null,
+        "started_at": "2026-10-17T05:04:23+0900",
+        "finished_at": "2026-10-17T05:04:23+0900",
+        "model_sha256": "8270790f3ab69fdfe860b7b64008d9a19986d8df7e407bb018184caa08798ebd",
+        "resource": {
+          "thermal_status": "0 battery_temp_c10=286 battery_level=99 powered=1 mem_available_kb=6194864",
+          "battery_temp_c10": null,
+          "battery_level": null,
+          "powered": null,
+          "mem_available_kb": null
+        },
+        "synced_at": "2026-10-17T05:04:24.097984+09:00",
+        "secret_recorded": false
+      },
+      "server_running_after": false
+    },
+    "F_REGISTRY_DASHBOARD": {
+      "pass": true,
+      "registry_entry": {
+        "node": "GALAXY",
+        "type": "LOCAL_AI",
+        "model": "gemma-3-1b-it-Q4_K_M.gguf",
+        "model_sha256": "8270790f3ab69fdfe860b7b64008d9a19986d8df7e407bb018184caa08798ebd",
+        "runtime": "llama.cpp b10536 android-arm64 (CPU)",
+        "health": "healthy",
+        "capabilities": [
+          "chat",
+          "classify",
+          "extract",
+          "light_diagnostic",
+          "log_analysis",
+          "summarize"
+        ],
+        "offline_capable": true,
+        "resource_state": {
+          "at": "2026-10-17T05:04:24+0900",
+          "model_state": "UNLOADED",
+          "thermal_status": "0",
+          "battery_temp_c10": "286",
+          "battery_level": "99",
+          "powered": "1",
+          "mem_available_kb": "6316768"
+        },
+        "heartbeat": "2026-10-17T05:04:24+0900",
+        "current_task": null,
+        "busy_state": "idle",
+        "limit_state": "not_applicable",
+        "lease": null,
+        "reset_at": null,
+        "notes": "On-demand load, idle unload, localhost-only with per-start API key. Escalates to FUJITSU_LOCAL_ROUTER.",
+        "last_result": "C:\\Users\\teppe\\.local\\daimon\\bus\\results\\GALAXY-LOCAL-AI-E2E-20261017-050407-A-v1.json",
+        "last_receipt": "C:\\Users\\teppe\\.local\\daimon\\bus\\receipts\\GALAXY-LOCAL-AI-E2E-20261017-050407-A.json"
+      },
+      "dashboard_source": "C:\\Users\\teppe\\.local\\daimon\\bus\\worker-registry.json"
+    },
+    "G_LIVE_EVENTS": {
+      "pass": true,
+      "events_file": "C:\\Users\\teppe\\.local\\daimon\\bus\\events\\galaxy_local_ai.jsonl",
+      "events_in_run": 9
+    }
+  },
+  "finished_at": "2026-10-17T05:04:24.524211+09:00",
+  "summary": {
+    "A_LOCAL_JAPANESE_TASK": "PASS",
+    "B_OFFLINE_LOCAL_TASK": "PASS",
+    "D_SYNC_AFTER_RECONNECT": "PASS",
+    "C_ESCALATION": "FAIL",
+    "E_RESOURCE_GUARD": "PASS",
+    "F_REGISTRY_DASHBOARD": "PASS",
+    "G_LIVE_EVENTS": "PASS"
+  },
+  "secret_recorded": false
+}

@@ -14,10 +14,12 @@ Result/Receipt/Evidence : writes <bus_root>\results\<task_id>-v1.json,
 #>
 param(
   [Parameter(Mandatory=$true)][string]$TaskPath,
-  [string]$ConfigPath = (Join-Path $PSScriptRoot 'local-router.config.json'),
+  [string]$ConfigPath,
   [int]$TimeoutSeconds = 180
 )
 $ErrorActionPreference = 'Stop'
+# $PSScriptRoot can be empty inside param() defaults under Windows PowerShell 5.1; resolve it in the body.
+if (-not $ConfigPath) { $ConfigPath = Join-Path $PSScriptRoot 'local-router.config.json' }
 
 function Write-DecisionAndExit {
   param([hashtable]$Decision, [string]$BusRoot, [string]$RawOutput, [int]$ExitCode)

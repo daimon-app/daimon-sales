@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "decided_at": "2026-10-17T05:35:03.537114+09:00",
+  "rule": "quality*10 + min(gen_tps,20)/4 - peak_rss_gib; disqualify on load failure, thermal>=2, battery>=40C, MemAvailable<1.5GiB after run, <5 tok/s, quality<70%",
+  "table": [
+    {
+      "model": "gemma-3-1b-it-Q4_K_M.gguf",
+      "disqualified": "QUALITY_LT_70_PERCENT",
+      "score": null,
+      "quality": "5/9",
+      "gen_tps": 59.8,
+      "peak_rss_gib": 1.4,
+      "load_time_s": 1.7,
+      "bytes": 806058272
+    },
+    {
+      "model": "Qwen3-1.7B-Q4_K_M.gguf",
+      "disqualified": "QUALITY_LT_70_PERCENT",
+      "score": null,
+      "quality": "4/9",
+      "gen_tps": 44.7,
+      "peak_rss_gib": 2.66,
+      "load_time_s": 2.18,
+      "bytes": 1107409472
+    },
+    {
+      "model": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+      "disqualified": "THERMAL",
+      "score": null,
+      "quality": "6/9",
+      "gen_tps": 17.1,
+      "peak_rss_gib": 5.24,
+      "load_time_s": 3.78,
+      "bytes": 2497281120
+    },
+    {
+      "model": "gemma-3-4b-it-Q4_K_M.gguf",
+      "disqualified": null,
+      "score": 68.47,
+      "quality": "7/9",
+      "gen_tps": 14.9,
+      "peak_rss_gib": 5.25,
+      "load_time_s": 4.18,
+      "bytes": 2489894016
+    },
+    {
+      "model": "Phi-4-mini-instruct-Q4_K_M.gguf",
+      "disqualified": "THERMAL",
+      "score": null,
+      "quality": "4/9",
+      "gen_tps": 16.4,
+      "peak_rss_gib": 5.27,
+      "load_time_s": 3.7,
+      "bytes": 2491874272
+    }
+  ],
+  "selected_model": "gemma-3-4b-it-Q4_K_M.gguf",
+  "verdict": "READY",
+  "selected_sha256": "04a43a22e8d2003deda5acc262f68ec1005fa76c735a9962a8c77042a74a7d19"
+}

@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "test": "NIGHT_ZERO_TOUCH",
+  "session_id": "8149f0cd-00de-486c-bd67-aa5436f75f0e",
+  "started_at": "2026-10-17T04:45:40.602392+09:00",
+  "settings_sources": "default (user+project+local)",
+  "summary": {
+    "NIGHT_ZERO_TOUCH": "PASS",
+    "TEST_DURATION_MIN": 31.3,
+    "NORMAL_PERMISSION_PROMPTS": 0,
+    "NON_FIXED_TOOL_COMMANDS": 0,
+    "TOOL_COMMANDS_TOTAL": 28,
+    "JAPANESE_ALL_TURNS": "PASS"
+  },
+  "denials": [],
+  "non_fixed_commands": [],
+  "commands": [
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py status"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py bench-next"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py status"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py stop"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py stop"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py status"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py bench-next"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py bench-next"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py bench-next"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py bench-next"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py bench-next"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py bench-next"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py select"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py deploy"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py e2e"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py e2e"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py e2e"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py e2e"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py e2e"
+    },
+    {
+      "tool": "Bash",
+      "command": "git status --short ai5-hub/tools"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py status"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py logs"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py status"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py logs"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py status"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py logs"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py status"
+    },
+    {
+      "tool": "Bash",
+      "command": "python ai5-hub/tools/galaxy_local_ai.py logs"
+    }
+  ],
+  "turns": [
+    {
+      "prompt": "夜間無人施工の受入試験です。ai5-hub/CLAUDE_SESSION_RESTORE.md のルールに従ってください。固定Tool galaxy_local_ai.py の status を実行し、続けて bench-next を、出力に ALL_DONE が出るまで1回ずつ繰り返してください。bench-next は時間がかかるので Bash tool の timeout を 600000 にしてください。終わったら本人向けに日本語2行で報告してください。",
+      "elapsed_s": 1068,
+      "denials": 0,
+      "japanese": true,
+      "output": "スマホ上のAIモデル5種類の速さと回答の正確さの計測がすべて終わりました（最後に ALL_DONE を確認済み）。最初の1回は計測ツールの不具合で止まりましたが、ツールを直して再実行し、本人の操作は1回も必要ありませんでした。\n一番速かったのは gemma-3-1b（1秒あたり64語ほど）、正確さは4種類が7問中5問正解でした。ツールの修正はまだ記録として保存（commit）していないので、残すかどうかだけ判断をお願いします。\n\n### 技術詳細\n- **不具合**: `ai5-hub/tools/galaxy_local_ai_bench.py` の `run_model` で、`cd X && nohup llama-server ... > server.log 2>&1 &` と書いていたため、コマンド全体がサブシェルごとバックグラウンドに回っていた。このサブシェルが adb の出力パイプを開いたままにするので、`adb shell` が終わらず600秒でタイムアウトしていた（llama-server 自体は pid 19493 で起動済みだった）。\n- **修正内容（未commit）**: `cd X || exit 1; ... &` に変更してバックグラウンドに回すのを llama-server 本体だけにした。起動コマンドの timeout を60秒にし、起動前に `pkill -f llama-server` を入れて、前回の残りのサーバーがポートを使い続ける事態を防いだ。修正前に、固定Tool `stop` で残っていたサーバーを停止した。\n- **結果**（生成速度 tok/s / 正解数 / 最大メモリ使用量）:\n  - gemma-3-1b: 64.3 / 5/7 / 1.4GiB\n  - Qwen3-1.7B: 46.0 / 5/7 / 2.64GiB\n  - Qwen3-4B: 16.5 / 5/7 / 5.01GiB。計測後に `thermal_status` が2になり、`select` で THERMAL として除外される見込み。\n  - gemma-3-4b: 19.8 / 4/7 / 5.36GiB\n  - Phi-4-mini: 19.5 / 5/7 / 5.26GiB\n- **注意**: 1回目の失敗時のエラー表示に、その回だけ使う API key が出ていました。スマホ内部だけで使う使い捨ての鍵で、そのサーバーも停止済みのため実害はありません。\n- **次の工程**: `select`、`deploy`、`e2e` は今回の依頼に含まれていないため、実行していません。"
+    },
+    {
+      "prompt": "続けて、固定Tool galaxy_local_ai.py の select、deploy、e2e を順に実行してください（timeout は 600000）。結果を本人向けに日本語3行で報告してください。",
+      "elapsed_s": 268,
+      "denials": 0,
+      "japanese": true,
+      "output": "一番成績の良かった gemma-3-1b を採用モデルに選び、スマホへの配置まで済ませました。通しの動作テストは最終的に7項目すべて合格し、本人の操作は一度も必要ありませんでした。\nただ、1回目と2回目のテストでは「スマホで扱えない仕事をPC側AIへ回す」項目が不合格でした。PC側の仕組みに不具合が見つかったので直して3回目で合格しましたが、その修正（前回のツール修正分も含む）はまだ記録として保存していないため、保存するかどうかの判断をお願いします。\n\n### 技術詳細\n- **select**: 選ばれたのは `gemma-3-1b-it-Q4_K_M.gguf`（score 57.2、sha256 `8270790f…8ebd`）。除外されたモデルは Qwen3-4B（THERMAL）と gemma-3-4b（QUALITY_LT_5_OF_7）。\n- **deploy**: PASS。負荷が軽いときはモデルを読み込まず待機しています（`busy_state=idle`、`model_state=UNLOADED`）。\n- **e2e**: 3回実行。\n  - 1回目 `GALAXY_E2E_20261017-050407.json`：C_ESCALATION FAIL\n  - 2回目 `GALAXY_E2E_20261017-050515.json`：C_ESCALATION FAIL\n  - 3回目 `GALAXY_E2E_20261017-050548.json`：全7項目 PASS\n- **失敗の原因**: `Invoke-DaimonLocalRouter.ps1` の `param()` で、既定値に `Join-Path $PSScriptRoot ...` を使っていた。Windows PowerShell 5.1 ではこの時点の `$PSScriptRoot` が空になり、Join-Path がエラーになって exit 1 で終了していた。出力も残らなかった。\n- **修正（すべて未commit）**:\n  - `ai5-hub/tools/Invoke-DaimonLocalRouter.ps1`（Git管理下で変更あり）：`ConfigPath` の既定値を、スクリプト本体の中で決めるように変更。\n  - `ai5-hub/tools/galaxy_local_ai.py`（Git未管理）：`escalate_to_fujitsu` の戻り値にエラー出力 `stderr`（末尾1000文字）を追加し、原因が記録されるようにした。\n  - `ai5-hub/tools/galaxy_local_ai_bench.py`（Git未管理）：前回の起動コマンドの修正。\n- **追加で見つけた小さな不具合（未対応）**: `collect()` が status ファイルを読み取る処理で、`resource.thermal_status` に他の値が1行まとめて入り、battery などの各項目が null になっている。e2e の合否には影響していない。"
+    },
+    {
+      "prompt": "施工の継続確認です。固定Tool galaxy_local_ai.py の status と logs を実行し、現在の状態を本人向けに日本語2行で報告してください。",
+      "elapsed_s": 18,
+      "denials": 0,
+      "japanese": true,
+      "output": "スマホ上のAI（gemma-3-1b）は配置済みで、今は依頼を待っている状態です。使っていない間はメモリから外しており、温度・電池（99%・充電中）・空きメモリにも問題はありません。\n記録上も異常はありません。3回の通しテストで、「パスワード系の依頼を断る」「熱いときは処理を止めてPCへ回す」という安全装置も、毎回想定どおりに動いていました。\n\n### 技術詳細\n- **status**: `phone_worker=present`。スマホ上のモデルの sha256（`8270790f…8ebd`）は、select で選んだものと一致。`server_pid=null`、`model_state=UNLOADED`。最後の heartbeat は 05:07:42。`thermal_status=0`、電池温度 26.9℃、`mem_available` 5.65GiB。5モデルとも計測済み。\n- **logs（サーバーのログ）**: 最後に起動したときは約1.1秒でモデルを読み込み、生成速度は約63 tok/s だった。その後 `cleaning up before exit` で正常に終了している。\n- **logs（タスクの記録）**: 3回の e2e（050407 / 050515 / 050548）すべてで、A と B は COMPLETED。C2 は SECRET_REFUSED、E は RESOURCE_GUARD_THERMAL で、どちらも試験で狙った結果。\n- **未commit のまま**: `Invoke-DaimonLocalRouter.ps1`、`galaxy_local_ai.py`、`galaxy_local_ai_bench.py` の修正。"
+    },
+    {
+      "prompt": "施工の継続確認です。固定Tool galaxy_local_ai.py の status と logs を実行し、現在の状態を本人向けに日本語2行で報告してください。",
+      "elapsed_s": 17,
+      "denials": 0,
+      "japanese": true,
+      "output": "前回（05:10）の確認から状態は変わっていません。スマホ上のAI（gemma-3-1b）は配置済みのまま依頼を待っていて、温度・電池（99%・充電中）・空きメモリも正常です。\n新しい作業の記録や異常はなく、最後の動作は05:07の通しテストのままです。テストで直した3つのファイルは、まだ記録として保存していないので、保存するかどうかの判断だけ残っています。\n\n### 技術詳細\n- **status**（05:12:22）: `phone_worker=present`、`phone_model_sha256` は `8270790f…8ebd` のままで、selection と一致。`server_pid=null`、`model_state=UNLOADED`。電池温度 26.4℃、`thermal_status=0`、`mem_available` 5.57GiB。\n- **heartbeat**: 05:07:42 から更新されていない。e2e 以降に新しいタスクがないので、ワーカーが動いていないためと見られる。常に一定間隔で更新される仕組みかどうかは、今回は確かめていない。\n- **logs**: 前回と同じ内容で、新しい行は増えていない。3回の e2e で、C2=SECRET_REFUSED と E=RESOURCE_GUARD_THERMAL はどちらも試験で狙った結果。\n- **未commit**: `ai5-hub/tools/Invoke-DaimonLocalRouter.ps1`（Git管理下で変更あり）、`galaxy_local_ai.py` と `galaxy_local_ai_bench.py`（Git未管理）。"
+    },
+    {
+      "prompt": "施工の継続確認です。固定Tool galaxy_local_ai.py の status と logs を実行し、現在の状態を本人向けに日本語2行で報告してください。",
+      "elapsed_s": 15,
+      "denials": 0,
+      "japanese": true,
+      "output": "前回（05:12）の確認から変化はありません。スマホ上のAI（gemma-3-1b）は配置済みのまま依頼を待っていて、温度・電池（99%・充電中）・空きメモリも正常です。\n新しい作業の記録や異常もありません。テストで直した3つのファイルを記録として保存（commit）するかどうかの判断だけが残っています。\n\n### 技術詳細\n- **status**（05:14:40）: `phone_worker=present`、`phone_model_sha256` は `8270790f…8ebd` のままで、selection と一致。`server_pid=null`、`model_state=UNLOADED`。電池温度 25.9℃、`thermal_status=0`、`mem_available` 5.56GiB。\n- **heartbeat**: 05:07:42 から更新されていない。e2e 以降に新しいタスクがないためと見られる。\n- **logs**: 前回と同じ内容で、新しい行はない。\n- **未commit**: `ai5-hub/tools/Invoke-DaimonLocalRouter.ps1`（Git管理下で変更あり）、`galaxy_local_ai.py` と `galaxy_local_ai_bench.py`（Git未管理）。"
+    },
+    {
+      "prompt": "施工の継続確認です。固定Tool galaxy_local_ai.py の status と logs を実行し、現在の状態を本人向けに日本語2行で報告してください。",
+      "elapsed_s": 14,
+      "denials": 0,
+      "japanese": true,
+      "output": "前回（05:14）の確認から変化はありません。スマホ上のAI（gemma-3-1b）は配置済みのまま依頼を待っていて、温度・電池（99%・充電中）・空きメモリも正常です。\n新しい作業の記録や異常もありません。テストで直した3つのファイルを記録として保存（commit）するかどうかの判断だけが残っています。\n\n### 技術詳細\n- **status**（05:16:54）: `phone_worker=present`、`phone_model_sha256` は `8270790f…8ebd` のままで、selection と一致。`server_pid=null`、`model_state=UNLOADED`。電池温度 25.5℃、`thermal_status=0`、`mem_available` 5.33GiB。\n- **heartbeat**: 05:07:42 のまま更新されていない。e2e 以降に新しいタスクがないためと見られる。\n- **logs**: 前回と同じ内容で、新しい行はない。\n- **未commit**: `ai5-hub/tools/Invoke-DaimonLocalRouter.ps1`（Git管理下で変更あり）、`galaxy_local_ai.py` と `galaxy_local_ai_bench.py`（Git未管理）。"
+    }
+  ],
+  "secret_recorded": false
+}
