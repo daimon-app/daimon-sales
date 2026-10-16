@@ -19,6 +19,7 @@
   - ホスト RAM / git プロセス：`...\ai5-hub\tools\Invoke-DaimonSystemDiagnostics.ps1`
   - localhost health：`...\ai5-hub\tools\Invoke-DaimonLocalhostHealth.ps1`
   - Bus状態：`...\ai5-hub\tools\Invoke-DaimonBusStatus.ps1`
+  - Galaxy実機PRE-FLIGHT（USB ADB、読み取り専用）：`...\ai5-hub\tools\Invoke-DaimonGalaxyPreflight.ps1`（`-GateTaskId GALAXY-LOCAL-AI-20261016-01` を付けると、接続検知時に待機Taskを自動RESUMEする。SessionStart hookも自動で実行する）
 - Git 読み取りは作業ディレクトリ（リポジトリ直下）から `git status` / `git log` / `git diff` / `git show` 等を `cd` なしで直接実行する。別リポジトリは `git -C` ではなく固定Tool または Read / Glob / Grep ツールで確認する。
 - ファイル内容・ログ・Evidence の読み取りは Bash ではなく Read / Glob / Grep ツールを使う（承認不要）。
 - 新しい定型診断が必要になったら、承認を求める前に固定Toolとして `ai5-hub/tools/` に追加し、完全一致パスで `.claude/settings.json` に登録する。

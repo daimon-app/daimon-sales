@@ -38,7 +38,17 @@ try {
     try { $task = [IO.File]::ReadAllText($file.FullName, $utf8) | ConvertFrom-Json } catch { continue }
     if ([string]::IsNullOrWhiteSpace([string]$task.task_id)) { continue }  # plan/report files, not tasks
     switch ([string]$task.status) {
-      'WAITING_OWNER_GATE' { $waiting.Add("$($task.task_id) (gate=$($task.owner_gate_id), auto_resume=$($task.auto_resume_after_owner_gate))") }
+      'WAITING_OWNER_GATE' {
+        if ([string]$task.owner_gate_id -eq 'GALAXY_DEVICE_CONNECT' -and [bool]$task.auto_resume_after_owner_gate) {
+          # Detector: read-only Galaxy preflight; resumes the task itself only on a verified AUTHORIZED device.
+          $detector = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $RepoRoot 'ai5-hub\tools\Invoke-DaimonGalaxyPreflight.ps1') -GateTaskId ([string]$task.task_id) 2>$null
+          if ((@($detector) -join "`n") -match 'OWNER_GATE_AUTO_RESUMED') {
+            $runnable.Add("$($task.task_id) [QUEUED - auto-resumed now: Galaxy connected] ai=$($task.assigned_ai) target=$($task.target_device_id)")
+            continue
+          }
+        }
+        $waiting.Add("$($task.task_id) (gate=$($task.owner_gate_id), auto_resume=$($task.auto_resume_after_owner_gate))")
+      }
       { $_ -in @('QUEUED','READY','RUNNING','CLAIMED') } {
         $stamp = if ($task.updated_at) { $task.updated_at } else { $task.created_at }
         $stale = $false
@@ -52,8 +62,8 @@ try {
   $lines.Add("- OWNER_GATE_STATE: $gateState ($($waiting.Count) task)")
   foreach ($w in $waiting) { $lines.Add("  - $w") }
   $lines.Add("- RUNNABLE_TASKS (updated within 14 days): $($runnable.Count)")
-  $lines.Add("- STALE_QUEUED_TASKS (older than 14 days, legacy queue owned by their assigned_ai/device; NOT runnable by Claude fallback without ownership check): $staleCount")
   foreach ($r in $runnable | Select-Object -First 10) { $lines.Add("  - $r") }
+  $lines.Add("- STALE_QUEUED_TASKS (older than 14 days, legacy queue owned by their assigned_ai/device; NOT runnable by Claude fallback without ownership check): $staleCount")
   $latest = Get-ChildItem -LiteralPath (Join-Path $busRoot 'results') -Filter *.json -File |
     Sort-Object LastWriteTime -Descending | Select-Object -First 3
   $lines.Add('- LATEST_RESULTS (LAST_VERIFIED_CHECKPOINT candidates):')
