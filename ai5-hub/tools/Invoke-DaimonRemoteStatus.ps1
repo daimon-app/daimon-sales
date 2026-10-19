@@ -67,6 +67,9 @@ $report = [ordered]@{
   processes               = $processes
   services                = $services
   local_rustdesk_listen   = $listening
+  # Incoming DAIMON Remote sessions: remote addresses of ESTABLISHED connections to local port 21118.
+  local_rustdesk_sessions_from = @(Get-NetTCPConnection -LocalPort 21118 -State Established -ErrorAction SilentlyContinue |
+                                   Select-Object -ExpandProperty RemoteAddress -Unique)
   dynabook_rustdesk_probe = $probe
   galaxy_rustdesk_probe   = $galaxyProbe
   secret_recorded         = $false

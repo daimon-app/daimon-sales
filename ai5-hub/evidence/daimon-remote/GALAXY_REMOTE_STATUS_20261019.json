@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "evidence_id": "GALAXY_REMOTE_STATUS_20261019",
+  "measured_at": "2026-10-19T21:44:25+09:00/21:45:52+09:00",
+  "measured_by": "fujitsu-claude-code-fallback (fixed tools only, 0 permission prompts)",
+  "tools": [
+    "ai5-hub/tools/Invoke-DaimonGalaxyPreflight.ps1",
+    "ai5-hub/tools/Invoke-DaimonRemoteStatus.ps1",
+    "python ai5-hub/tools/galaxy_local_ai.py status",
+    "python ai5-hub/tools/galaxy_local_ai.py logs"
+  ],
+  "galaxy_adb": {"device_state": "AUTHORIZED", "model": "samsung SCG39", "soc": "SM8850", "android": "17", "serial_sha256_prefix": "998243afabe3"},
+  "galaxy_resource": {"mem_available_gib": 3.17, "battery_level": 78, "battery_temp_c": 38.2, "powered": true, "thermal_status": 2},
+  "galaxy_local_ai": {
+    "runtime_present": true, "worker_present": true,
+    "model_sha256": "04a43a22e8d2003deda5acc262f68ec1005fa76c735a9962a8c77042a74a7d19",
+    "model_sha256_matches_selection": true,
+    "llama_server_running": false,
+    "llama_server_note": "on-demand by design (load -> task -> unload)",
+    "last_worker_events": "2026-10-17 E2E A/B COMPLETED, C2 SECRET_REFUSED, E RESOURCE_GUARD_THERMAL",
+    "live_inference_today": "DEFERRED: thermal_status=2 now; the worker guard refuses inference at >=2, so a run would only heat the phone"
+  },
+  "galaxy_remote_apps": {
+    "rustdesk": {"package": "com.carriez.flutter_hbb", "version": "1.4.9", "process_running": true, "services": ["InputService", "MainService"], "foreground_service": true, "media_projection_held": false, "tcp_21118_listen": false},
+    "tailscale": {"package": "com.tailscale.ipn", "version": "1.102.4", "process_running": true, "services": ["IPNService"], "tun0_ipv4": "100.65.78.107"},
+    "chrome_remote_desktop": {"package": "com.google.chromeremotedesktop", "version": "TWA 1.5.2", "process_running": true}
+  },
+  "paths": {
+    "galaxy_to_dynabook_100.110.32.108_21118": "OPEN",
+    "galaxy_to_fujitsu_100.72.31.31_21118": "CLOSED (FUJITSU address in the other tailnet; expected)",
+    "fujitsu_to_dynabook_100.110.32.108_21118": "OPEN (27.5 ms)",
+    "fujitsu_to_galaxy_100.65.78.107_21118": "CLOSED (Galaxy RustDesk host not listening)"
+  },
+  "fujitsu": {"rustdesk": "Running", "tailscale": "Running", "chromoting": "Running", "local_21118_listen": true},
+  "diagnosis": "Galaxy RustDesk MainService is up but holds no screen-capture (MediaProjection) grant and does not listen on 21118, i.e. the in-app 'Start service' + Android screen-share consent has not been given this boot. Android requires the Owner to tap that consent; ADB/AI cannot grant it.",
+  "settings_changed": false,
+  "secret_recorded": false
+}

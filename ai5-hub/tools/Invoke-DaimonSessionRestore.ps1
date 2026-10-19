@@ -39,7 +39,7 @@ try {
     if ([string]::IsNullOrWhiteSpace([string]$task.task_id)) { continue }  # plan/report files, not tasks
     switch ([string]$task.status) {
       'WAITING_OWNER_GATE' {
-        if ([string]$task.owner_gate_id -eq 'GALAXY_DEVICE_CONNECT' -and [bool]$task.auto_resume_after_owner_gate) {
+        if ([string]$task.owner_gate_id -in @('GALAXY_DEVICE_CONNECT', 'GALAXY_DAIMON_REMOTE_HOST_CONSENT') -and [bool]$task.auto_resume_after_owner_gate) {
           # Detector: read-only Galaxy preflight; resumes the task itself only on a verified AUTHORIZED device.
           $detector = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $RepoRoot 'ai5-hub\tools\Invoke-DaimonGalaxyPreflight.ps1') -GateTaskId ([string]$task.task_id) 2>$null
           if ((@($detector) -join "`n") -match 'OWNER_GATE_AUTO_RESUMED') {

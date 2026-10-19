@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "evidence_id": "GALAXY_DAIMON_REMOTE_ENTRY_E2E_20261019",
+  "measured_at": "2026-10-19T22:09:36+09:00/22:23:45+09:00",
+  "measured_by": "fujitsu-claude-code-fallback via fixed tools (0 permission prompts, 0 Owner operations)",
+  "design_rule": "Owner entry is DAIMON Remote. RustDesk is only the internal transport/backend; the Owner is never asked to open or operate RustDesk.",
+  "entry": {
+    "galaxy_app": {"package": "app.daimon.remote", "version": "1.4.9-daimon6", "backend": "RustDesk-based (com.carriez.flutter_hbb classes inside app.daimon.remote)", "deep_link_scheme": "daimonremote"},
+    "pc_launcher": "ai5-github-result-bus/worker/Start-DaimonRemote.ps1 (name picker: FUJITSU メインPC / 鉄兵 dynabook / Galaxy Fold)",
+    "driver_tool": "ai5-hub/tools/Invoke-DaimonRemoteGalaxy.ps1 (ui | host-start | connect -Device fujitsu|dynabook | disconnect)"
+  },
+  "galaxy_as_controller": {
+    "route": "DAIMON Remote (Galaxy) -> backend RustDesk direct -> Tailscale private 21118",
+    "device_selected_by": "registry device_key (dynabook / fujitsu); endpoint resolved from ai5-github-result-bus/config/daimon-remote-device-registry.json, never typed",
+    "dynabook": {
+      "connect_1": {"at": "22:15:01", "state": "SESSION_OPEN", "established_peer": "100.110.32.108", "password_prompt": false},
+      "disconnect_1": {"at": "22:16:40", "state": "DISCONNECTED", "confirm": "DAIMON Remote own dialog '本当に切断しますか？' -> OK", "established": "1 -> 0"},
+      "reconnect": {"at": "22:17:00", "state": "SESSION_OPEN", "established_peer": "100.110.32.108 (verified 22:17:26)"},
+      "disconnect_2": {"at": "22:17:35", "state": "DISCONNECTED", "established": "1 -> 0"}
+    },
+    "fujitsu": {
+      "connect": {"at": "22:17:53", "state": "SESSION_OPEN", "established_peer": "100.75.128.87"},
+      "fujitsu_side_confirmation": {"at": "22:18:31", "tool": "Invoke-DaimonRemoteStatus.ps1", "local_rustdesk_sessions_from": ["100.65.78.107"], "rustdesk_processes": "3 -> 4"},
+      "disconnect": {"at": "22:18:55", "state": "DISCONNECTED", "established": "1 -> 0"}
+    },
+    "failover": {"at": "22:19:29", "drill": "direct path forced DOWN in the tool only (-SimulateDirectDown); Tailscale/RustDesk/network untouched", "state": "FAILOVER_FALLBACK_OPENED", "route": "EMERGENCY_FALLBACK_CHROME_REMOTE_DESKTOP", "foreground": "com.android.chrome CustomTabActivity (Chrome Remote Desktop TWA)"},
+    "failback": {"at": "22:19:38", "state": "SESSION_OPEN", "route": "TAILSCALE_PRIVATE_RUSTDESK_DIRECT", "established_peer": "100.110.32.108"},
+    "final_disconnect": {"at": "22:19:52", "state": "DISCONNECTED"}
+  },
+  "galaxy_as_host": {
+    "state": "WAITING_OWNER_GATE GALAXY_DAIMON_REMOTE_HOST_CONSENT",
+    "ai_done": "opened DAIMON Remote, pressed its own '画面を共有' tab and 'サービスを開始' (22:10:25)",
+    "stopped_at": [
+      "DAIMON Remote anti-scam consent ('同意する' after 7 s) - Owner consent, AI only declined/closed it",
+      "Android screen-capture consent (MediaProjection 'Start now') - OS-enforced Owner consent"
+    ],
+    "later_attempts": "22:20-22:23: Galaxy had no input-focused window (mCurrentFocus=null); the tool now refuses to tap in that state (GALAXY_INPUT_NOT_FOCUSED)",
+    "listen_21118": false,
+    "auto_resume_detector": "Invoke-DaimonGalaxyPreflight.ps1 -GateTaskId GALAXY-REMOTE-HOST-20261019-01 (rustdesk_21118_listen=true)"
+  },
+  "clipboard": {
+    "status": "NOT_REMEASURED",
+    "reason": "Android restricts clipboard read/write to the focused app or IME; there is no safe fixed ADB path to set or read Galaxy clipboard content. Last measured: FUJITSU->Galaxy clipboard correctness PASS (2026-10-05, GALAXY_DAIMON_REMOTE_LIVE_E2E_20261005)."
+  },
+  "owner_exposure": {
+    "direct_rustdesk_owner_operation": 0,
+    "remaining_rustdesk_branding_inside_daimon_remote": "the DAIMON Remote app still shows the title 'RustDesk' and the RustDesk anti-scam text (fork source not found: GALAXY_FLOATING_SHORTCUT_PRODUCT_REQUIREMENT_20261003)",
+    "stock_rustdesk_also_installed": "com.carriez.flutter_hbb 1.4.9 is installed and its MainService runs; not touched (removal would be an Owner decision)"
+  },
+  "raw_reports": "C:/Users/teppe/.local/daimon/bus/results/DAIMON_REMOTE_GALAXY-*-20261019-*.json",
+  "settings_changed": false,
+  "secret_recorded": false
+}
