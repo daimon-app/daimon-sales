@@ -24,6 +24,13 @@
 - GALAXY_LOCAL_AI の通常施工は、固定Tool `python ai5-hub/tools/galaxy_local_ai.py <サブコマンド>` だけで行う（作業ディレクトリはリポジトリ直下、文字列は完全一致）。サブコマンドは `status` / `bench-next` / `select` / `deploy` / `e2e` / `stop` / `logs` / `cleanup-losers` のみ。ad-hoc の adb / python / bash は生成しない。長時間かかる `bench-next` と `e2e` は Bash tool の `timeout` を 600000 にする。
 - 夜間無人施工（NIGHT_ZERO_TOUCH）：本物の Owner Gate 以外で Permission を発生させない。固定Toolで足りない処理が出たら、承認を求めず、固定Toolを拡張するまでその処理を保留して次の Task へ進む。
 - Git 読み取りは作業ディレクトリ（リポジトリ直下）から `git status` / `git log` / `git diff` / `git show` 等を `cd` なしで直接実行する。別リポジトリは `git -C` ではなく固定Tool または Read / Glob / Grep ツールで確認する。
+- **Git は目的別の固定Toolだけを使う**（2026-10-20 監査：承認15件はすべて Claude が作った ad-hoc コマンドが原因。内訳は `git -C` 連結8、commit/push 連結4、pipe・`cat`・`grep`・`for` ループ3）：
+  - SAFE_GIT_READ：`...\ai5-hub\tools\Invoke-DaimonGitRead.ps1 -Repo <daimon-sales|result-bus> -Op <status|log|diff-stat|diff-names|diff|fetch|incoming|show|exists> [-Ref r] [-Path p] [-Count n]`
+  - SAFE_GIT_STAGE_EXPLICIT / COMMIT_DAIMON / PUSH_APPROVED_BRANCH：`...\ai5-hub\tools\Invoke-DaimonGitSave.ps1 -Repo <daimon-sales|result-bus> -Paths a,b,c -Message "..." [-Push]`（承認済みbranchだけ、名前を挙げたファイルだけをstage、secret検査、remoteが進んでいれば重複ファイルが無い場合だけmerge、force push不可）
+  - 他端末のResult待ち：`...\ai5-hub\tools\Wait-DaimonBusResult.ps1 -TaskId <id> -MaxMinutes <1-30>`（`run_in_background` で呼ぶ）
+  - 権限監査：`...\ai5-hub\tools\Invoke-DaimonPermissionAudit.ps1 [-Since yyyy-MM-dd]`、回帰試験：`...\ai5-hub\tools\Test-DaimonZeroTouchPermission.ps1`
+- Bash で `&&` / `;` / `|` の連結、`git -C`、`cat` / `grep` / `head` / `tail` / `for` ループを作らない。1回の Bash 呼び出しは固定Tool 1本か、許可済み git 読み取り 1本だけにする。
+- force push / `reset --hard` / `clean` / `rebase` / branch削除 / `rm -rf` は `.claude/settings.json` の `deny` で自動拒否される（Owner にも聞かない）。必要なら Owner の明示指示を受けてから別途扱う。
 - ファイル内容・ログ・Evidence の読み取りは Bash ではなく Read / Glob / Grep ツールを使う（承認不要）。
 - 新しい定型診断が必要になったら、承認を求める前に固定Toolとして `ai5-hub/tools/` に追加し、完全一致パスで `.claude/settings.json` に登録する。
 - Owner Gate を維持するもの：本人認証、password / secret 入力、MFA、支払い、公開、本番不可逆変更、destructive delete、security control 解除。これらを包括許可へ入れない。「Yes を自動クリック」する設計は禁止。
