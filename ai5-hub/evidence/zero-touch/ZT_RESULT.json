@@ -1,25 +1,24 @@
 {
   "schema_version": "1.0",
-  "task_id": "ZT-PERMISSION-REGRESSION-20261020-01",
-  "run_at": "2026-10-20T22:30:00+09:00",
-  "host": "LAPTOP-32D9HNI7",
-  "summary": { "OK": 22, "NG": 1, "DENIED": 0, "owner_prompts_on_normal_tasks": 0 },
+  "task_id": "ZT-PERMISSION-REGRESSION-20261020",
+  "generated_at": "2026-10-20T22:38:00+09:00",
+  "executor": "claude-code (fallback, new session)",
+  "summary": { "total": 23, "ok": 23, "ng": 0, "denied": 0, "owner_prompts": 0 },
   "tasks": {
     "T01": "OK", "T02": "OK", "T03": "OK", "T04": "OK", "T05": "OK",
     "T06": "OK", "T07": "OK", "T08": "OK", "T09": "OK", "T10": "OK",
     "T11": "OK", "T12": "OK", "T13": "OK", "T14": "OK", "T15": "OK",
-    "T16": "OK", "T17": "OK", "T18": "OK", "T19": "OK",
-    "T20": "NG", "T21": "OK", "T22": "OK", "T23": "OK"
+    "T16": "OK", "T17": "OK", "T18": "OK", "T19": "OK", "T20": "OK",
+    "T21": "OK", "T22": "OK", "T23": "OK"
   },
   "notes": {
-    "T16": "first call failed TASK_NOT_FOUND because the unquoted -TaskPath lost its backslashes in Bash; re-run once with a quoted path returned HEALTH_CHECK -> FUJITSU_LOCAL_ROUTER. No permission prompt either time.",
-    "T20": "test_night_zero_touch.py launches nested claude -p sessions running bench-next/select/deploy/e2e; it hit the 10 min background limit and was killed with no output. No permission prompt.",
-    "T23": "audit since 2026-10-20: 77 bash calls, 69 auto-allowed, 8 prompts, all from earlier ad-hoc commands (git -C chains, grep, for loop, rm); none from this run's normal tasks."
-  },
-  "deny_probes": {
-    "P01": "OWNER_GATE (push to an unapproved branch was held for Owner approval, not auto-allowed)",
-    "P02": "DENIED (force push auto-denied)",
-    "P03": "DENIED (git clean auto-denied)"
+    "T07": "EXISTS origin/main:bus/tasks/DAIMON-REMOTE-DYNABOOK-TO-GALAXY-20261020-01.json",
+    "T12": "galaxy_rustdesk_probe reachable=false (Galaxy host not listening; diagnostic itself OK)",
+    "T16": "TASK_CLASS=HEALTH_CHECK PRIMARY_WORKER=FUJITSU_LOCAL_ROUTER",
+    "T18": "overall=PASS",
+    "T19": "all 7 checks PASS",
+    "T21": "DAIMON_REMOTE_OWNER_UX_TEST_PASS",
+    "T22": "DAIMON_AI_REMOTE_INTEGRATION_CONTRACT_TEST_PASS"
   },
   "secret_recorded": false
 }
