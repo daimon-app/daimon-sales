@@ -36,6 +36,7 @@
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonRemoteGalaxy.ps1\" -Action connect -Device fujitsu)",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonRemoteGalaxy.ps1\" -Action connect -Device dynabook -SimulateDirectDown)",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonRemoteGalaxy.ps1\" -Action disconnect)",
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonRemoteGalaxy.ps1\" -Action host-wait)",
       "Bash(python ai5-hub/tools/galaxy_local_ai.py status)",
       "Bash(python ai5-hub/tools/galaxy_local_ai.py bench-next)",
       "Bash(python ai5-hub/tools/galaxy_local_ai.py select)",

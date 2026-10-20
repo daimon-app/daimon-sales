@@ -13,6 +13,9 @@ Actions (fixed)         : ui         - foreground package; visible texts ONLY wh
                                        key (fujitsu|dynabook); endpoint comes from the registry, never from input.
                           disconnect - close the DAIMON Remote session view on Galaxy (back + DAIMON's own
                                        disconnect confirmation only).
+                          host-wait  - touch nothing; poll up to 15 minutes for the Owner's consent taps and
+                                       report which stage the Galaxy is at (DAIMON consent / Android consent /
+                                       listening). Run in the background after host-start reaches a gate.
 Input schema            : -Action (ValidateSet), -Device (ValidateSet), -WaitSeconds (0..120).
 Path/scope restriction  : adb.exe at the fixed SDK path, exactly one authorized device; temp UI dump at
                           /data/local/tmp/daimon-remote-ui.xml (deleted after each read); report JSON in
@@ -22,7 +25,7 @@ Never                   : reads or types passwords, grants permissions, changes 
 Exit codes              : 0 = report written (gates and failures are reported as data in "state").
 #>
 param(
-  [Parameter(Mandatory = $true)][ValidateSet('ui', 'host-start', 'connect', 'disconnect')][string]$Action,
+  [Parameter(Mandatory = $true)][ValidateSet('ui', 'host-start', 'host-wait', 'connect', 'disconnect')][string]$Action,
   [ValidateSet('fujitsu', 'dynabook')][string]$Device,
   [ValidateRange(0, 120)][int]$WaitSeconds = 20,
   # Failover drill: treat the private direct path as down without touching Tailscale/RustDesk/network settings.
@@ -68,9 +71,12 @@ function Get-Screen {
   $p = Sh 'dumpsys power | grep -m1 mWakefulness='
   $ds = Sh 'cmd device_state print-state 2>/dev/null'
   $disp = Sh "dumpsys display | grep -E 'mScreenState=|mGlobalDisplayState=' | head -n 4"
-  $focus = Sh "dumpsys window | grep -m1 mCurrentFocus"
   [pscustomobject]@{ awake = ($p -match 'mWakefulness=Awake'); locked = ($w -match '(mDreamingLockscreen|isKeyguardShowing|mShowingLockscreen)=true')
-    device_state = $ds; display = ($disp -replace '\s+', ' '); has_focus = ($focus -notmatch 'mCurrentFocus=null') }
+    device_state = $ds; display = ($disp -replace '\s+', ' '); has_focus = (Test-AnyFocus) }
+}
+function Test-AnyFocus {
+  # Foldables keep one focus per display; the first one listed can be the switched-off cover display.
+  return ((Sh "dumpsys window displays | grep mCurrentFocus=") -match 'mCurrentFocus=Window\{')
 }
 function Get-Nodes {
   # Visible text nodes, only for allowed foreground packages.
@@ -91,7 +97,13 @@ function Tap-Own($nodes, [string]$re) {
   # Taps only a DAIMON Remote node whose first label line matches $re as a whole.
   $n = @($nodes | Where-Object { $_.package -eq $Pkg -and (($_.label -split "`n")[0].Trim()) -match $re }) | Select-Object -First 1
   if (-not $n) { return $null }
-  Sh "input touchscreen swipe $($n.x) $($n.y) $($n.x) $($n.y) 120" | Out-Null  # short press; plain taps were dropped by Flutter tabs
+  # Short press; plain taps were dropped by Flutter tabs. Pin to the display that holds focus
+  # (foldables: injected touches can otherwise land on the switched-off cover display).
+  $d = if ((Sh "dumpsys input | grep -A1 -m1 FocusedWindows: | tail -n 1") -match 'displayId=(\d+)') { $Matches[1] } else { '0' }
+  Sh "input touchscreen -d $d swipe $($n.x) $($n.y) $($n.x) $($n.y) 120" | Out-Null
+  # Where the dispatcher sent / dropped the injected touch (window names only).
+  $script:LastTapDispatch = @((Sh "dumpsys input | grep -A6 -E 'RecentQueue:|DropReason|LastDropped' | cut -c1-220 | head -n 16") -split "`n" | ForEach-Object { $_.Trim() })
+  $script:LastTapDisplay = $d
   Start-Sleep -Milliseconds 1500
   return $n.label
 }
@@ -130,6 +142,10 @@ elseif ($lines.Count -eq 1) {
     # Window names only (no content): which windows are focused / drawn on top.
     $report.lock_probe = $script:LockLines
     $report.focus = Sh "dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' | head -n 2"
+    # Foldables: focus is tracked per display; window names / display ids only.
+    $report.focus_per_display = @((Sh "dumpsys window displays | grep -E 'Display: mDisplayId=|mCurrentFocus=|mFocusedApp='") -split "`n" | ForEach-Object { $_.Trim() } | Select-Object -First 12)
+    $report.input_focus = @((Sh "dumpsys input | grep -E 'FocusedWindows|FocusedApplications|displayId=[0-9]+.*(focus|name)' | head -n 8") -split "`n" | ForEach-Object { $_.Trim() })
+    $report.display_ids = Sh "dumpsys display | grep -E 'mDisplayId=|mState=' | head -n 8"
     $report.overlay_windows = @((Sh "dumpsys window windows | grep -E '^ *Window #' | head -n 12") -split "`n" |
       ForEach-Object { if ($_ -match 'Window\{\w+ u\d+ ([^}]+)\}') { $Matches[1] } })
     # Unlabelled DAIMON Remote controls (icon buttons): class + bounds only.
@@ -153,7 +169,7 @@ elseif ($lines.Count -eq 1) {
     else {
       Sh "am start -n $Main" | Out-Null; $report.steps += 'open_daimon_remote'
       Start-Sleep -Seconds 3
-      if ((Sh 'dumpsys window | grep -m1 mCurrentFocus') -match 'mCurrentFocus=null') {
+      if (-not (Test-AnyFocus)) {
         # Nothing has input focus (gesture/transition in progress or Owner handling the phone): do not tap.
         $report.state = 'GALAXY_INPUT_NOT_FOCUSED'
       }
@@ -173,7 +189,16 @@ elseif ($lines.Count -eq 1) {
         $t = Tap-Own $nodes $ReStartService
         if ($t) { $report.steps += "tap_own:$t"; Start-Sleep -Seconds 2; continue }
         $t = Tap-Own $nodes $ReShareTab
-        if ($t) { $report.steps += "tap_own:$t"; continue }
+        if ($t) {
+          $report.steps += "tap_own:$t"
+          if ($i -eq 1) {
+            # Tab press delivered but the page did not change (stuck Flutter view, seen 2026-10-19 22:20 and 2026-10-20):
+            # recreate only the activity (NEW_TASK|CLEAR_TASK); services and the app process are left running.
+            Sh "am start -f 0x10008000 -n $Main" | Out-Null; $report.steps += 'recreate_daimon_remote_activity'
+            Start-Sleep -Seconds 4
+          }
+          continue
+        }
         $report.daimon_ui = @($nodes | ForEach-Object { "$($_.label)|$(if ($_.clickable) {'btn'} else {'txt'})" })
         break
       }
@@ -183,10 +208,28 @@ elseif ($lines.Count -eq 1) {
       $report.projection_held = Test-Projection
       if ($report.listen_21118) { $report.state = 'HOST_READY' }
       elseif ($report.state -eq 'NO_DEVICE') { $report.state = 'HOST_START_CONTROL_NOT_FOUND' }
+      if ($script:LastTapDispatch) { $report.tap_display = $script:LastTapDisplay; $report.tap_dispatch = $script:LastTapDispatch }
       if ($report.state -like 'OWNER_GATE_*' -or $report.state -eq 'GALAXY_INPUT_NOT_FOCUSED' -or $report.state -eq 'HOST_START_CONTROL_NOT_FOUND') {
         $report.owner_gate_id = 'GALAXY_DAIMON_REMOTE_HOST_CONSENT'
       }
     }
+  }
+  elseif ($Action -eq 'host-wait') {
+    # Read-only watch: no taps, no intents. Ends at listen, or after 15 minutes.
+    $deadline = (Get-Date).AddMinutes(15); $stages = @()
+    while ((Get-Date) -lt $deadline) {
+      if (Test-Listen) { break }
+      $fg = Get-Foreground
+      $stage = if ($fg.package -eq 'com.android.systemui' -or $fg.activity -match 'MediaProjection') { 'ANDROID_SCREEN_CAPTURE_CONSENT' }
+        elseif ($fg.package -eq $Pkg) { 'DAIMON_REMOTE' } else { 'OTHER:' + $fg.package }
+      if ($stages.Count -eq 0 -or $stages[-1] -ne $stage) { $stages += $stage }
+      Start-Sleep -Seconds 3
+    }
+    $report.stages_seen = $stages
+    $report.listen_21118 = Test-Listen
+    $report.projection_held = Test-Projection
+    $report.state = if ($report.listen_21118) { 'HOST_READY' } else { 'HOST_WAIT_TIMEOUT' }
+    if (-not $report.listen_21118) { $report.owner_gate_id = 'GALAXY_DAIMON_REMOTE_HOST_CONSENT' }
   }
   elseif ($Action -eq 'connect') {
     if (-not $Device) { $report.state = 'DEVICE_REQUIRED' }

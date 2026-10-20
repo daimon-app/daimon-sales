@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "evidence_id": "GALAXY_HOST_CONSENT_RESUME_20261020",
+  "task_id": "GALAXY-REMOTE-HOST-20261019-01",
+  "device": { "model": "SCG39", "android": "17", "serial_sha256_prefix": "998243afabe3", "tailnet_ip": "100.65.78.107" },
+  "timeline": [
+    { "at": "2026-10-20T05:03:24+09:00", "state": "GALAXY_INPUT_NOT_FOCUSED", "note": "false negative: focus check read the switched-off cover display (displayId=1); inner display 0 had DAIMON Remote focused" },
+    { "at": "2026-10-20T05:04:29+09:00", "state": "HOST_START_CONTROL_NOT_FOUND", "note": "share-tab presses dispatched (RecentQueue MotionEvents) but the Flutter page did not change" },
+    { "at": "2026-10-20T05:09:00+09:00", "state": "OWNER_GATE_DAIMON_REMOTE_HOST_CONSENT", "note": "after activity recreate: share tab -> start service reached DAIMON Remote anti-scam consent; AI stopped, agree side not pressed" },
+    { "at": "2026-10-20T05:25:24+09:00", "state": "HOST_WAIT_TIMEOUT", "note": "15 min read-only watch, no Owner action yet" },
+    { "at": "2026-10-20T05:45:37+09:00", "state": "HOST_READY_ALREADY", "note": "Owner pressed the two consent buttons; listen_21118=true projection_held=true" },
+    { "at": "2026-10-20T05:45:46+09:00", "state": "OWNER_GATE_AUTO_RESUMED", "note": "preflight detector GALAXY_PREFLIGHT_DAIMON_REMOTE_21118_LISTEN, resume_status=QUEUED" }
+  ],
+  "measurements": {
+    "galaxy_rustdesk_21118_listen": true,
+    "galaxy_to_dynabook_21118": "OPEN",
+    "galaxy_to_fujitsu_21118": "OPEN",
+    "fujitsu_to_galaxy_21118": { "reachable": true, "connect_ms": 53.1 },
+    "dynabook_to_galaxy_21118": "PENDING (task DAIMON-REMOTE-DYNABOOK-TO-GALAXY-20261020-01 queued for codex@teppei-dynabook-v83hs)"
+  },
+  "tool_fixes": [
+    "Test-AnyFocus: per-display focus (foldable)",
+    "touch injected with -d <focused display>",
+    "activity recreate (NEW_TASK|CLEAR_TASK) when tab press does not switch page; no force-stop",
+    "new read-only action host-wait"
+  ],
+  "tests": { "Test-DaimonGalaxyGateResume": "PASS", "Test-StartDaimonRemote": "PASS" },
+  "owner_actions": 2,
+  "owner_operated_rustdesk_directly": false,
+  "ai_pressed_consent": false,
+  "settings_changed": false,
+  "secret_recorded": false
+}
