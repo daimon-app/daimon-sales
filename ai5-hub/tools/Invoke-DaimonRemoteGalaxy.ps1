@@ -16,7 +16,10 @@ Actions (fixed)         : ui         - foreground package; visible texts ONLY wh
                           host-wait  - touch nothing; poll up to 15 minutes for the Owner's consent taps and
                                        report which stage the Galaxy is at (DAIMON consent / Android consent /
                                        listening). Run in the background after host-start reaches a gate.
-Input schema            : -Action (ValidateSet), -Device (ValidateSet), -WaitSeconds (0..120).
+                          host-watch - touch nothing; sample every 30 s for -WatchMinutes and record each change of
+                                       listen / screen capture / screen / fold / foreground package / power / USB,
+                                       to find what ends the host (no screen contents are read).
+Input schema            : -Action (ValidateSet), -Device (ValidateSet), -WaitSeconds (0..120), -WatchMinutes (1..110).
 Path/scope restriction  : adb.exe at the fixed SDK path, exactly one authorized device; temp UI dump at
                           /data/local/tmp/daimon-remote-ui.xml (deleted after each read); report JSON in
                           <bus_root>\results\DAIMON_REMOTE_GALAXY-<action>-<timestamp>.json.
@@ -25,9 +28,10 @@ Never                   : reads or types passwords, grants permissions, changes 
 Exit codes              : 0 = report written (gates and failures are reported as data in "state").
 #>
 param(
-  [Parameter(Mandatory = $true)][ValidateSet('ui', 'host-start', 'host-wait', 'connect', 'disconnect')][string]$Action,
+  [Parameter(Mandatory = $true)][ValidateSet('ui', 'host-start', 'host-wait', 'host-watch', 'connect', 'disconnect')][string]$Action,
   [ValidateSet('fujitsu', 'dynabook')][string]$Device,
   [ValidateRange(0, 120)][int]$WaitSeconds = 20,
+  [ValidateRange(1, 110)][int]$WatchMinutes = 100,
   # Failover drill: treat the private direct path as down without touching Tailscale/RustDesk/network settings.
   [switch]$SimulateDirectDown,
   [string]$BusRoot = 'C:\Users\teppe\.local\daimon\bus',
@@ -160,6 +164,30 @@ elseif ($lines.Count -eq 1) {
     $report.established_peers = @(Get-EstablishedPeers)
     $report.state = 'OK'
   }
+  elseif ($Action -eq 'host-watch') {
+    # Read-only: state flags and package names only. Keeps going when the device leaves USB and comes back.
+    $deadline = (Get-Date).AddMinutes($WatchMinutes); $events = @(); $prev = $null; $samples = 0
+    while ((Get-Date) -lt $deadline) {
+      $present = @(& $Adb devices 2>$null | Select-Object -Skip 1 | Where-Object { $_ -match "^$([regex]::Escape($script:Serial))\s+device\s*$" }).Count -eq 1
+      $s = if (-not $present) { [ordered]@{ usb_adb = $false } } else {
+        $sc = Get-Screen
+        $bat = Sh "dumpsys battery | grep -E '^ *(level|AC powered|USB powered):'"
+        [ordered]@{ usb_adb = $true; listen = (Test-Listen); projection = (Test-Projection); awake = $sc.awake; locked = $sc.locked
+          fold_state = $sc.device_state; foreground = (Get-Foreground).package
+          daimon_process = [bool](Sh "pidof $Pkg"); powered = ($bat -match '(AC|USB) powered: true')
+          battery = if ($bat -match 'level: (\d+)') { [int]$Matches[1] } else { $null }; peers = @(Get-EstablishedPeers).Count }
+      }
+      $samples++
+      $key = ($s.GetEnumerator() | Where-Object { $_.Key -ne 'battery' } | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ';'
+      if ($key -ne $prev) { $s.at = [DateTimeOffset]::Now.ToString('o'); $events += [pscustomobject]$s; $prev = $key }
+      Start-Sleep -Seconds 30
+    }
+    $report.samples = $samples
+    $report.events = $events
+    $lost = @($events | Where-Object { $_.usb_adb -and -not ($_.listen -and $_.projection) }) | Select-Object -First 1
+    $report.host_lost_at = if ($lost) { $lost.at } else { $null }
+    $report.state = if ($lost) { 'HOST_LOST' } elseif (@($events | Where-Object { -not $_.usb_adb }).Count) { 'HOST_UNKNOWN_DEVICE_LEFT_USB' } else { 'HOST_HELD' }
+  }
   elseif ($Action -ne 'ui' -and (-not $screen.awake -or $screen.locked)) {
     $report.state = 'OWNER_GATE_SCREEN_LOCKED'
     $report.owner_action_ja = [regex]::Unescape('Galaxy\' + 'u306e\' + 'u753b\' + 'u9762\' + 'u30ed\' + 'u30c3\' + 'u30af\' + 'u3092\' + 'u89e3\' + 'u9664')  # unlock the Galaxy screen
@@ -202,23 +230,28 @@ elseif ($lines.Count -eq 1) {
         $report.daimon_ui = @($nodes | ForEach-Object { "$($_.label)|$(if ($_.clickable) {'btn'} else {'txt'})" })
         break
       }
-      $deadline = (Get-Date).AddSeconds($WaitSeconds)
-      while ((Get-Date) -lt $deadline -and -not (Test-Listen)) { Start-Sleep -Seconds 2 }
+      # 21118 starts listening as soon as the service starts, before the Owner's consent (measured 2026-10-21 22:29);
+      # the host is ready only when screen capture is also granted.
+      if ($report.state -notlike 'OWNER_GATE_*') {
+        $deadline = (Get-Date).AddSeconds($WaitSeconds)
+        while ((Get-Date) -lt $deadline -and -not ((Test-Listen) -and (Test-Projection))) { Start-Sleep -Seconds 2 }
+      }
       $report.listen_21118 = Test-Listen
       $report.projection_held = Test-Projection
-      if ($report.listen_21118) { $report.state = 'HOST_READY' }
+      if ($report.listen_21118 -and $report.projection_held) { $report.state = 'HOST_READY' }
+      elseif ($report.state -eq 'NO_DEVICE' -and $report.listen_21118) { $report.state = 'HOST_LISTEN_WITHOUT_SCREEN_CAPTURE' }
       elseif ($report.state -eq 'NO_DEVICE') { $report.state = 'HOST_START_CONTROL_NOT_FOUND' }
       if ($script:LastTapDispatch) { $report.tap_display = $script:LastTapDisplay; $report.tap_dispatch = $script:LastTapDispatch }
-      if ($report.state -like 'OWNER_GATE_*' -or $report.state -eq 'GALAXY_INPUT_NOT_FOCUSED' -or $report.state -eq 'HOST_START_CONTROL_NOT_FOUND') {
+      if ($report.state -like 'OWNER_GATE_*' -or $report.state -in @('GALAXY_INPUT_NOT_FOCUSED', 'HOST_START_CONTROL_NOT_FOUND', 'HOST_LISTEN_WITHOUT_SCREEN_CAPTURE')) {
         $report.owner_gate_id = 'GALAXY_DAIMON_REMOTE_HOST_CONSENT'
       }
     }
   }
   elseif ($Action -eq 'host-wait') {
-    # Read-only watch: no taps, no intents. Ends at listen, or after 15 minutes.
+    # Read-only watch: no taps, no intents. Ends at listen + screen capture granted, or after 15 minutes.
     $deadline = (Get-Date).AddMinutes(15); $stages = @()
     while ((Get-Date) -lt $deadline) {
-      if (Test-Listen) { break }
+      if ((Test-Listen) -and (Test-Projection)) { break }
       $fg = Get-Foreground
       $stage = if ($fg.package -eq 'com.android.systemui' -or $fg.activity -match 'MediaProjection') { 'ANDROID_SCREEN_CAPTURE_CONSENT' }
         elseif ($fg.package -eq $Pkg) { 'DAIMON_REMOTE' } else { 'OTHER:' + $fg.package }
@@ -228,8 +261,9 @@ elseif ($lines.Count -eq 1) {
     $report.stages_seen = $stages
     $report.listen_21118 = Test-Listen
     $report.projection_held = Test-Projection
-    $report.state = if ($report.listen_21118) { 'HOST_READY' } else { 'HOST_WAIT_TIMEOUT' }
-    if (-not $report.listen_21118) { $report.owner_gate_id = 'GALAXY_DAIMON_REMOTE_HOST_CONSENT' }
+    $ready = $report.listen_21118 -and $report.projection_held
+    $report.state = if ($ready) { 'HOST_READY' } else { 'HOST_WAIT_TIMEOUT' }
+    if (-not $ready) { $report.owner_gate_id = 'GALAXY_DAIMON_REMOTE_HOST_CONSENT' }
   }
   elseif ($Action -eq 'connect') {
     if (-not $Device) { $report.state = 'DEVICE_REQUIRED' }

@@ -136,6 +136,7 @@ if ($report.adb_present) {
     $mp = Invoke-AdbShell $s 'dumpsys media_projection'
     $report.media_projection = [ordered]@{
       rustdesk_holds_projection = ($mp -match 'com\.carriez\.flutter_hbb')
+      daimon_remote_holds_projection = ($mp -match 'app\.daimon\.remote')
       any_projection_active     = ($mp -match '(?i)media projection(?: is|:)?\s*(?:active|running)|mProjectionGrant=\S*\{')
     }
   }
