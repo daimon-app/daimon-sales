@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "evidence_id": "GALAXY_HOST_REMEASURE_20261021",
+  "task_id": "GALAXY-REMOTE-HOST-20261019-01",
+  "secret_recorded": false,
+  "settings_changed": false,
+  "timeline": [
+    { "at": "2026-10-21T22:27:57+09:00", "event": "Galaxy back on USB; host down (listen=false, projection=false); Galaxy had a DAIMON Remote client session open to dynabook (1 ESTABLISHED to 100.110.32.108)" },
+    { "at": "2026-10-21T22:28:48+09:00", "event": "AI closed the Galaxy client session (-Action disconnect, DAIMON's own OK)" },
+    { "at": "2026-10-21T22:29:06+09:00", "event": "host-start: share tab -> start service -> DAIMON anti-scam consent shown; 21118 already LISTEN while consent pending (projection=false)" },
+    { "at": "2026-10-21T22:30:04+09:00", "event": "Owner accepted DAIMON consent; Android 17 MediaProjection dialog shown (default '1 app')" },
+    { "at": "2026-10-21T22:30:46+09:00", "event": "host-wait HOST_READY: listen=true, projection_held=true (Owner granted Android screen capture)" },
+    { "at": "2026-10-21T22:31:48+09:00", "event": "FUJITSU -> Galaxy 100.65.78.107:21118 reachable, 111.5 ms" },
+    { "at": "2026-10-21T22:53:44+09:00", "event": "dynabook -> Galaxy PASS (tailscale_ping=true, tcp=true), DAIMON-REMOTE-DYNABOOK-TO-GALAXY-20261021-01" },
+    { "at": "2026-10-21T22:33:02+09:00/2026-10-22T00:13:00+09:00", "event": "host-watch 195 samples / 100 min: listen and projection held throughout app switches, fold (state 3->0), lock and screen off" },
+    { "at": "2026-10-22T00:13:24+09:00", "event": "FUJITSU -> Galaxy reachable, 102.2 ms" }
+  ],
+  "findings": [
+    "21118 LISTEN starts when the service starts, before the Owner's consent; listen alone is not host readiness. Earlier acceptance (2026-10-20) measured listen only.",
+    "With screen capture granted, the host survives app switching, folding, locking and screen-off while USB powered (100 min).",
+    "Both observed losses (2026-10-20 ~22:20 and 2026-10-21 before 22:27) coincided with the Galaxy being used as a DAIMON Remote client / leaving USB; cause still unproven (no sample at the moment of loss)."
+  ],
+  "tool_fixes": [
+    "Invoke-DaimonRemoteGalaxy.ps1: HOST_READY requires listen AND projection; new state HOST_LISTEN_WITHOUT_SCREEN_CAPTURE; host-wait waits for both; new read-only host-watch",
+    "Invoke-DaimonGalaxyPreflight.ps1: daimon_remote_holds_projection (old field only checked stock RustDesk package)",
+    "Result Bus tasks for device workers need task_base_head (Assert-AI5TaskFresh.ps1); first 20-min wait timed out without it"
+  ],
+  "commits": {
+    "daimon-sales": ["31263cb"],
+    "result-bus": ["5838c60", "86cc896"]
+  }
+}
