@@ -38,6 +38,7 @@
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonRemoteGalaxy.ps1\" -Action disconnect)",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonRemoteGalaxy.ps1\" -Action host-wait)",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonRemoteGalaxy.ps1\" -Action host-watch)",
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonHostInventory.ps1\")",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonPermissionAudit.ps1\")",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonPermissionAudit.ps1\" *)",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-DaimonGitRead.ps1\" *)",

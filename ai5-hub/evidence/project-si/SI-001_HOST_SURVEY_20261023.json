@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "work_id": "SI-001",
+  "project": "PROJECT SI",
+  "generated_at": "2026-10-23T08:30:00+09:00",
+  "host": "LAPTOP-32D9HNI7 (FUJITSU FMVAXD3BZ)",
+  "method": "read-only fixed tool ai5-hub/tools/Invoke-DaimonHostInventory.ps1 + existing Bus/health tools; nothing started, stopped, installed or changed",
+  "measured": {
+    "cpu": "Intel Core i7-9750H, 6 cores / 12 threads, load 11-28% at survey time",
+    "ram_gib": { "total": 15.69, "free": 4.39, "commit_limit": 32.69, "commit_free": 17.56 },
+    "gpu": "Intel UHD Graphics 630 only (shared memory, ~1 GiB); no NVIDIA/AMD device present even among disabled PnP devices; no CUDA",
+    "disks": [
+      { "drive": "C:", "device": "Samsung NVMe SSD 954 GiB", "free_gib": 670.1 },
+      { "drive": "D:", "device": "WD SATA HDD 932 GiB", "free_gib": 928.6 }
+    ],
+    "runtimes": { "python": "3.14.7", "git": "2.55.0", "node": "24.19.0", "ollama": "not installed", "llama.cpp": "b10536 CPU build at ~/.local/daimon/local-router/runtime-b10536" },
+    "top_ram": "chrome ~2.4 GiB total, mc-fw-host 0.6 GiB, claude processes ~0.9 GiB total"
+  },
+  "seven_b_model": {
+    "exists": true,
+    "model": "Qwen2.5-7B-Instruct",
+    "quantization": "Q4_K_M (GGUF, 2 shards, 4.36 GiB)",
+    "path": "C:/Users/teppe/.local/daimon/local-router/models/qwen2.5-7b-instruct-q4_k_m-0000{1,2}-of-00002.gguf",
+    "runtime": "llama.cpp b10536, CPU only, 4 threads (ai5-hub/tools/local-router.config.json)",
+    "speed_measured_earlier": "prompt 14.2-14.3 t/s, generation 4.1-4.8 t/s (bus results DAIMON-BENCH-QUOTA-v1 / -2-v1 raw logs)",
+    "role_today": "FUJITSU_LOCAL_ROUTER (classification/routing/summaries), on-demand load, idle",
+    "not_measured_today": "no new load test was run (SI-001 is read-only)"
+  },
+  "other_local_models": [ "gemma-3-4b-it Q4_K_M (Galaxy local AI, staging copy on FUJITSU)" ],
+  "conflicts_with_running_work": {
+    "daimon_remote_e2e": "GALAXY-REMOTE-HOST-20261019-01 COMPLETED/CONDITIONAL (v2, 2026-10-22); no DAIMON Remote job running now; RustDesk/Tailscale/CRD services running and untouched",
+    "ai5_hub": "localhost health 200, bridge ready, worker idle, bus task_count 0",
+    "risk": [
+      "RAM: a 7B run needs ~5-6 GiB; only ~4.4 GiB free now -> paging and slowdown of Claude/Chrome/AI5 HUB if run while busy",
+      "CPU: generation uses 4 of 6 cores; keep at most one 7B process",
+      "No GPU: fine-tuning (LoRA/QLoRA) of a 7B is not practical on this PC; CPU-only would take days per small run"
+    ]
+  },
+  "resource_budget_proposal": {
+    "local_7b": "one process at a time, threads<=4, start only when free RAM >= 6 GiB and no DAIMON Remote / build job is running; stop on idle",
+    "disk": "research data and model files on D: (HDD, 928 GiB free) or C: under a dedicated folder; cap 100 GiB initially",
+    "training": "no local training of 7B; small experiments only (<=1.5B models, or retrieval/memory research); GPU rental needs Owner approval (billing)"
+  },
+  "unverified": [
+    "dynabook: Qwen 2.5 3B / ROKU state (not queried; registry says DYNABOOK_LOCAL_AI UNKNOWN). Needs a read-only Bus task, ROKU untouched",
+    "Gemini / Manus connection for research (registry: GEMINI not_connected)",
+    "Which cloud AI functions are inside existing subscriptions vs paid API"
+  ],
+  "si_001_verdict": "CONDITIONAL",
+  "si_001_reason": "Host survey, 7B existence and risk/budget done by measurement; dynabook and cloud-AI availability not measured yet",
+  "next": [
+    "SI-001b: read-only dynabook inventory via Result Bus (ROKU untouched)",
+    "SI-002: needs a decision on creating the private GitHub repository project-si (creating a repository is an outward action)"
+  ],
+  "secret_recorded": false
+}
