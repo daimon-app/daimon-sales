@@ -29,6 +29,7 @@
   - SAFE_GIT_STAGE_EXPLICIT / COMMIT_DAIMON / PUSH_APPROVED_BRANCH：`...\ai5-hub\tools\Invoke-DaimonGitSave.ps1 -Repo <daimon-sales|result-bus> -Paths a,b,c -Message "..." [-Push]`（承認済みbranchだけ、名前を挙げたファイルだけをstage、secret検査、remoteが進んでいれば重複ファイルが無い場合だけmerge、force push不可）
   - 他端末のResult待ち：`...\ai5-hub\tools\Wait-DaimonBusResult.ps1 -TaskId <id> -MaxMinutes <1-30>`（`run_in_background` で呼ぶ）
   - 権限監査：`...\ai5-hub\tools\Invoke-DaimonPermissionAudit.ps1 [-Since yyyy-MM-dd]`、回帰試験：`...\ai5-hub\tools\Test-DaimonZeroTouchPermission.ps1`
+- PROJECT SI（非公開 `daimon-app/project-si`、作業コピーは `daimon-sales\project-si`、2026-10-23 Owner 承認）：`...\ai5-hub\tools\Invoke-ProjectSi.ps1 -Op <preflight|create-repo|verify|test>`、`-Op run -Sub <status|guard|selftest|baseline-echo|baseline-local7b|memory-eval>`。保存は `Invoke-DaimonGitSave.ps1 -Repo project-si ...`。7B は guard（空きRAM 6GiB 以上・codex 等の他作業なし・STOP なし）が通った時だけ動く。課金・外部公開・秘密送信・本番変更は別承認。
 - Bash で `&&` / `;` / `|` の連結、`git -C`、`cat` / `grep` / `head` / `tail` / `for` ループを作らない。1回の Bash 呼び出しは固定Tool 1本か、許可済み git 読み取り 1本だけにする。
 - force push / `reset --hard` / `clean` / `rebase` / branch削除 / `rm -rf` は `.claude/settings.json` の `deny` で自動拒否される（Owner にも聞かない）。必要なら Owner の明示指示を受けてから別途扱う。
 - ファイル内容・ログ・Evidence の読み取りは Bash ではなく Read / Glob / Grep ツールを使う（承認不要）。

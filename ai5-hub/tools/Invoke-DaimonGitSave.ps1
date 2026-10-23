@@ -16,7 +16,7 @@ Never                   : reset --hard, clean, checkout/switch, rebase, stash, b
 Exit codes              : 0 = SAVED / PUSHED / NOTHING_TO_COMMIT; 3 = refused (state in JSON).
 #>
 param(
-  [Parameter(Mandatory = $true)][ValidateSet('daimon-sales', 'result-bus')][string]$Repo,
+  [Parameter(Mandatory = $true)][ValidateSet('daimon-sales', 'result-bus', 'project-si')][string]$Repo,
   [Parameter(Mandatory = $true)][string[]]$Paths,
   [Parameter(Mandatory = $true)][ValidateLength(1, 2000)][string]$Message,
   [switch]$Push
@@ -29,6 +29,10 @@ $Policy = @{
     prefixes = @('ai5-hub/', 'claude-fallback/', '.claude/settings.json') }
   'result-bus'   = @{ dir = (Join-Path $Root 'ai5-github-result-bus'); branch = '^main$'
     prefixes = @('bus/', 'worker/', 'config/', 'docs/') }
+  # PROJECT SI private research repository (Owner-approved 2026-10-23); nested working copy like the Result Bus.
+  'project-si'   = @{ dir = (Join-Path $Root 'project-si'); branch = '^main$'
+    prefixes = @('README.md', 'MASTER.md', 'AGENTS.md', '.gitignore', 'pyproject.toml', 'docs/', 'src/', 'experiments/',
+      'benchmarks/', 'tests/', 'configs/', 'scripts/', 'reports/', 'evidence/') }
 }[$Repo]
 $Dir = $Policy.dir
 $Trailer = 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'
@@ -38,15 +42,14 @@ function Done([string]$state, [int]$code) { $report.state = $state; $report | Co
 
 # Paths may arrive as one comma/space separated string from the shell.
 $list = @($Paths | ForEach-Object { $_ -split '[,\s]+' } | Where-Object { $_ } | ForEach-Object { $_.Replace('\', '/') } | Select-Object -Unique)
-$branch = (G rev-parse --abbrev-ref HEAD | Select-Object -First 1)
+# symbolic-ref also works before the first commit (rev-parse --abbrev-ref answers "HEAD" there).
+$branch = (G symbolic-ref --short -q HEAD | Select-Object -First 1)
 $report.branch = $branch
 if ($branch -notmatch $Policy.branch) { Done 'REFUSED_BRANCH_NOT_APPROVED' 3 }
 $gitDir = (G rev-parse --absolute-git-dir | Select-Object -First 1)
 foreach ($m in 'MERGE_HEAD', 'REBASE_HEAD', 'rebase-merge', 'rebase-apply', 'CHERRY_PICK_HEAD') {
   if (Test-Path -LiteralPath (Join-Path $gitDir $m)) { Done "REFUSED_OPERATION_IN_PROGRESS:$m" 3 }
 }
-$preStaged = @(G diff --cached --name-only | Where-Object { $_ })
-if ($preStaged.Count) { $report.foreign_staged = $preStaged; Done 'REFUSED_FOREIGN_STAGED_CHANGES' 3 }
 foreach ($p in $list) {
   $ok = $p -match '^[A-Za-z0-9._][A-Za-z0-9._/ -]{0,200}$' -and $p -notmatch '\.\.' -and -not $p.StartsWith('-')
   $ok = $ok -and @($Policy.prefixes | Where-Object { $p -eq $_ -or ($_.EndsWith('/') -and $p.StartsWith($_)) }).Count -gt 0
@@ -54,6 +57,10 @@ foreach ($p in $list) {
   if (-not $ok) { $report.rejected_path = $p; Done 'REFUSED_PATH_NOT_ALLOWED' 3 }
   if (-not (Test-Path -LiteralPath (Join-Path $Dir $p) -PathType Leaf)) { $report.rejected_path = $p; Done 'REFUSED_PATH_MISSING_OR_NOT_FILE' 3 }
 }
+# Already-staged files are accepted only when they are among the named files (e.g. left by a failed commit).
+$preStaged = @(G diff --cached --name-only | Where-Object { $_ })
+$foreign = @($preStaged | Where-Object { $list -notcontains $_ })
+if ($foreign.Count) { $report.foreign_staged = $foreign; Done 'REFUSED_FOREIGN_STAGED_CHANGES' 3 }
 G add -- @list | Out-Null
 $staged = @(G diff --cached --name-only | Where-Object { $_ })
 $report.files = $staged
@@ -75,7 +82,9 @@ if (-not $Push) { Done 'SAVED' 0 }
 
 for ($attempt = 1; $attempt -le 3; $attempt++) {
   G fetch -q origin $branch | Out-Null
-  $behind = [int](G rev-list --count "HEAD..origin/$branch" | Select-Object -First 1)
+  # An empty new remote has no origin/<branch> yet: nothing to merge.
+  $hasRemote = [bool](G rev-parse --verify -q "refs/remotes/origin/$branch" | Select-Object -First 1)
+  $behind = if ($hasRemote) { [int](G rev-list --count "HEAD..origin/$branch" | Select-Object -First 1) } else { 0 }
   if ($behind -gt 0) {
     $incoming = @(G diff --name-only "HEAD...origin/$branch" | Where-Object { $_ })
     $overlap = @($incoming | Where-Object { $staged -contains $_ })
