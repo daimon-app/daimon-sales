@@ -14,9 +14,9 @@ Never                   : changes repo visibility, deletes repos/branches, force
 Exit codes              : 0 = ok; 3 = refused / failed (state in JSON).
 #>
 param(
-  [Parameter(Mandatory = $true)][ValidateSet('preflight', 'create-repo', 'verify', 'test', 'run')][string]$Op,
+  [Parameter(Mandatory = $true)][ValidateSet('preflight', 'create-repo', 'verify', 'test', 'run', 'jobs')][string]$Op,
   [ValidateSet('status', 'selftest', 'baseline-echo', 'baseline-local7b', 'memory-eval', 'guard',
-    'bench-generate', 'bench-verify', 'runs-verify', 'heldout-echo', 'heldout-random', 'heldout-local7b', 'heldout-local7b-wait')][string]$Sub = 'status'
+    'bench-generate', 'bench-verify', 'runs-verify', 'heldout-echo', 'heldout-random', 'heldout-local7b', 'heldout-local7b-wait', 'state')][string]$Sub = 'status'
 )
 $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -40,6 +40,18 @@ function GhRepo([string]$full) {
 }
 $PyExe = (Get-Command python -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1).Source
 function Invoke-Py { & $PyExe @args 2>&1 | ForEach-Object { "$_" } }
+
+if ($Op -eq 'jobs') {
+  # Read-only: PROJECT SI's own python processes (python -m si ...) and any llama.cpp process, so a second
+  # copy of a long job is never started by mistake. Nothing is stopped here.
+  $procs = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
+      ($_.Name -match '^python' -and $_.CommandLine -match '-m si\b') -or $_.Name -match '^llama' })
+  $report.processes = @($procs | ForEach-Object {
+      [ordered]@{ pid = $_.ProcessId; parent_pid = $_.ParentProcessId; name = $_.Name
+        started = "$($_.CreationDate)"; args = (($_.CommandLine -replace '^.*?-m si', 'python -m si') -replace '"', '') } })
+  $report.count = $procs.Count
+  Done 'OK' 0
+}
 
 if ($Op -in @('preflight', 'create-repo', 'verify')) {
   $report.gh_present = [bool]$Gh

@@ -57,6 +57,7 @@
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-ProjectSi.ps1\" -Op create-repo)",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-ProjectSi.ps1\" -Op verify)",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-ProjectSi.ps1\" -Op test)",
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-ProjectSi.ps1\" -Op jobs)",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\teppe\\Documents\\GitHub\\daimon-sales\\ai5-hub\\tools\\Invoke-ProjectSi.ps1\" -Op run -Sub *)",
       "Bash(python ai5-hub/tools/galaxy_local_ai.py status)",
       "Bash(python ai5-hub/tools/galaxy_local_ai.py bench-next)",
