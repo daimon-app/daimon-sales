@@ -16,7 +16,7 @@ Never                   : reset --hard, clean, checkout/switch, rebase, stash, b
 Exit codes              : 0 = SAVED / PUSHED / NOTHING_TO_COMMIT; 3 = refused (state in JSON).
 #>
 param(
-  [Parameter(Mandatory = $true)][ValidateSet('daimon-sales', 'result-bus', 'project-si')][string]$Repo,
+  [Parameter(Mandatory = $true)][ValidateSet('daimon-sales', 'result-bus', 'project-si', 'project-si-dev')][string]$Repo,
   [Parameter(Mandatory = $true)][string[]]$Paths,
   [Parameter(Mandatory = $true)][ValidateLength(1, 2000)][string]$Message,
   [switch]$Push
@@ -31,6 +31,10 @@ $Policy = @{
     prefixes = @('bus/', 'worker/', 'config/', 'docs/') }
   # PROJECT SI private research repository (Owner-approved 2026-10-23); nested working copy like the Result Bus.
   'project-si'   = @{ dir = (Join-Path $Root 'project-si'); branch = '^main$'
+    prefixes = @('README.md', 'MASTER.md', 'AGENTS.md', '.gitignore', '.gitattributes', 'pyproject.toml', 'docs/', 'src/', 'experiments/',
+      'benchmarks/', 'tests/', 'configs/', 'scripts/', 'reports/', 'evidence/') }
+  # PROJECT SI development worktree (separate folder, dev/* branches only) so the measured copy stays frozen.
+  'project-si-dev' = @{ dir = (Join-Path $Root 'project-si-dev'); branch = '^dev/[A-Za-z0-9._-]+$'
     prefixes = @('README.md', 'MASTER.md', 'AGENTS.md', '.gitignore', '.gitattributes', 'pyproject.toml', 'docs/', 'src/', 'experiments/',
       'benchmarks/', 'tests/', 'configs/', 'scripts/', 'reports/', 'evidence/') }
 }[$Repo]
