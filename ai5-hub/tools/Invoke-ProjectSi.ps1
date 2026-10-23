@@ -15,7 +15,8 @@ Exit codes              : 0 = ok; 3 = refused / failed (state in JSON).
 #>
 param(
   [Parameter(Mandatory = $true)][ValidateSet('preflight', 'create-repo', 'verify', 'test', 'run')][string]$Op,
-  [ValidateSet('status', 'selftest', 'baseline-echo', 'baseline-local7b', 'memory-eval', 'guard')][string]$Sub = 'status'
+  [ValidateSet('status', 'selftest', 'baseline-echo', 'baseline-local7b', 'memory-eval', 'guard',
+    'bench-generate', 'bench-verify', 'runs-verify', 'heldout-echo', 'heldout-random', 'heldout-local7b')][string]$Sub = 'status'
 )
 $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

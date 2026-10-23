@@ -31,7 +31,7 @@ $Policy = @{
     prefixes = @('bus/', 'worker/', 'config/', 'docs/') }
   # PROJECT SI private research repository (Owner-approved 2026-10-23); nested working copy like the Result Bus.
   'project-si'   = @{ dir = (Join-Path $Root 'project-si'); branch = '^main$'
-    prefixes = @('README.md', 'MASTER.md', 'AGENTS.md', '.gitignore', 'pyproject.toml', 'docs/', 'src/', 'experiments/',
+    prefixes = @('README.md', 'MASTER.md', 'AGENTS.md', '.gitignore', '.gitattributes', 'pyproject.toml', 'docs/', 'src/', 'experiments/',
       'benchmarks/', 'tests/', 'configs/', 'scripts/', 'reports/', 'evidence/') }
 }[$Repo]
 $Dir = $Policy.dir
